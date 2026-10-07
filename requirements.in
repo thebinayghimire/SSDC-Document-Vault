@@ -1,0 +1,9 @@
+Django>=5.2,<5.3
+psycopg[binary]>=3.2,<4
+Pillow
+pypdf
+pyotp
+cryptography
+argon2-cffi
+gunicorn; sys_platform != 'win32'
+whitenoise

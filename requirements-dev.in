@@ -1,0 +1,7 @@
+-r requirements.in
+pytest
+pytest-django
+pytest-cov
+ruff
+pip-audit
+playwright

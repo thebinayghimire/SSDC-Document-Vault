@@ -1,0 +1,6 @@
+# Localhost-only test of the production configuration; never use as deployment.
+services:
+  app:
+    image: ssdc-vault-app
+  proxy:
+    ports: !override [127.0.0.1:8081:8080, 127.0.0.1:8443:8443]

@@ -1,0 +1,12 @@
+{
+  "name": "ssdc-document-vault",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Self-hosted PDF.js assets for the SSDC viewer",
+  "scripts": {
+    "vendor": "node scripts/vendor-pdfjs.mjs"
+  },
+  "dependencies": {
+    "pdfjs-dist": "6.4.299"
+  }
+}

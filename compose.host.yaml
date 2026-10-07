@@ -1,0 +1,7 @@
+# Optional loopback-only PostgreSQL access for running Python tests on the host.
+services:
+  db:
+    ports: [127.0.0.1:5432:5432]
+    networks: [backend, hosttools]
+networks:
+  hosttools:

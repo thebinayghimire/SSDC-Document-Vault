@@ -1,0 +1,34 @@
+{% load static %}
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Document Vault{% endblock %} · SSDC</title>
+  <link rel="stylesheet" href="{% static 'css/app.css' %}">
+  {% block head %}{% endblock %}
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+{% if request.user.is_authenticated %}
+<aside class="sidebar">
+  <a class="brand" href="{% url 'library' %}"><span class="brand-mark">S</span><span>SSDC<span class="brand-sub">DOCUMENT VAULT</span></span></a>
+  <div class="nav-label">WORKSPACE</div>
+  <nav aria-label="Main navigation">
+    <a href="{% url 'library' %}" class="nav-link"><span aria-hidden="true">▦</span> Document library</a>
+    {% if request.user.can_manage %}<a class="nav-link" href="{% url 'management' %}"><span aria-hidden="true">▤</span> Manage documents</a>{% endif %}
+    {% if request.user.is_portal_admin %}<a class="nav-link" href="{% url 'admin:index' %}"><span aria-hidden="true">⚙</span> Administration</a>{% endif %}
+    <a class="nav-link" href="{% url 'password_change' %}"><span aria-hidden="true">◇</span> Account security</a>
+  </nav>
+  <div class="sidebar-bottom"><div class="security-note"><span class="status-dot"></span> Private workspace</div><p>Access is limited to approved staff.</p></div>
+</aside>
+<div class="workspace">
+<header class="topbar"><span class="organization">Siddhartha Social Development Centre</span><div class="user-menu"><span class="avatar">{{ request.user.username|first|upper }}</span><span>{{ request.user.username }}<small>{{ request.user.get_role_display }}</small></span><form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form></div></header>
+{% endif %}
+<main id="main" class="{% if request.user.is_authenticated %}content{% else %}auth-page{% endif %}">
+{% for message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
+{% block content %}{% endblock %}
+</main>
+{% if request.user.is_authenticated %}<footer class="footer">SSDC Document Vault <span>For authorized staff use only</span></footer></div>{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

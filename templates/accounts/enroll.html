@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="auth-card"><span class="eyebrow">ACCOUNT SECURITY</span><h1>Set up your authenticator.</h1><p>In your authenticator app, add a time-based account named SSDC Vault using this setup key.</p><code class="secret">{{ secret }}</code><p class="muted">Keep this key private. Enter the six-digit code to complete setup.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Verify and continue</button></form></section>{% endblock %}

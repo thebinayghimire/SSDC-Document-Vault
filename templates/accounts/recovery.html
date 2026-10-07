@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<section class="form-card"><span class="eyebrow">ACCOUNT SECURITY</span><h1>Save your recovery codes.</h1><p>Each code can be used once if you lose access to your authenticator. Keep them somewhere private, separate from your password. They are shown only now.</p><div class="recovery-codes">{% for code in codes %}<code>{{ code }}</code>{% endfor %}</div><a class="button" href="{% url 'library' %}">I've saved my codes</a></section>{% endblock %}

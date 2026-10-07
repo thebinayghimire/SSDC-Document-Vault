@@ -1,0 +1,71 @@
+name: ssdc-vault
+services:
+  db:
+    image: ssdc-postgres
+    build: {context: ., dockerfile: deploy/Dockerfile.db}
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ssdc}
+      POSTGRES_USER: ${POSTGRES_USER:-ssdc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks: [backend]
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    restart: unless-stopped
+    mem_limit: 512m
+  clamav:
+    image: ssdc-clamav
+    build: {context: ., dockerfile: deploy/Dockerfile.scanner}
+    networks: [backend, updates]
+    volumes: [clam-data:/var/lib/clamav]
+    restart: unless-stopped
+    mem_limit: 2g
+  app:
+    build: .
+    environment:
+      APP_ENV: development
+      POSTGRES_DB: ${POSTGRES_DB:-ssdc}
+      POSTGRES_USER: ${POSTGRES_USER:-ssdc}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-development-only}
+      POSTGRES_HOST: db
+      ALLOWED_HOSTS: localhost,127.0.0.1,[::1],app
+      PRIVATE_STORAGE_ROOT: /data/private
+      CLAMAV_HOST: clamav
+      SCAN_MODE: clamav
+    depends_on:
+      db: {condition: service_healthy}
+    volumes: [private-data:/data/private]
+    networks: [backend, frontend]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 768m
+    pids_limit: 128
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health/', timeout=3)"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+  proxy:
+    image: ssdc-proxy
+    build: {context: ., dockerfile: deploy/Dockerfile.proxy}
+    ports: [127.0.0.1:8080:8080]
+    volumes: [./deploy/nginx.dev.conf:/etc/nginx/conf.d/default.conf:ro]
+    depends_on: [app]
+    networks: [frontend]
+    restart: unless-stopped
+    mem_limit: 128m
+volumes:
+  db-data:
+  private-data:
+  clam-data:
+networks:
+  backend: {internal: true}
+  frontend:
+  updates:

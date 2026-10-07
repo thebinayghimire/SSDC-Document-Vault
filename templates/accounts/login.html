@@ -1,0 +1,10 @@
+{% extends 'base.html' %}
+{% block title %}Staff sign in{% endblock %}
+{% block content %}
+<section class="auth-card">
+  <div class="auth-brand"><span class="brand-mark">S</span><span>SSDC <small>DOCUMENT VAULT</small></span></div>
+  <span class="eyebrow">YOUR PRIVATE WORKSPACE</span><h1>Welcome back.</h1><p class="muted">Sign in to access your organization's documents.</p>
+  <form method="post">{% csrf_token %}{{ form.as_p }}<button class="button full" type="submit">Sign in <span aria-hidden="true">→</span></button></form>
+  <div class="auth-foot">Need access or help signing in? Contact your SSDC administrator.</div>
+</section><p class="auth-caption">Siddhartha Social Development Centre<br>For authorized staff use only</p>
+{% endblock %}

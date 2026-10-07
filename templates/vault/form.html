@@ -1,0 +1,2 @@
+{% extends 'base.html' %}
+{% block content %}<a class="back-link" href="{% url 'library' %}">← Document library</a><section class="form-card"><span class="eyebrow">DOCUMENT MANAGEMENT</span><h1>{{ title }}</h1><form method="post" {% if multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Save</button></form>{% if multipart %}<p class="muted">PDF, JPEG, PNG, or WebP. Up to 25 MiB. Files are checked before becoming available.</p>{% endif %}</section>{% endblock %}
