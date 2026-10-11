@@ -1,2 +1,17 @@
-{% extends 'base.html' %}
-{% block content %}<section class="auth-card"><span class="eyebrow">ACCOUNT SECURITY</span><h1>Set up your authenticator.</h1><p>In your authenticator app, add a time-based account named SSDC Vault using this setup key.</p><code class="secret">{{ secret }}</code><p class="muted">Keep this key private. Enter the six-digit code to complete setup.</p><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Verify and continue</button></form></section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Set up your authenticator{% endblock %}
+{% block content %}
+  <section class="auth-card account-panel" aria-labelledby="enroll-heading">
+    <span class="eyebrow">Account security · Step 1 of 2</span>
+    <h1 id="enroll-heading">Set up your authenticator.</h1>
+    <ol class="setup-steps">
+      <li>Open your authenticator app and add a time-based account.</li>
+      <li>Name it <strong>SSDC Vault</strong> and enter the setup key below.</li>
+      <li>Enter the current code to finish setup.</li>
+    </ol>
+    <code class="secret" aria-label="Private authenticator setup key">{{ secret }}</code>
+    <p class="muted">Keep this key private. You’ll save your recovery codes next.</p>
+    <form method="post" data-progress="Verifying…">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">Verify and continue</button></div></form>
+    <div class="auth-foot"><a class="back-link" href="{% url 'login' %}">{% include "components/icon.html" with name="back" %}Back to sign in</a></div>
+  </section>
+{% endblock %}

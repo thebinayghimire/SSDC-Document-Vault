@@ -1,2 +1,14 @@
-{% extends 'base.html' %}
-{% block content %}<section class="form-card"><span class="eyebrow">ACCOUNT SECURITY</span><h1>Save your recovery codes.</h1><p>Each code can be used once if you lose access to your authenticator. Keep them somewhere private, separate from your password. They are shown only now.</p><div class="recovery-codes">{% for code in codes %}<code>{{ code }}</code>{% endfor %}</div><a class="button" href="{% url 'library' %}">I've saved my codes</a></section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Save recovery codes{% endblock %}
+{% block content %}
+  <section class="form-card account-panel" aria-labelledby="recovery-heading">
+    <span class="eyebrow">Account security · Step 2 of 2</span>
+    <h1 id="recovery-heading">Save your recovery codes.</h1>
+    <p class="muted">Each code can be used once if you lose access to your authenticator. Store them somewhere private, separate from your password.</p>
+    <div class="notice">{% include "components/icon.html" with name="info" %}<span>These codes are shown only once. Save them before continuing.</span></div>
+    <div class="recovery-codes"
+         aria-label="One-use recovery codes">{% for code in codes %}<code>{{ code }}</code>{% endfor %}</div>
+    <a class="button"
+       href="{% url 'library' %}">{% include "components/icon.html" with name="check" %}I've saved my codes</a>
+  </section>
+{% endblock %}

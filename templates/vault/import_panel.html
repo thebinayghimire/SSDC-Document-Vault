@@ -1,0 +1,72 @@
+<section id="import-documents"
+         class="import-panel"
+         aria-labelledby="import-heading"
+         data-import
+         data-max-bytes="{{ max_upload_bytes }}">
+  <div class="import-heading"><div><span class="eyebrow">A place for every document</span><h2 id="import-heading">Bring files into your vault</h2><p>{% if import_folders %}Choose files, drop a folder, or paste a copied file.{% else %}Add documents here once your account has upload access.{% endif %}</p></div><span class="import-private">{% include "components/icon.html" with name="shield" %}Private &amp; checked</span></div>
+  {% if import_folders %}
+    <form method="post"
+          action="{% url 'import_documents' %}"
+          enctype="multipart/form-data"
+          data-import-form>
+      {% csrf_token %}
+      {% if form.errors %}<div class="error-summary"
+     role="alert"
+     tabindex="-1"><h3>Check your upload</h3>{{ form.errors }}</div>{% endif %}
+      <div class="import-destination"><span class="import-folder-icon">{% include "components/icon.html" with name="folder" %}</span><div><label for="import-folder">Save to folder</label><select id="import-folder" name="folder" required><option value="">Choose a vault folder</option>{% for destination in import_folders %}<option value="{{ destination.pk }}"
+        {% if destination.pk == folder.pk or form.folder.value == destination.pk|stringformat:'s' %}selected{% endif %}>{{ destination.name }}{% if destination.parent_id in import_folder_ids %} — {{ destination.parent.name }}{% endif %}</option>{% endfor %}</select></div><p>Files use this folder’s access permissions.</p></div>
+      <div class="import-dropzone"
+           data-dropzone
+           tabindex="0"
+           role="group"
+           aria-label="Drop or paste files here"
+           aria-describedby="import-help">
+        <div class="import-art" aria-hidden="true"><span class="import-art-file"> {% include "components/icon.html" with name="file" %} </span><span class="import-art-folder"> {% include "components/icon.html" with name="folder" %} </span><span class="import-art-upload"> {% include "components/icon.html" with name="upload" %} </span></div>
+        <h3>Drop your documents here</h3>
+        <p id="import-help">PDF, JPG, PNG &amp; WebP · Up to {{ max_upload_bytes|filesizeformat }} each</p>
+        <div class="import-methods" data-enhanced hidden><button class="button" type="button" data-choose-files>{% include "components/icon.html" with name="plus" %}Choose files</button><button class="button secondary" type="button" data-choose-folder>{% include "components/icon.html" with name="folder" %}Import folder</button><button class="button secondary" type="button" data-paste>{% include "components/icon.html" with name="clipboard" %}Paste files</button></div>
+        <p class="import-paste-hint"
+           data-enhanced
+           hidden>Or click here and press <kbd data-paste-key>Ctrl + V</kbd></p>
+        <div data-fallback>
+          <label for="import-files">Select a document</label><input id="import-files"
+       type="file"
+       name="file"
+       accept=".pdf,.jpg,.jpeg,.png,.webp"
+       required><label for="import-title">Document title</label><input id="import-title"
+       name="title"
+       maxlength="200"
+       value="{{ form.title.value|default_if_none:'' }}"
+       required>
+        </div>
+        <input type="file"
+               data-folder-input
+               webkitdirectory
+               multiple
+               hidden
+               aria-label="Choose a folder from your computer">
+      </div>
+      <p class="import-note">Folder imports include supported files from subfolders. All files go into your selected vault folder; local folder structure is not recreated. Up to 50 files per batch.</p>
+      <div class="import-feedback"
+           role="status"
+           aria-live="polite"
+           data-feedback></div>
+      <a class="back-link"
+         data-reauth
+         hidden
+         target="_blank"
+         rel="noopener">Verify identity in a new tab, then continue here</a>
+      <div class="import-queue" data-queue hidden>
+        <div class="section-heading">
+          <h3>Ready to import <span class="count" data-count></span></h3>
+          <button type="button" class="text-button" data-clear>Clear finished</button>
+        </div>
+        <ul class="import-file-list" data-file-list>
+        </ul>
+      </div>
+      <div class="import-footer"><span>{% include "components/icon.html" with name="shield" %}Files are checked before they appear in the library.</span><button class="button" type="submit" data-start>{% include "components/icon.html" with name="upload" %}Import documents</button></div>
+    </form>
+  {% else %}
+    <div class="import-no-folders">{% include "components/icon.html" with name="folder" %}<h3>{% if request.user.is_portal_admin %}Create your first folder{% elif request.user.can_manage %}You need a folder with upload access{% else %}Your account has viewing access{% endif %}</h3><p>{% if request.user.is_portal_admin %}Create a vault folder, then add your documents here.{% elif request.user.can_manage %}Ask your administrator to give you manage access to a folder. You can then import documents here.{% else %}You are signed in as {{ request.user.get_role_display }}. To upload, sign in with an administrator account or ask your administrator to assign the Document manager role and manage access to a folder.{% endif %}</p>{% if request.user.is_portal_admin %}<a class="button" href="{% url 'create_root_folder' %}">{% include "components/icon.html" with name="plus" %}Create folder</a>{% endif %}</div>
+  {% endif %}
+</section>

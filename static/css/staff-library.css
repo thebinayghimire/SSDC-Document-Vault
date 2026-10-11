@@ -1,0 +1,55 @@
+/* Staff library: a quiet header, folder shortcuts, and one document workspace. */
+.staff-library { max-width: 1160px; margin-inline: auto; }
+.staff-library .page-heading { margin-bottom: 36px; align-items: start; }
+.staff-library .page-heading .eyebrow { color: var(--color-secondary); letter-spacing: .08em; text-transform: uppercase; font-size: 11px; margin-bottom: 12px; }
+.staff-library h1 { font-size: clamp(28px, 3vw, 36px); margin-bottom: 12px; }
+.staff-library .page-heading p { font-size: 14px; line-height: 1.6; margin: 0; }
+.staff-library .heading-actions:empty { display: none; }
+.staff-library .section-heading { align-items: center; margin-bottom: 20px; }
+.staff-library .section-heading h2 { font-size: 18px; }
+.staff-library .count { display: inline-flex; align-items: center; justify-content: center; min-width: 26px; padding: 2px 8px; background: var(--color-canvas-secondary); border-radius: 7px; font-size: 12px; vertical-align: middle; }
+.staff-library .section-description { color: var(--color-secondary); font-size: 13px; margin: 6px 0 0; line-height: 1.5; overflow-wrap: anywhere; }
+.staff-library .folder-section { margin-bottom: 36px; }
+.staff-library .folder-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.staff-library .folder-card { padding: 20px; min-height: 88px; background: var(--color-white); border-radius: 14px; gap: 14px; }
+.staff-library .folder-card strong { font-weight: 500; min-width: 0; }
+.staff-library .folder-card .folder-icon { box-sizing: content-box; padding: 10px; background: var(--color-primary-soft); border-radius: 10px; }
+.staff-library .folder-card:hover { background: var(--color-surface-soft); border-color: var(--color-primary); }
+.staff-library .library-documents { border: 1px solid var(--color-border-strong); border-radius: 16px; padding: 24px; min-width: 0; }
+.staff-library .toolbar { display: grid; grid-template-columns: minmax(200px, 1fr) minmax(140px, 170px) minmax(160px, 190px); align-items: end; gap: 16px; margin: 24px 0; padding: 20px; background: var(--color-surface-soft); border: 1px solid var(--color-border); border-radius: 12px; }
+.staff-library .search-field { border: 1px solid var(--color-border-strong); border-radius: 8px; background: var(--color-white); min-width: 0; height: 46px; }
+.staff-library .search-field input { min-width: 0; font-size: 14px; }
+.staff-library .filter-control { min-width: 0; }
+.staff-library .filter-control label { font-size: 12px; margin-bottom: 8px; }
+.staff-library .filter-control select { width: 100%; height: 46px; }
+.staff-library .filter-summary { margin: 0 0 20px; }
+.staff-library .table-wrap { border: 1px solid var(--color-border); border-radius: 10px; }
+.staff-library .document-table th { padding: 14px 16px; font-weight: 500; }
+.staff-library .document-table td { height: 82px; padding: 16px; }
+.staff-library .document-name { gap: 14px; }
+.staff-library .file-icon { background: var(--color-primary-soft); color: var(--color-primary); border-radius: 8px; width: 38px; height: 44px; }
+.staff-library .file-icon .icon { width: 22px; height: 22px; }
+.staff-library .open-link { opacity: 1; color: var(--color-primary); }
+.staff-library .document-grid { gap: 18px; }
+.staff-library .document-cover { height: 180px; }
+.staff-library .empty-state { background: transparent; padding-block: 48px; }
+@media (max-width: 1068px) {
+  .staff-library .folder-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-library .toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .staff-library .search-field { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+  .staff-library .page-heading { margin-bottom: 28px; }
+  .staff-library .folder-grid { grid-template-columns: minmax(0, 1fr); gap: 10px; }
+  .staff-library .folder-card { min-height: 76px; padding: 16px; }
+  .staff-library .library-documents { padding: 16px; border-radius: 12px; }
+  .staff-library .toolbar { padding: 12px; gap: 12px; margin-block: 20px; }
+  .staff-library .filter-control select { font-size: 12px; padding-inline: 8px; }
+  .staff-library .section-heading { gap: 12px; }
+  .staff-library .section-description { max-width: 210px; }
+  .staff-library .document-table td { padding: 12px; }
+  .staff-library .document-name { min-width: 0; gap: 10px; }
+  .staff-library .document-name > span:last-child { min-width: 0; }
+  .staff-library .document-grid { grid-template-columns: minmax(0, 1fr); }
+  .staff-library .view-toggle a { width: 36px; }
+}

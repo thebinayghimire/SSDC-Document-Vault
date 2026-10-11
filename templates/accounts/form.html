@@ -1,2 +1,20 @@
-{% extends 'base.html' %}
-{% block content %}<section class="form-card"><span class="eyebrow">ACCOUNT SECURITY</span><h1>{{ title }}</h1><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Continue</button></form></section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  {% if request.user.is_authenticated %}<nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'library' %}">Document library</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">Account security</span></nav>{% endif %}
+  <section class="{% if request.user.is_authenticated %}form-panel account-panel{% else %}auth-card{% endif %}"
+           aria-labelledby="security-heading">
+    {% if not request.user.is_authenticated %}<div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>Document Vault</small></span></div>{% endif %}
+    <span class="eyebrow">Account security</span>
+    <h1 id="security-heading">{{ title }}</h1>
+    <p class="muted">{% if request.resolver_match.url_name == "password_change" %}Choose a strong password you haven’t used elsewhere.{% elif request.resolver_match.url_name == "reauthenticate" %}Confirm your credentials to continue with administrative actions.{% else %}Enter a code from your authenticator app, or use a recovery code.{% endif %}</p>
+    <form method="post"
+          data-progress="{% if request.resolver_match.url_name == 'password_change' %}Updating password…{% else %}Verifying…{% endif %}">
+      {% csrf_token %}
+      {% include "components/form_fields.html" %}
+      <div class="form-actions"><button class="button {% if not request.user.is_authenticated %}full{% endif %}"
+        type="submit">{% if request.resolver_match.url_name == "password_change" %}Update password{% else %}Continue{% endif %}</button>{% if request.user.is_authenticated %}<a class="button secondary" href="{% url 'library' %}">Cancel</a>{% endif %}</div>
+    </form>
+    {% if not request.user.is_authenticated %}<div class="auth-foot"><a class="back-link" href="{% url 'login' %}">{% include "components/icon.html" with name="back" %}Back to sign in</a></div>{% endif %}
+  </section>
+{% endblock %}

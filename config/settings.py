@@ -13,6 +13,16 @@ if ENVIRONMENT not in {"development", "test", "production"}:
 PRODUCTION = ENVIRONMENT == "production"
 
 
+def positive_int(name, default, maximum):
+    try:
+        value = int(os.getenv(name, str(default)))
+    except ValueError as exc:
+        raise ImproperlyConfigured(f"{name} must be an integer") from exc
+    if not 1 <= value <= maximum:
+        raise ImproperlyConfigured(f"{name} must be between 1 and {maximum}")
+    return value
+
+
 def env(name, default=None):
     file = os.getenv(f"{name}_FILE")
     if PRODUCTION and not (file or os.getenv(name)):
@@ -58,8 +68,10 @@ INSTALLED_APPS = [
     "vault",
 ]
 MIDDLEWARE = [
+    "config.middleware.RequestReferenceMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
+    "config.middleware.MaintenanceMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -131,12 +143,13 @@ if any(
     raise ImproperlyConfigured("Private storage must be outside all public static directories")
 SESSION_ENGINE = "django.contrib.sessions.backends.db"
 SESSION_COOKIE_HTTPONLY = True
-SESSION_COOKIE_SAMESITE = "Strict"
+# Owner OAuth returns through a top-level cross-site GET; CSRF remains mandatory on writes.
+SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Strict"
 SESSION_COOKIE_SECURE = PRODUCTION
 CSRF_COOKIE_SECURE = PRODUCTION
-SESSION_COOKIE_AGE = int(os.getenv("SESSION_ABSOLUTE_SECONDS", "28800"))
-SESSION_IDLE_SECONDS = int(os.getenv("SESSION_IDLE_SECONDS", "1800"))
+SESSION_COOKIE_AGE = positive_int("SESSION_ABSOLUTE_SECONDS", 28800, 86400)
+SESSION_IDLE_SECONDS = positive_int("SESSION_IDLE_SECONDS", 1800, SESSION_COOKIE_AGE)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
@@ -153,25 +166,64 @@ CSRF_TRUSTED_ORIGINS = (
     os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
 )
 MFA_ALL_STAFF = os.getenv("MFA_ALL_STAFF", "0") == "1"
-MAX_UPLOAD_BYTES = int(os.getenv("MAX_UPLOAD_BYTES", str(25 * 1024 * 1024)))
-MAX_STORAGE_BYTES = int(os.getenv("MAX_STORAGE_BYTES", str(10 * 1024**3)))
-MAX_IMAGE_PIXELS = int(os.getenv("MAX_IMAGE_PIXELS", "20000000"))
-MAX_PDF_PAGES = int(os.getenv("MAX_PDF_PAGES", "500"))
-MAX_FOLDERS = int(os.getenv("MAX_FOLDERS", "1000"))
+# Local development can temporarily use password-only login. Production always uses MFA.
+MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
+MAX_UPLOAD_BYTES = positive_int("MAX_UPLOAD_BYTES", 25 * 1024 * 1024, 100 * 1024 * 1024)
+MAX_STORAGE_BYTES = positive_int("MAX_STORAGE_BYTES", 10 * 1024**3, 100 * 1024**4)
+MAX_IMAGE_PIXELS = positive_int("MAX_IMAGE_PIXELS", 20000000, 50000000)
+MAX_PDF_PAGES = positive_int("MAX_PDF_PAGES", 500, 2000)
+MAX_FOLDERS = positive_int("MAX_FOLDERS", 1000, 10000)
+LOGIN_IP_LIMIT = positive_int("LOGIN_IP_LIMIT", 300, 10000)
+LOGIN_ACCOUNT_LIMIT = positive_int("LOGIN_ACCOUNT_LIMIT", 10, 50)
+PARSER_CONCURRENCY = positive_int("PARSER_CONCURRENCY", 1, 1)
+SCANNER_MAX_SIGNATURE_HOURS = positive_int("SCANNER_MAX_SIGNATURE_HOURS", 72, 168)
 DATA_UPLOAD_MAX_MEMORY_SIZE = MAX_UPLOAD_BYTES + 1024 * 1024
 FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 FILE_UPLOAD_PERMISSIONS = 0o600
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
+FILE_UPLOAD_HANDLERS = [
+    "django.core.files.uploadhandler.MemoryFileUploadHandler",
+    "vault.upload_handlers.BudgetedTemporaryFileUploadHandler",
+]
 SCAN_MODE = os.getenv("SCAN_MODE", "clamav")
 if SCAN_MODE not in {"clamav", "skip-development"} or (PRODUCTION and SCAN_MODE != "clamav"):
     raise ImproperlyConfigured("Production requires ClamAV scanning")
 CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
 CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
+DOCUMENT_STORAGE_PROVIDER = os.getenv("DOCUMENT_STORAGE_PROVIDER", "gdrive")
+if DOCUMENT_STORAGE_PROVIDER not in {"gdrive", "filesystem"}:
+    raise ImproperlyConfigured("Unknown DOCUMENT_STORAGE_PROVIDER")
+
+
+def drive_secret(name):
+    file = os.getenv(f"{name}_FILE")
+    return Path(file).read_text().strip() if file else os.getenv(name, "")
+
+
+GOOGLE_DRIVE_CLIENT_ID = drive_secret("GOOGLE_DRIVE_CLIENT_ID")
+GOOGLE_DRIVE_CLIENT_SECRET = drive_secret("GOOGLE_DRIVE_CLIENT_SECRET")
+GOOGLE_DRIVE_CREDENTIAL_KEY = drive_secret("GOOGLE_DRIVE_CREDENTIAL_KEY")
+GOOGLE_DRIVE_REDIRECT_URI = os.getenv("GOOGLE_DRIVE_REDIRECT_URI", "")
+if GOOGLE_DRIVE_CLIENT_SECRET or GOOGLE_DRIVE_CREDENTIAL_KEY:
+    # Technical debug pages can disclose inner library locals, even with sensitive_variables.
+    DEBUG = False
+if PRODUCTION and DOCUMENT_STORAGE_PROVIDER == "gdrive":
+    if not all((GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, GOOGLE_DRIVE_CREDENTIAL_KEY)):
+        raise ImproperlyConfigured("Google Drive server secrets must be configured")
+    if not GOOGLE_DRIVE_REDIRECT_URI.startswith("https://"):
+        raise ImproperlyConfigured("Google Drive production redirect URI must use HTTPS")
+    try:
+        Fernet(GOOGLE_DRIVE_CREDENTIAL_KEY.encode())
+    except (ValueError, TypeError) as exc:
+        raise ImproperlyConfigured("Google Drive credential key must be a Fernet key") from exc
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "formatters": {"safe": {"()": "config.logging.SafeJSONFormatter"}},
     "handlers": {"console": {"class": "logging.StreamHandler", "formatter": "safe"}},
     "root": {"handlers": ["console"], "level": "INFO"},
-    "loggers": {"django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False}},
+    "loggers": {
+        "django.request": {"handlers": ["console"], "level": "ERROR", "propagate": False},
+        "django.server": {"handlers": ["console"], "level": "INFO", "propagate": False},
+    },
 }

@@ -1,0 +1,14 @@
+# Explicit opt-in for local owner authorization. Mount only secrets, never bake them into images.
+services:
+  app:
+    environment:
+      DOCUMENT_STORAGE_PROVIDER: gdrive
+      GOOGLE_DRIVE_CLIENT_ID_FILE: /run/secrets/google_client_id
+      GOOGLE_DRIVE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      GOOGLE_DRIVE_CREDENTIAL_KEY_FILE: /run/secrets/google_credential_key
+      GOOGLE_DRIVE_REDIRECT_URI: ${GOOGLE_DRIVE_REDIRECT_URI:?Set exact callback URI}
+    secrets: [google_client_id, google_client_secret, google_credential_key]
+secrets:
+  google_client_id: {file: '${GOOGLE_DRIVE_CLIENT_ID_FILE:?Set private client ID file path}'}
+  google_client_secret: {file: '${GOOGLE_DRIVE_CLIENT_SECRET_FILE:?Set private client secret file path}'}
+  google_credential_key: {file: '${GOOGLE_DRIVE_CREDENTIAL_KEY_FILE:?Set separate Fernet key file path}'}

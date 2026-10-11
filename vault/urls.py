@@ -1,14 +1,17 @@
 from django.urls import path
 
-from . import views
+from . import drive_views, views
 
 urlpatterns = [
+    path("storage/google/", drive_views.connection, name="drive_connection"),
+    path("storage/google/callback/", drive_views.callback, name="drive_callback"),
     path(
         "documents/<uuid:document_id>/versions/<uuid:version_id>/restore/",
         views.restore_version,
         name="restore_version",
     ),
     path("", views.library, name="library"),
+    path("documents/import/", views.import_documents, name="import_documents"),
     path("folders/new/", views.create_folder, name="create_root_folder"),
     path("folders/<uuid:folder_id>/", views.library, name="folder"),
     path("folders/<uuid:folder_id>/new/", views.create_folder, name="create_folder"),

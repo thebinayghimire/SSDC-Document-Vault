@@ -32,8 +32,10 @@ def test_range_and_head_authorization(client, users, document, method):
     assert getattr(client, method)(url, HTTP_RANGE="bytes=0-9").status_code == 404
     authenticate_client(client, users["alice"])
     response = getattr(client, method)(url, HTTP_RANGE="bytes=0-9")
-    assert response.status_code == 206
-    assert response["Content-Length"] == "10"
+    assert response.status_code == (206 if method == "get" else 200)
+    assert response["Content-Length"] == (
+        "10" if method == "get" else str(document.active_version.size)
+    )
     assert response["Cache-Control"].startswith("no-store")
     if method == "get":
         assert b"".join(response.streaming_content).startswith(b"%PDF-")
@@ -109,15 +111,18 @@ def test_search_does_not_leak(client, users, document):
     assert response.context["total"] == 0
 
 
-def test_xss_title_and_watermark(client, users, document):
+@pytest.mark.parametrize("user_key", ["alice", "admin"])
+def test_xss_title_and_unwatermarked_preview(client, users, document, user_key):
     document.title = '<script>alert("x")</script>'
     document.save()
-    authenticate_client(client, users["alice"])
+    authenticate_client(client, users[user_key])
     response = client.get("/")
     assert b"<script>alert" not in response.content
     assert b"&lt;script&gt;" in response.content
     response = client.get(f"/documents/{document.pk}/")
-    assert b"SSDC" in response.content and b"alice" in response.content
+    assert b'class="watermark"' not in response.content
+    assert b"data-watermark" not in response.content
+    assert b"Your staff ID appears on this preview" not in response.content
     assert b'data-url="/documents/' in response.content
     assert b"Content-Security-Policy" not in response.content
     assert "object-src 'none'" in response["Content-Security-Policy"]
@@ -188,6 +193,7 @@ def test_scan_failure_quarantines_and_retry_publishes(folder, users):
     assert version.status == Version.Status.READY
 
 
+@pytest.mark.django_db(transaction=True)
 def test_malware_rejected(folder, users):
     with patch("vault.services.scan", return_value="infected"):
         version = upload_document(users["manager"], folder, pdf_upload(), "Infected")

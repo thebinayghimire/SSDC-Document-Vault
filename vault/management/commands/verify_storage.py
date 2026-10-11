@@ -3,7 +3,7 @@ import hashlib
 from django.core.management.base import BaseCommand, CommandError
 
 from vault.models import Version
-from vault.storage import path_for
+from vault.storage import StorageError, provider
 
 
 class Command(BaseCommand):
@@ -13,15 +13,34 @@ class Command(BaseCommand):
         failures = 0
         checked = 0
         for version in Version.objects.exclude(status=Version.Status.REJECTED).iterator():
-            path = path_for(version.storage_key)
+            storage = provider(version.storage_provider)
             checked += 1
             try:
-                with path.open("rb") as stream:
-                    digest = hashlib.file_digest(stream, "sha256").hexdigest()
-                valid = digest == version.sha256 and path.stat().st_size == version.size
+                digest = hashlib.sha256()
+                size = 0
+                content = storage.open(version.storage_key)
+                try:
+                    for block in content:
+                        digest.update(block)
+                        size += len(block)
+                finally:
+                    content.close()
+                valid = digest.hexdigest() == version.sha256 and size == version.size
                 if version.thumbnail_key:
-                    valid = valid and path_for(version.thumbnail_key).is_file()
-            except OSError:
+                    digest, size = hashlib.sha256(), 0
+                    content = storage.open(version.thumbnail_key)
+                    try:
+                        for block in content:
+                            digest.update(block)
+                            size += len(block)
+                    finally:
+                        content.close()
+                    valid = (
+                        valid
+                        and size == version.thumbnail_size
+                        and digest.hexdigest() == version.thumbnail_sha256
+                    )
+            except (OSError, StorageError):
                 valid = False
             if not valid:
                 failures += 1

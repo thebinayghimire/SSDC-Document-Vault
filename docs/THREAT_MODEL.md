@@ -13,7 +13,7 @@ compromised account/device, administrator, infrastructure operator.
 | SQL injection | Django ORM, bounded filters and sort allowlist | Unsafe future raw queries |
 | Malicious uploads | Signature/structure checks, limits, quarantine, ClamAV, no converters | New parser/antivirus vulnerabilities |
 | Public storage exposure | Private volume, no media routing, non-root paths, endpoint checks | Operator misconfiguration |
-| Extraction / screenshots | Removed controls, user watermarks, no-store | Authorized recipients can recover bytes or screenshot |
+| Extraction / screenshots | Removed controls, no-store | Authorized recipients can recover bytes or screenshot |
 | Admin compromise | Mandatory MFA, reauthentication, auditable mutations | Admins intentionally have broad authority |
 | Backup theft / deletion | Encrypted backups, separate keys, controlled restore/purge | Operator access and untested procedures |
 | Denial of service | Request/file/page/pixel/quota/rate/resource limits | Capacity exhaustion, expensive hostile PDFs |
@@ -21,7 +21,8 @@ compromised account/device, administrator, infrastructure operator.
 
 Trust boundaries: browser and uploaded content are untrusted; proxy is trusted
 only for explicitly set forwarding headers; app controls authorization; DB holds
-identity/policy; private filesystem holds bytes; antivirus sees confidential bytes
+identity/policy; private owner Google Drive holds accepted bytes and the private
+filesystem stages uploads and preserves legacy versions; antivirus sees confidential bytes
 internally; host/backup operator controls infrastructure. No third-party CDN gets
 document data. Antivirus signature updates require network access only for scanner.
 

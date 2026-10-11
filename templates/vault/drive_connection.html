@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Document storage{% endblock %}
+{% block content %}
+  <h1>Document storage</h1>
+  <p>{% if connected %}Storage owner connected.{% else %}Connect or reconnect the storage owner's Google account.{% endif %}</p>
+  <p>Staff continue using SSDC accounts. Only the storage owner authorizes Google access.</p>
+  <form method="post">{% csrf_token %}<input type="hidden" name="action" value="connect"><button class="button" type="submit">Connect / reconnect Google Drive</button></form>
+  {% if connected %}
+    <p>{% if folder_ready %}The SSDC folder is configured. Verify it before uploading.{% else %}Prepare the private SSDC folder before uploading.{% endif %}</p>
+    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="folder"><button class="button" type="submit">Prepare / verify private folder</button></form>
+  {% endif %}
+  <p>Keep this folder private in Google Drive. SSDC permissions are managed inside the portal.</p>
+{% endblock %}

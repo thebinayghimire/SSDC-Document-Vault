@@ -1,0 +1,12 @@
+[Unit]
+Description=SSDC document scan retries and operational monitoring
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+Unit=ssdc-operations.service
+
+[Install]
+WantedBy=timers.target

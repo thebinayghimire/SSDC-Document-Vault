@@ -3,8 +3,24 @@ from django.db import transaction
 from django.utils.dateparse import parse_datetime
 
 from audit.services import record
+from vault.maintenance import operator_job
 from vault.models import Document
-from vault.storage import path_for
+from vault.mutations import lock_policy_writes
+from vault.storage import path_for, provider
+
+
+def complete_purge(identifier, keys):
+    try:
+        for name, key in keys:
+            if name == "filesystem":
+                path_for(key).unlink(missing_ok=True)
+            else:
+                provider(name).delete_orphan(key)
+                path_for(key).unlink(missing_ok=True)
+    except Exception:
+        record(None, "operator_purge", identifier, "failed")
+        raise
+    record(None, "operator_purge", identifier, "success")
 
 
 class Command(BaseCommand):
@@ -15,6 +31,7 @@ class Command(BaseCommand):
         parser.add_argument("--execute", action="store_true")
         parser.add_argument("--policy-reference")
 
+    @operator_job
     def handle(self, *args, **options):
         cutoff = parse_datetime(options["before"])
         if cutoff is None or cutoff.tzinfo is None:
@@ -28,6 +45,7 @@ class Command(BaseCommand):
             return
         for identifier in ids:
             with transaction.atomic():
+                lock_policy_writes()
                 document = (
                     Document.objects.select_for_update()
                     .filter(pk=identifier, deleted_at__lt=cutoff)
@@ -36,13 +54,23 @@ class Command(BaseCommand):
                 if not document:
                     continue
                 keys = [
-                    key
+                    (version.storage_provider, key)
                     for version in document.versions.all()
                     for key in (version.storage_key, version.thumbnail_key)
                     if key
                 ]
                 document.delete()
-                record(None, "operator_purge", identifier)
+                record(
+                    None,
+                    "operator_purge",
+                    identifier,
+                    "scheduled",
+                    details={
+                        "policy_reference": options["policy_reference"],
+                        "object_type": "vault.document",
+                        "object_id": str(identifier),
+                    },
+                )
                 transaction.on_commit(
-                    lambda keys=keys: [path_for(key).unlink(missing_ok=True) for key in keys]
+                    lambda identifier=identifier, keys=keys: complete_purge(identifier, keys)
                 )

@@ -1,5 +1,19 @@
 # Security and operational responsibilities
 
+Google Drive is primary document storage. Owner-only offline OAuth uses `drive.file`;
+server-held credentials are encrypted in PostgreSQL with a separate configured key.
+Administrator connection uses CSRF-protected initiation, short-lived, single-use
+session/account-bound state and PKCE. Session cookies use SameSite Lax for Google's
+top-level callback; writes retain Django CSRF checks. The callback redirects to
+clear its query and uses no-referrer. Supplied proxy logs omit URLs/query strings.
+No tokens or Google download locations reach staff. Portal UUIDs resolve to Drive
+IDs only after current SSDC ACL, active account/session and MFA checks on every
+content, thumbnail and HEAD/range request. No sharing permissions are created.
+Owner/app markers, parent, size, MIME and checksum checks fail closed if files are
+changed/shared externally. The Drive owner and deployment operators remain trusted;
+the owner can access originals in their own Drive. Delivered bytes cannot be recalled.
+See [Google setup, limits and backup recovery](GOOGLE_DRIVE_SETUP.md).
+
 Every document endpoint checks current server-side permissions. UUIDs only
 identify records. Files are never served as media/static files. The customized
 viewer omits print/download controls and overlays staff ID/time. It cannot stop
@@ -27,9 +41,31 @@ Staff cannot edit audit entries. Host/database operators can; for stronger tampe
 resistance export to an organization-owned append-only sink. Retention awaits
 organizational approval; physical purge is explicit, dry-run by default.
 
+Account, permission, and document changes commit with their local audit events.
+Event-store failures roll back the database mutation, including password changes,
+MFA consumption at sign-in/identity confirmation, and automatic password-hash
+upgrades (`password_hash_upgraded`, without recording hashes). Selected-user
+session/MFA resets and administrative bulk deletion roll back the entire selection
+on failure; both portal events and Django deletion history follow that result.
+External audit export must not replace this local transaction.
+
+File deletion cannot be rolled back by a database transaction. Operator orphan
+cleanup durably records `started` before removing files; per-document physical
+purge records `scheduled` with database deletion before removing its files.
+Both record completion or failure separately. An interrupted operation or failed
+completion write retains its initial event for investigation and does not claim
+success. Purge is partial across documents: earlier completed documents remain
+deleted if a later document fails. Maintenance/reference safeguards and richer
+audit details still require the separate open deployment findings to be resolved.
+
 Malware scanning fails closed in production. Pending uploads can be retried using
 `retry_scans`. Monitor scanner health/signature freshness and never disable it
 to clear production backlogs. Parser and ClamAV zero-days remain residual risks.
+Processing is exclusive per version across uploads and retries. Fresh status
+checks prevent an older attempt from altering a published/rejected result.
+Rejection and its audit entry save together before original/preview cleanup;
+failed or rolled-back saves preserve the files for retry. Generated previews are
+replaced only after their complete contents have been written.
 PDF/image validation and thumbnail generation run in a separate bounded process
 without inherited credential environment. It shares the app UID and filesystem;
 this is resource isolation, not a separate hardware/container trust boundary.

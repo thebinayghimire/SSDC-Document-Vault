@@ -1,2 +1,27 @@
-{% extends 'base.html' %}
-{% block content %}<div class="page-heading"><div><span class="eyebrow">DOCUMENT MANAGEMENT</span><h1>Manage your documents</h1><p class="muted">Review uploads, versions, archived items, and deleted documents.</p></div></div><div class="table-wrap"><table class="document-table"><thead><tr><th>Document</th><th>Folder</th><th>State</th><th>Action</th></tr></thead><tbody>{% for doc in page %}<tr><td>{{ doc.title }}</td><td>{{ doc.folder.name }}</td><td>{% if doc.deleted_at %}Deleted{% elif doc.archived %}Archived{% elif doc.active_version %}Published{% else %}Awaiting publication{% endif %}</td><td><a href="{% url 'manage_document' doc.pk %}">Manage →</a></td></tr>{% empty %}<tr><td colspan="4">No documents to manage yet.</td></tr>{% endfor %}</tbody></table></div>{% include 'vault/pagination.html' %}{% endblock %}
+{% extends "base.html" %}
+{% block title %}Manage documents{% endblock %}
+{% block content %}
+  <div class="page-heading"><div><span class="eyebrow">Document management</span><h1>Manage your documents</h1><p class="muted">Review uploads, update details, and manage version history.</p></div><a class="button secondary" href="{% url 'library' %}">{% include "components/icon.html" with name="library" %}Browse library</a></div>
+  <div class="section-heading">
+    <h2>All documents <span class="count">{{ page.paginator.count }}</span></h2>
+  </div>
+  {% if page %}
+    <div class="table-wrap">
+      <table class="document-table management-table">
+        <caption class="sr-only">Documents you can manage, including archived and deleted items</caption>
+        <thead>
+          <tr>
+            <th scope="col">Document</th>
+            <th scope="col" class="folder-cell">Folder</th>
+            <th scope="col">State</th>
+            <th scope="col"><span class="sr-only">Actions</span></th>
+          </tr>
+        </thead>
+        <tbody>{% for doc in page %}<tr><td><a class="document-name" href="{% url 'manage_document' doc.pk %}"><span class="file-icon">{% include "components/icon.html" with name="file" %}</span><span><strong>{{ doc.title }}</strong><small class="mobile-metadata">{{ doc.folder.name }}</small></span></a></td><td class="folder-cell">{{ doc.folder.name }}</td><td><span class="status {% if doc.deleted_at %}status-deleted{% elif not doc.archived and doc.active_version %}status-ready{% elif not doc.archived %}status-pending{% endif %}">{% if doc.deleted_at %}Deleted{% elif doc.archived %}Archived{% elif doc.active_version %}Published{% else %}Awaiting publication{% endif %}</span></td><td class="row-action"><a class="button secondary manage-link"
+   href="{% url 'manage_document' doc.pk %}"
+   aria-label="Manage {{ doc.title }}">Manage</a></td></tr>{% endfor %}</tbody>
+      </table>
+    </div>
+{% else %}<div class="empty-state">{% include "components/icon.html" with name="folder" %}<h3>No documents to manage yet</h3><p>Open a folder in the library to upload your first document. Your uploads and their versions will appear here.</p><a class="button" href="{% url 'library' %}">Browse folders</a></div>{% endif %}
+{% include "vault/pagination.html" %}
+{% endblock %}

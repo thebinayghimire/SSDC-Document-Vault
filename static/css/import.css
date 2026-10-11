@@ -1,0 +1,68 @@
+.import-panel { margin-bottom: var(--space-8); padding: var(--space-8); border: 1px solid var(--color-border-strong); border-radius: 22px; background: linear-gradient(135deg, var(--color-primary-soft), var(--color-white) 55%); scroll-margin-top: 90px; }
+.import-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-6); }
+.import-heading .eyebrow { color: var(--color-primary); margin-bottom: var(--space-2); }
+.import-heading h2 { font-size: 24px; margin-bottom: var(--space-2); }
+.import-heading p, .import-destination p { font-size: var(--text-sm); color: var(--color-secondary); margin: 0; }
+.import-private { display: inline-flex; align-items: center; gap: var(--space-2); white-space: nowrap; padding: var(--space-2) var(--space-3); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-pill); color: var(--color-success); font-size: var(--text-xs); }
+.import-private .icon { width: 16px; height: 16px; }
+.import-destination { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-4); margin-bottom: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-white); }
+.import-folder-icon { padding: var(--space-3); border-radius: var(--radius-sm); background: var(--color-primary-soft); color: var(--color-primary); }
+.import-destination > div { flex: 1; min-width: 0; }
+.import-destination label { display: block; font-size: var(--text-xs); color: var(--color-secondary); margin-bottom: var(--space-1); }
+.import-destination select { width: 100%; }
+.import-destination p { flex: 0 1 200px; font-size: var(--text-xs); }
+.import-dropzone { padding: var(--space-8) var(--space-4) var(--space-6); border: 1.5px dashed #a9c9e9; border-radius: var(--radius-lg); background: var(--color-frosted); text-align: center; transition: background var(--duration-panel), border-color var(--duration-panel); }
+.import-dropzone.is-dragging { background: var(--color-primary-soft); border-color: var(--color-primary); outline: 3px solid var(--color-primary-soft); }
+.import-dropzone h3 { font-size: var(--text-lg); }
+.import-dropzone > p { color: var(--color-secondary); font-size: var(--text-xs); }
+.import-art { position: relative; width: 120px; height: 76px; margin: 0 auto var(--space-4); }
+.import-art-file, .import-art-folder, .import-art-upload { position: absolute; display: grid; place-items: center; border: 1px solid #d6e4f1; background: var(--color-white); border-radius: 12px; }
+.import-art-file { width: 44px; height: 54px; top: 4px; left: 9px; transform: rotate(-13deg); color: var(--color-secondary); }
+.import-art-folder { width: 62px; height: 54px; top: 16px; left: 39px; color: var(--color-primary); background: var(--color-primary-soft); transform: rotate(6deg); }
+.import-art-folder .icon { width: 32px; height: 32px; }
+.import-art-upload { width: 30px; height: 30px; top: 0; right: 9px; border-radius: 50%; background: var(--color-primary); color: var(--color-white); border-color: var(--color-white); }
+.import-art-upload .icon { width: 16px; height: 16px; }
+.import-methods { display: flex; justify-content: center; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-6); }
+.import-methods .secondary { background: var(--color-white); border-color: var(--color-border-strong); }
+.import-paste-hint { margin: var(--space-4) 0 0; }
+.import-paste-hint kbd { font-family: inherit; padding: 3px 6px; border: 1px solid var(--color-border-strong); border-bottom-width: 2px; border-radius: 5px; background: var(--color-white); }
+.import-note { font-size: var(--text-xs); color: var(--color-secondary); margin: var(--space-3) 0 var(--space-4); }
+.import-feedback { font-size: var(--text-sm); overflow-wrap: anywhere; }
+.import-feedback:not(:empty) { padding: var(--space-3) var(--space-4); background: var(--color-primary-soft); border-radius: var(--radius-sm); margin-bottom: var(--space-4); }
+.import-feedback[data-error] { color: var(--color-danger); background: var(--color-danger-soft); }
+.import-queue { margin-top: var(--space-6); }
+.import-queue h3 { font-size: var(--text-sm); margin: 0; }
+.import-file-list { margin: 0; padding: 0; list-style: none; display: grid; gap: var(--space-2); }
+.import-file-row { display: grid; grid-template-columns: 40px minmax(0, 1fr) 44px; gap: var(--space-3); align-items: start; padding: var(--space-4); background: var(--color-white); border: 1px solid var(--color-border); border-radius: var(--radius-md); }
+.import-file-mark { display: grid; place-items: center; height: 40px; border-radius: var(--radius-sm); background: var(--color-primary-soft); color: var(--color-primary); font-size: 10px; font-weight: 600; }
+.import-file-details { min-width: 0; }
+.import-file-details input { width: 100%; min-height: 38px; padding: var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-xs); background: var(--color-white); font-size: var(--text-sm); }
+.import-file-details small { display: block; margin: var(--space-2) 0; color: var(--color-secondary); font-size: var(--text-xs); overflow-wrap: anywhere; }
+.import-file-status { font-size: var(--text-xs); color: var(--color-secondary); overflow-wrap: anywhere; }
+.import-file-status a { display: inline-block; margin-left: var(--space-2); }
+.import-file-row[data-state="done"] .import-file-status { color: var(--color-success); }
+.import-file-row[data-state="failed"] .import-file-status, .import-file-row[data-state="rejected"] .import-file-status { color: var(--color-danger); }
+.import-file-details progress { display: block; width: 100%; height: 6px; margin: var(--space-2) 0; accent-color: var(--color-primary); }
+.import-remove { font-size: 24px; line-height: 1; }
+.import-footer { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: var(--space-4); margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-border); }
+.import-footer > span { display: flex; align-items: center; gap: var(--space-2); color: var(--color-secondary); font-size: var(--text-xs); }
+.import-footer > span .icon { width: 16px; height: 16px; }
+.import-no-folders { text-align: center; padding: var(--space-8); border-radius: var(--radius-lg); background: var(--color-white); }
+.import-no-folders > .icon { width: 36px; height: 36px; color: var(--color-primary); margin-bottom: var(--space-4); }
+.import-no-folders p { color: var(--color-secondary); font-size: var(--text-sm); }
+[data-fallback] { display: grid; gap: var(--space-3); text-align: left; max-width: 420px; margin: var(--space-6) auto 0; }
+[data-fallback] label { font-size: var(--text-sm); }
+[data-fallback] input { max-width: 100%; min-width: 0; }
+@media (max-width: 1068px) { .import-heading { flex-wrap: wrap; } }
+@media (max-width: 640px) {
+  .import-panel { padding: var(--space-6) var(--space-4); border-radius: var(--radius-lg); }
+  .import-heading h2 { font-size: 21px; }
+  .import-destination { flex-wrap: wrap; }
+  .import-destination p { flex-basis: 100%; }
+  .import-methods .button { flex: 1 1 auto; padding-inline: var(--space-4); }
+  .import-methods .button:first-child { flex-basis: 100%; }
+  .import-footer > .button { width: 100%; }
+  .import-file-row { grid-template-columns: 30px minmax(0, 1fr) 32px; gap: var(--space-2); padding: var(--space-3); }
+  .import-file-mark { height: 32px; }
+  .import-remove { min-width: 32px; }
+}

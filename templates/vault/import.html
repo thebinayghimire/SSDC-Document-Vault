@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Add documents{% endblock %}
+{% block head %}
+  <link rel="stylesheet" href="{% static 'css/import.css' %}">
+{% endblock %}
+{% block scripts %}
+  <script type="module" src="{% static 'js/import.mjs' %}"></script>
+{% endblock %}
+{% block content %}
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'library' %}">Document library</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">Add documents</span></nav>
+  <div class="page-heading"><div><span class="eyebrow">Grow your library</span><h1>Add documents</h1><p class="muted">Bring your files together, ready to share with your team.</p></div><a class="button secondary" href="{% url 'management' %}">Manage documents</a></div>
+  {% include "vault/import_panel.html" %}
+{% endblock %}

@@ -2,7 +2,7 @@ import uuid
 
 from django.conf import settings
 from django.core.exceptions import ValidationError
-from django.db import models
+from django.db import connection, models, transaction
 
 
 class Folder(models.Model):
@@ -24,18 +24,40 @@ class Folder(models.Model):
         return self.name
 
     def clean(self):
-        if self._state.adding and type(self).objects.count() >= settings.MAX_FOLDERS:
+        parents = dict(type(self).objects.values_list("pk", "parent_id"))
+        if self.pk not in parents and len(parents) >= settings.MAX_FOLDERS:
             raise ValidationError("The folder limit has been reached.")
-        parent, seen = self.parent, {self.pk}
-        depth = 0
-        while parent:
-            if parent.pk in seen:
-                raise ValidationError("Folder cycles are not allowed.")
-            seen.add(parent.pk)
-            depth += 1
-            if depth > 20:
-                raise ValidationError("Folders may be nested at most 20 levels.")
-            parent = parent.parent
+        parents[self.pk] = self.parent_id
+        for identifier in parents:
+            seen, node, depth = set(), identifier, 0
+            while node is not None:
+                if node in seen:
+                    raise ValidationError({"parent": "Folder cycles are not allowed."})
+                seen.add(node)
+                if depth > 20:
+                    raise ValidationError(
+                        {
+                            "parent": "Folders may be nested at most 20 levels, including descendants."
+                        }
+                    )
+                node = parents.get(node)
+                depth += 1
+
+    def save(self, *args, **kwargs):
+        with transaction.atomic():
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_xact_lock(731012)")
+            fields = kwargs.get("update_fields")
+            if fields is not None and "parent" not in fields and "parent_id" not in fields:
+                current = (
+                    type(self)
+                    .objects.filter(pk=self.pk)
+                    .values_list("parent_id", flat=True)
+                    .first()
+                )
+                self.parent_id = current
+            self.clean()
+            return super().save(*args, **kwargs)
 
 
 class FolderGrant(models.Model):
@@ -64,6 +86,7 @@ class Document(models.Model):
     active_version = models.ForeignKey(
         "Version", null=True, blank=True, on_delete=models.SET_NULL, related_name="+"
     )
+    selection_revision = models.PositiveBigIntegerField(default=0, editable=False)
 
     class Meta:
         ordering = ["-modified_at", "id"]
@@ -97,10 +120,13 @@ class Version(models.Model):
     document = models.ForeignKey(Document, on_delete=models.CASCADE, related_name="versions")
     original_name = models.CharField(max_length=255)
     storage_key = models.CharField(max_length=100, unique=True)
+    storage_provider = models.CharField(max_length=16, default="filesystem")
     thumbnail_key = models.CharField(max_length=100, blank=True)
     thumbnail_size = models.PositiveIntegerField(
         default=0, help_text="Reserved preview bytes until processing completes."
     )
+    thumbnail_sha256 = models.CharField(max_length=64, blank=True, editable=False)
+    selection_revision = models.PositiveBigIntegerField(default=0, editable=False)
     mime_type = models.CharField(max_length=80)
     size = models.PositiveBigIntegerField()
     sha256 = models.CharField(max_length=64)
@@ -112,3 +138,43 @@ class Version(models.Model):
     )
     processing_note = models.CharField(max_length=120, blank=True)
     scan_result = models.CharField(max_length=32, blank=True)
+
+
+class DriveConnection(models.Model):
+    """Singleton owner credentials; never register this model with Django admin."""
+
+    id = models.PositiveSmallIntegerField(primary_key=True, default=1, editable=False)
+    installation_id = models.UUIDField(default=uuid.uuid4, editable=False)
+    encrypted_credentials = models.TextField(blank=True)
+    owner_id = models.CharField(max_length=128, blank=True)
+    folder_id = models.CharField(max_length=128, blank=True)
+    reconnect_required = models.BooleanField(default=False)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return "SSDC Drive connection"
+
+
+class DriveObject(models.Model):
+    """Durable upload intent survives publication rollback and document purge."""
+
+    key = models.CharField(max_length=100, unique=True)
+    file_id = models.CharField(max_length=128, unique=True)
+    folder_id = models.CharField(max_length=128)
+    installation_id = models.UUIDField()
+    size = models.PositiveBigIntegerField()
+    sha256 = models.CharField(max_length=64)
+    md5 = models.CharField(max_length=32)
+    mime_type = models.CharField(max_length=80)
+    complete = models.BooleanField(default=False)
+    encrypted_session = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+
+class DriveOAuthAttempt(models.Model):
+    state_hash = models.CharField(max_length=64, primary_key=True)
+    session_hash = models.CharField(max_length=64)
+    encrypted_verifier = models.TextField()
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    auth_version = models.PositiveIntegerField()
+    expires_at = models.DateTimeField()

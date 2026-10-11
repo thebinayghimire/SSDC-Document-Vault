@@ -30,7 +30,8 @@ existing sessions; already delivered content cannot be recalled.
 ## Lifecycle
 
 Upload -> private quarantine -> extension/signature/structure/size validation ->
-malware scan -> publication. Scan failures leave quarantine for retry; malformed
+malware scan -> private owner Drive upload -> metadata commit/publication.
+Scan/storage failures leave quarantine for retry; malformed
 or infected uploads are rejected. Replacement publishes a new immutable version
 only when ready, keeping the old version active until then. Archive hides from
 readers; soft deletion preserves versions for administrator restoration. Physical
@@ -42,7 +43,8 @@ No automatic retention period is invented.
 25 MiB/file, 20 megapixels/image, 500 PDF pages, 1,000 folders, 10 GiB total storage, 30-minute
 idle session, 8-hour absolute session, five-minute MFA challenge, bounded login
 and content request rates, pagination of 24 items. Configurable before deployment.
-Single Linux host, PostgreSQL, private filesystem volume, ClamAV, Nginx, Docker
+Single Linux host, PostgreSQL, Google Drive API primary storage, private staging
+volume (and retained legacy filesystem versions), ClamAV, Nginx, Docker
 Compose. Database and antivirus are never publicly published. Development is
 loopback-only. Production requires explicit secrets, hosts, HTTPS, and scanning.
 

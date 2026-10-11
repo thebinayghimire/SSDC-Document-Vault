@@ -1,2 +1,10 @@
 FROM clamav/clamav:stable@sha256:ebec5bc138401b36ae987caa1a3fa3c3b2a21ed3d51f0bfa5852825e663e67b0
 RUN apk upgrade --no-cache
+COPY deploy/start-scanner.sh /opt/ssdc/start-scanner.sh
+RUN sed -i -e '/^LogFile /d' -e '/^[# ]*LocalSocket /d' -e '/^[# ]*SelfCheck /d' /etc/clamav/clamd.conf \
+    && printf '\nLocalSocket /run/clamav/clamd.sock\nSelfCheck 60\n' >> /etc/clamav/clamd.conf \
+    && sed -i -e '/^UpdateLogFile /d' -e '/^[# ]*NotifyClamd /d' /etc/clamav/freshclam.conf \
+    && printf '\nNotifyClamd /etc/clamav/clamd.conf\n' >> /etc/clamav/freshclam.conf \
+    && mkdir -p /run/clamav && chown clamav:clamav /run/clamav /var/lib/clamav
+USER clamav
+ENTRYPOINT ["/sbin/tini", "--", "/bin/sh", "/opt/ssdc/start-scanner.sh"]

@@ -2,6 +2,7 @@ import base64
 import io
 import json
 import os
+import runpy
 import subprocess
 import sys
 import warnings
@@ -16,6 +17,10 @@ class InvalidUpload(ValueError):
     pass
 
 
+class ProcessingBusy(InvalidUpload):
+    pass
+
+
 def inspect_file(path, original_name):
     return isolated_inspection(path, original_name)
 
@@ -25,6 +30,7 @@ def isolated_inspection(path, original_name, thumbnail=False):
         "pixels": settings.MAX_IMAGE_PIXELS,
         "pages": settings.MAX_PDF_PAGES,
         "thumbnail": thumbnail,
+        "sandbox": settings.PRODUCTION,
     }
     environment = {
         key: value
@@ -32,19 +38,22 @@ def isolated_inspection(path, original_name, thumbnail=False):
         if key in {"SYSTEMROOT", "SystemRoot", "TEMP", "TMP"}
     }
     try:
-        result = subprocess.run(
-            [
-                sys.executable,
-                "-I",
-                str(Path(__file__).resolve()),
-                str(path),
-                original_name,
-                json.dumps(limits),
-            ],
-            capture_output=True,
-            timeout=15,
-            env=environment,
-        )
+        from vault.processing import parser_slot
+
+        with parser_slot():
+            result = subprocess.run(
+                [
+                    sys.executable,
+                    "-I",
+                    str(Path(__file__).resolve()),
+                    str(path),
+                    original_name,
+                    json.dumps(limits),
+                ],
+                capture_output=True,
+                timeout=15,
+                env=environment,
+            )
         if result.returncode != 0:
             raise InvalidUpload("The file is malformed or exceeds processing limits.")
         data = json.loads(result.stdout)
@@ -61,7 +70,8 @@ def isolated_inspection(path, original_name, thumbnail=False):
 
 def inspect_untrusted(path, original_name, max_pixels, max_pages):
     extension = Path(original_name).suffix.lower()
-    header = path.read_bytes()[:16]
+    with path.open("rb") as stream:
+        header = stream.read(16)
     allowed = {
         ".pdf": "application/pdf",
         ".jpg": "image/jpeg",
@@ -145,6 +155,9 @@ if __name__ == "__main__":
     try:
         options = json.loads(sys.argv[3])
         path = Path(sys.argv[1])
+        if options.get("sandbox"):
+            sandbox = runpy.run_path(str(Path(__file__).with_name("parser_sandbox.py")))
+            sandbox["restrict_parser"](path)
         mime, pages = inspect_untrusted(path, sys.argv[2], options["pixels"], options["pages"])
         thumbnail = b""
         if options["thumbnail"] and mime.startswith("image/"):

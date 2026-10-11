@@ -1,0 +1,11 @@
+[Unit]
+Description=SSDC bounded scan retries and operational checks
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/ssdc/app
+ExecStart=/usr/bin/docker compose --env-file /srv/ssdc/.env.production -f compose.prod.yaml run --rm --no-deps -T app python manage.py run_scheduled_maintenance
+TimeoutStartSec=600
+# Configure OnFailure in an operator-owned drop-in for the approved alert destination.

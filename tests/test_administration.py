@@ -109,6 +109,7 @@ def test_encrypted_pdf_rejected(users, folder):
         )
 
 
+@pytest.mark.django_db(transaction=True)
 def test_cleanup_orphans_dry_run(document):
     from vault.storage import path_for, write_exclusive
 

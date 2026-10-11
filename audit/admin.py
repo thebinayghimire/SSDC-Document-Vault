@@ -10,7 +10,7 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ("at", "actor", "kind", "target", "outcome")
     list_filter = ("kind", "outcome", "at")
     search_fields = ("actor__username", "target", "kind")
-    readonly_fields = ("at", "actor", "kind", "target", "outcome")
+    readonly_fields = ("at", "actor", "kind", "target", "outcome", "details")
 
     def has_add_permission(self, request):
         return False

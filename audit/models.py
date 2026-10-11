@@ -9,6 +9,7 @@ class Event(models.Model):
     kind = models.CharField(max_length=64, db_index=True)
     target = models.CharField(max_length=64, blank=True)
     outcome = models.CharField(max_length=24, default="success")
+    details = models.JSONField(default=dict, blank=True)
 
     class Meta:
         ordering = ["-at"]

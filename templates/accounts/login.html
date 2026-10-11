@@ -1,10 +1,21 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 {% block title %}Staff sign in{% endblock %}
 {% block content %}
-<section class="auth-card">
-  <div class="auth-brand"><span class="brand-mark">S</span><span>SSDC <small>DOCUMENT VAULT</small></span></div>
-  <span class="eyebrow">YOUR PRIVATE WORKSPACE</span><h1>Welcome back.</h1><p class="muted">Sign in to access your organization's documents.</p>
-  <form method="post">{% csrf_token %}{{ form.as_p }}<button class="button full" type="submit">Sign in <span aria-hidden="true">→</span></button></form>
-  <div class="auth-foot">Need access or help signing in? Contact your SSDC administrator.</div>
-</section><p class="auth-caption">Siddhartha Social Development Centre<br>For authorized staff use only</p>
+  <section class="auth-card" aria-labelledby="sign-in-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>Document Vault</small></span></div>
+    <span class="eyebrow">Your private workspace</span>
+    <h1 id="sign-in-heading">Welcome back.</h1>
+    <p class="muted">Sign in to access your organisation’s documents.</p>
+    <form method="post" data-progress="Signing in…">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">Sign in {% include "components/icon.html" with name="arrow" %}</button></div></form>
+    <div class="auth-foot">
+      Need access or help signing in?
+      <br>
+      Contact your SSDC administrator.
+    </div>
+  </section>
+  <p class="auth-caption">
+    Siddhartha Social Development Centre
+    <br>
+    For authorized staff use only
+  </p>
 {% endblock %}

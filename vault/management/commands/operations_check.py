@@ -8,14 +8,23 @@ from django.db import connection
 from django.utils import timezone
 
 from vault.models import Version
-from vault.storage import path_for
+from vault.storage import StorageError, path_for
 
 
 class Command(BaseCommand):
     help = "Operator checks: DB, private storage, disk headroom and scan backlog."
 
     def handle(self, *args, **options):
-        failures = []
+        from config.readiness import readiness_failures
+
+        failures = readiness_failures()
+        if settings.DOCUMENT_STORAGE_PROVIDER == "gdrive":
+            from vault.drive_storage import ensure_folder
+
+            try:
+                ensure_folder()
+            except StorageError as exc:
+                failures.append(str(exc))
         try:
             with connection.cursor() as cursor:
                 cursor.execute("SELECT 1")

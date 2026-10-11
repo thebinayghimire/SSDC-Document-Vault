@@ -1,24 +1,35 @@
 import re
 import time
+from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
+from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
-from django.db import connection, transaction
+from django.db import transaction
 from django.db.models import Q
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
+from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from audit.services import allow_rate, record
 
-from .forms import FolderForm, MetadataForm, UploadForm
+from .forms import FolderForm, ImportForm, MetadataForm, UploadForm
 from .models import Document, Folder, Version
 from .policy import can_manage_document, folder_permissions, permitted_documents
-from .services import upload_document
-from .storage import path_for
+from .services import (
+    change_document_lifecycle,
+    restore_document_version,
+    upload_document,
+)
+from .services import (
+    create_folder as save_folder,
+)
+from .storage import StorageError, provider
 from .validation import InvalidUpload
 
 
@@ -109,8 +120,87 @@ def library(request, folder_id=None):
             "sort": sort,
             "file_type": file_type,
             "can_upload": folder and folder.pk in manageable,
+            "import_folders": Folder.objects.filter(pk__in=manageable)
+            .select_related("parent")
+            .order_by("name", "id"),
+            "import_folder_ids": manageable,
+            "max_upload_bytes": settings.MAX_UPLOAD_BYTES,
             "breadcrumbs": breadcrumbs(folder, viewable),
             "total": query.count(),
+        },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def import_documents(request):
+    if request.method == "POST" and not request.user.can_manage:
+        raise Http404
+    _, manageable = folder_permissions(request.user)
+    folders = (
+        Folder.objects.filter(pk__in=manageable).select_related("parent").order_by("name", "id")
+    )
+    form = ImportForm(request.POST or None, request.FILES or None, allowed_folders=folders)
+    wants_json = request.headers.get("Accept") == "application/json"
+    if request.method == "GET" and wants_json:
+        return JsonResponse({"csrf_token": get_token(request)})
+    if request.method == "POST":
+        if not recent_identity(request):
+            if wants_json:
+                return JsonResponse(
+                    {
+                        "error": "Verify your identity, then continue your upload.",
+                        "reauth_url": reverse("reauthenticate"),
+                    },
+                    status=401,
+                )
+            return redirect("reauthenticate")
+        if not form.is_valid():
+            if wants_json:
+                return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+        else:
+            throttled = request_limit(request, "upload", 60)
+            if throttled:
+                return throttled
+            try:
+                version = upload_document(
+                    request.user,
+                    form.cleaned_data["folder"],
+                    form.cleaned_data["file"],
+                    form.cleaned_data["title"],
+                )
+            except InvalidUpload as exc:
+                form.add_error("file", str(exc))
+            except StorageError as exc:
+                form.add_error("file", str(exc))
+            except (PermissionDenied, Document.DoesNotExist) as exc:
+                if wants_json:
+                    return JsonResponse(
+                        {"error": "You no longer have permission to upload to this folder."},
+                        status=403,
+                    )
+                raise Http404 from exc
+            else:
+                if wants_json:
+                    return JsonResponse(
+                        {
+                            "status": version.status,
+                            "note": version.processing_note,
+                            "manage_url": reverse("manage_document", args=[version.document_id]),
+                        },
+                        status=201,
+                    )
+                return redirect("manage_document", document_id=version.document_id)
+            if wants_json:
+                return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
+    return render(
+        request,
+        "vault/import.html",
+        {
+            "form": form,
+            "import_folders": folders,
+            "import_folder_ids": manageable,
+            "max_upload_bytes": settings.MAX_UPLOAD_BYTES,
         },
     )
 
@@ -136,28 +226,15 @@ def preview(request, document_id):
         {
             "document": document,
             "version": document.active_version,
-            "watermark": f"SSDC · {request.user.username} · {timezone.localtime():%Y-%m-%d %H:%M}",
             "can_manage": can_manage_document(request.user, document),
+            "can_view_folder": document.folder_id in folder_permissions(request.user)[0],
         },
     )
-
-
-def bounded_stream(path, start, length):
-    with path.open("rb") as stream:
-        stream.seek(start)
-        while length > 0:
-            chunk = stream.read(min(65536, length))
-            if not chunk:
-                break
-            length -= len(chunk)
-            yield chunk
 
 
 @login_required
 @require_http_methods(["GET", "HEAD"])
 def content(request, document_id, thumbnail=False):
-    from django.http import StreamingHttpResponse
-
     throttled = request_limit(request)
     if throttled:
         return throttled
@@ -171,16 +248,32 @@ def content(request, document_id, thumbnail=False):
     ):
         raise Http404
     key = version.thumbnail_key if thumbnail else version.storage_key
+    selected = request.GET.get("version")
+    if selected and selected != str(version.pk):
+        return HttpResponse(
+            "The selected version changed. Refresh the preview.",
+            status=409,
+            content_type="text/plain",
+        )
     if not key:
         raise Http404
-    path = path_for(key)
-    if not path.is_file():
-        record(request.user, "storage_error", document.pk, "missing")
-        raise Http404
-    total = path.stat().st_size
     mime = "image/jpeg" if thumbnail else version.mime_type
+    if mime not in {"application/pdf", "image/jpeg", "image/png", "image/webp"}:
+        raise Http404
+    storage = provider(version.storage_provider)
+    try:
+        total = storage.size(key)
+        expected_size = version.thumbnail_size if thumbnail else version.size
+        if total != expected_size:
+            raise StorageError("integrity")
+    except StorageError as exc:
+        return storage_failure(request, document, exc)
     range_header = request.headers.get("Range")
-    if range_header and not thumbnail:
+    # No validators are emitted: an If-Range condition cannot match this response.
+    if request.headers.get("If-Range"):
+        range_header = None
+    start, end = 0, None
+    if range_header and request.method != "HEAD":
         match = re.fullmatch(r"bytes=(\d*)-(\d*)", range_header)
         try:
             if not match or not any(match.groups()):
@@ -200,26 +293,34 @@ def content(request, document_id, thumbnail=False):
             response = HttpResponse(status=416)
             response["Content-Range"] = f"bytes */{total}"
             return response
-        response = (
-            HttpResponse(content_type=mime, status=206)
-            if request.method == "HEAD"
-            else StreamingHttpResponse(
-                bounded_stream(path, start, end - start + 1), content_type=mime, status=206
+    try:
+        if request.method == "HEAD":
+            response = HttpResponse(content_type=mime)
+        else:
+            response = StreamingHttpResponse(
+                storage.open(key, start, end),
+                content_type=mime,
+                status=206 if end is not None else 200,
             )
-        )
+    except StorageError as exc:
+        return storage_failure(request, document, exc)
+    if end is not None:
         response["Content-Range"] = f"bytes {start}-{end}/{total}"
-        response["Content-Length"] = str(end - start + 1)
-    else:
-        response = (
-            HttpResponse(content_type=mime)
-            if request.method == "HEAD"
-            else FileResponse(path.open("rb"), content_type=mime)
-        )
-        response["Content-Length"] = str(total)
+    response["Content-Length"] = str(total if end is None else end - start + 1)
     response["Content-Disposition"] = 'inline; filename="preview"'
     response["Accept-Ranges"] = "bytes"
     response["X-Content-Type-Options"] = "nosniff"
+    response["ETag"] = f'"{version.pk}{"-thumbnail" if thumbnail else ""}"'
     record(request.user, "thumbnail" if thumbnail else "document_bytes", document.pk)
+    return response
+
+
+def storage_failure(request, document, error):
+    record(request.user, "storage_error", document.pk, error.code)
+    if error.code == "missing":
+        raise Http404
+    response = HttpResponse(str(error), status=503, content_type="text/plain")
+    response["Retry-After"] = "60"
     return response
 
 
@@ -236,8 +337,12 @@ def upload(request, folder_id=None, document_id=None):
         _, manageable = folder_permissions(request.user)
         folder = get_object_or_404(Folder.objects.filter(pk__in=manageable), pk=folder_id)
     if not recent_identity(request):
-        return redirect("reauthenticate")
-    form = UploadForm(
+        return redirect(
+            reverse("reauthenticate") + "?" + urlencode({"next": request.get_full_path()})
+        )
+    from .forms import ReplacementForm
+
+    form = (ReplacementForm if document else UploadForm)(
         request.POST or None,
         request.FILES or None,
         initial={"title": document.title if document else ""},
@@ -247,7 +352,6 @@ def upload(request, folder_id=None, document_id=None):
         if throttled:
             return throttled
         try:
-            # Recheck policy under a transaction; subsequent reads always recheck it too.
             version = upload_document(
                 request.user,
                 folder,
@@ -257,6 +361,8 @@ def upload(request, folder_id=None, document_id=None):
             )
         except InvalidUpload as exc:
             form.add_error("file", str(exc))
+        except (PermissionDenied, Document.DoesNotExist) as exc:
+            raise Http404 from exc
         else:
             messages.success(
                 request,
@@ -270,6 +376,7 @@ def upload(request, folder_id=None, document_id=None):
             "form": form,
             "title": "Replace document" if document else "Upload document",
             "multipart": True,
+            "max_upload_bytes": settings.MAX_UPLOAD_BYTES,
         },
     )
 
@@ -285,12 +392,22 @@ def manage_document(request, document_id):
         request.POST or None,
         instance=document,
         allowed_folders=Folder.objects.filter(Q(pk__in=manageable) | Q(pk=document.folder_id)),
+        actor=request.user,
     )
     if request.method == "POST" and form.is_valid():
-        form.save()
-        record(request.user, "metadata_changed", document.pk)
-        messages.success(request, "Document details updated.")
-        return redirect("manage_document", document_id=document.pk)
+        try:
+            with transaction.atomic():
+                document = form.save()
+                record(request.user, "metadata_changed", document.pk)
+        except PermissionDenied as exc:
+            raise Http404 from exc
+        except Document.DoesNotExist as exc:
+            raise Http404 from exc
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            messages.success(request, "Document details updated.")
+            return redirect("manage_document", document_id=document.pk)
     return render(
         request,
         "vault/manage.html",
@@ -311,14 +428,12 @@ def lifecycle(request, document_id, action):
     actions = {"archive", "unarchive", "delete", "restore"}
     if action not in actions:
         raise Http404
-    with transaction.atomic():
-        document = Document.objects.select_for_update().get(pk=document.pk)
-        if action in {"archive", "unarchive"}:
-            document.archived = action == "archive"
-        else:
-            document.deleted_at = timezone.now() if action == "delete" else None
-        document.save()
-        record(request.user, f"document_{action}", document.pk)
+    try:
+        document = change_document_lifecycle(request.user, document, action)
+    except (PermissionDenied, Document.DoesNotExist) as exc:
+        raise Http404 from exc
+    except StorageError as exc:
+        return storage_failure(request, document, exc)
     return redirect("manage_document", document_id=document.pk)
 
 
@@ -347,17 +462,14 @@ def create_folder(request, folder_id=None):
         throttled = request_limit(request, "folder-create", 10)
         if throttled:
             return throttled
-        with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_advisory_xact_lock(731010)")
-            try:
-                folder.full_clean()
-            except ValidationError as exc:
-                form.add_error(None, exc)
-            else:
-                folder.save()
-                record(request.user, "folder_created", folder.pk)
-                return redirect("folder", folder_id=folder.pk)
+        try:
+            folder = save_folder(request.user, folder)
+        except PermissionDenied as exc:
+            raise Http404 from exc
+        except ValidationError as exc:
+            form.add_error(None, exc)
+        else:
+            return redirect("folder", folder_id=folder.pk)
     return render(request, "vault/form.html", {"form": form, "title": "Create folder"})
 
 
@@ -380,17 +492,11 @@ def restore_version(request, document_id, version_id):
     document = authorized_document(request, document_id, manage=True)
     if not recent_identity(request):
         return redirect("reauthenticate")
-    with transaction.atomic():
-        document = Document.objects.select_for_update().get(pk=document.pk)
-        if document.deleted_at:
-            raise Http404
-        version = get_object_or_404(
-            Version, pk=version_id, document=document, status=Version.Status.READY
-        )
-        if not path_for(version.storage_key).is_file():
-            raise Http404
-        document.active_version = version
-        document.save()
-        record(request.user, "version_restored", version.pk)
+    try:
+        document = restore_document_version(request.user, document, version_id)
+    except (PermissionDenied, Document.DoesNotExist) as exc:
+        raise Http404 from exc
+    except StorageError as exc:
+        return storage_failure(request, document, exc)
     messages.success(request, "Previous version restored as the current document.")
     return redirect("manage_document", document_id=document.pk)

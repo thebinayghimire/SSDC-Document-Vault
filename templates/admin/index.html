@@ -1,0 +1,19 @@
+{% extends "admin/base_site.html" %}
+{% load i18n log %}
+{% block bodyclass %}{{ block.super }} dashboard vault-dashboard{% endblock %}
+{% block nav-sidebar %}{% endblock %}
+{% block nav-breadcrumbs %}{% endblock %}
+{% block content_title %}<div class="admin-page-heading"><span class="admin-eyebrow">Workspace administration</span><h1>{% if app_label %}{{ title }}{% else %}Accounts, access, and oversight.{% endif %}</h1><p>Manage staff permissions and review the activity in your document vault.</p></div>{% endblock %}
+{% block content %}
+  <div class="admin-overview">
+    <div class="admin-resource-grid">
+      {% for app in app_list %}<section class="admin-resource-group"
+         aria-labelledby="app-{{ app.app_label }}"><h2 id="app-{{ app.app_label }}">{% if app.app_label == "accounts" %}Staff accounts{% elif app.app_label == "vault" %}Documents &amp; permissions{% elif app.app_label == "audit" %}Audit &amp; activity{% else %}{{ app.name }}{% endif %}</h2>
+      {% for model in app.models %}<div class="admin-resource"><div>{% if model.admin_url %}<a href="{{ model.admin_url }}">{{ model.name }}</a>{% else %}<span>{{ model.name }}</span>{% endif %}</div>{% if model.add_url %}<a class="admin-add-link"
+   href="{{ model.add_url }}"
+   aria-label="Add {{ model.name }}">Add {% include "components/icon.html" with name="plus" %}</a>{% endif %}</div>{% endfor %}
+      </section>{% empty %}<p>You don’t have permission to manage any resources.</p>{% endfor %}
+  </div>
+  <aside class="admin-recent" aria-labelledby="recent-heading"><h2 id="recent-heading">Your recent changes</h2>{% get_admin_log 10 as admin_log for_user user %}{% if admin_log %}<ul>{% for entry in admin_log %}<li>{% if not entry.is_deletion and entry.get_admin_url %}<a href="{{ entry.get_admin_url }}">{{ entry.object_repr }}</a>{% else %}{{ entry.object_repr }}{% endif %}<small>{{ entry.content_type.name|capfirst }} · {{ entry.action_time|date:'M j, H:i' }}</small></li>{% endfor %}</ul>{% else %}<p>Your administrative changes will appear here.</p>{% endif %}<a class="admin-library-link" href="{% url 'library' %}">Return to document library {% include "components/icon.html" with name="arrow" %}</a></aside>
+</div>
+{% endblock %}

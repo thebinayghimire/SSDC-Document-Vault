@@ -1,2 +1,49 @@
-{% extends 'base.html' %}
-{% block content %}<div class="page-heading"><div><span class="eyebrow">DOCUMENT MANAGEMENT</span><h1>{{ document.title }}</h1></div>{% if not document.deleted_at %}<a class="button" href="{% url 'replace' document.pk %}">Upload a replacement</a>{% endif %}</div><div class="management-grid"><section class="form-card"><h2>Document details</h2><form method="post">{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Save changes</button></form></section><section class="form-card"><h2>Lifecycle</h2><p>{% if document.deleted_at %}Deleted — retained for restoration{% elif document.archived %}Archived{% else %}Active{% endif %}</p><div class="action-stack">{% if document.deleted_at %}<form method="post" action="{% url 'lifecycle' document.pk 'restore' %}">{% csrf_token %}<button class="button secondary">Restore document</button></form>{% else %}<form method="post" action="{% url 'lifecycle' document.pk document.archived|yesno:'unarchive,archive' %}">{% csrf_token %}<button class="button secondary">{% if document.archived %}Unarchive{% else %}Archive{% endif %}</button></form><form method="post" action="{% url 'lifecycle' document.pk 'delete' %}">{% csrf_token %}<button class="button danger">Move to deleted</button></form>{% endif %}</div></section></div><h2>Version history</h2><div class="table-wrap"><table class="document-table"><thead><tr><th>File</th><th>Uploaded</th><th>Status</th><th>Processing</th></tr></thead><tbody>{% for version in versions %}<tr><td>{{ version.original_name }}{% if version.pk == document.active_version_id %} <span class="badge">CURRENT</span>{% endif %}</td><td>{{ version.uploaded_at|date:'M j, Y H:i' }}</td><td>{{ version.get_status_display }}</td><td>{{ version.processing_note }}{% if version.status == "ready" and version.pk != document.active_version_id and not document.deleted_at %}<form method="post" action="{% url "restore_version" document.pk version.pk %}">{% csrf_token %}<button class="button secondary" type="submit">Restore this version</button></form>{% endif %}</td></tr>{% endfor %}</tbody></table></div>{% endblock %}
+{% extends "base.html" %}
+{% block title %}Manage {{ document.title }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'management' %}">Manage documents</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">Document details</span></nav>
+  <div class="page-heading"><div><span class="eyebrow">Document management</span><h1>{{ document.title }}</h1><p class="muted">Update the details, visibility, and versions of this document.</p></div><div class="heading-actions">{% if not document.deleted_at and not document.archived and document.active_version %}<a class="button secondary" href="{% url 'preview' document.pk %}">Preview</a>{% endif %}{% if not document.deleted_at %}<a class="button secondary" href="{% url 'replace' document.pk %}">{% include "components/icon.html" with name="upload" %}Upload a replacement</a>{% endif %}</div></div>
+  <div class="management-grid">
+    <section class="form-card" aria-labelledby="details-heading"><h2 id="details-heading">Document details</h2><form method="post" data-progress="Saving changes…">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button" type="submit">Save changes</button></div></form></section>
+    <section class="form-card" aria-labelledby="lifecycle-heading">
+      <h2 id="lifecycle-heading">Library visibility</h2><span class="status {% if document.deleted_at %}status-deleted{% elif not document.archived and document.active_version %}status-ready{% elif not document.archived %}status-pending{% endif %}">{% if document.deleted_at %}Deleted{% elif document.archived %}Archived{% elif document.active_version %}Active{% else %}Awaiting publication{% endif %}</span>
+      <p class="lifecycle-description">{% if document.deleted_at %}This document is retained for restoration until it is purged.{% elif document.archived %}Archived documents are hidden from the staff library. Unarchive to make this document available again.{% elif document.active_version %}This document is available to staff with access. Archive it to hide it while keeping its history.{% else %}The file must pass its checks before it appears in the library. Review the processing status below.{% endif %}</p>
+      <div class="action-stack">
+      {% if document.deleted_at %}<form method="post"
+      action="{% url 'lifecycle' document.pk 'restore' %}"
+      data-progress="Restoring…">{% csrf_token %}<button class="button secondary" type="submit">Restore document</button></form>
+{% else %}<form method="post"
+      action="{% url 'lifecycle' document.pk document.archived|yesno:'unarchive,archive' %}"
+      data-progress="Updating visibility…">{% csrf_token %}<button class="button secondary" type="submit">{% include "components/icon.html" with name="archive" %}{% if document.archived %}Unarchive document{% else %}Archive document{% endif %}</button></form>
+  <form method="post"
+        action="{% url 'lifecycle' document.pk 'delete' %}"
+        data-confirm
+        data-progress="Moving to deleted…">{% csrf_token %}<button class="button danger" type="submit">{% include "components/icon.html" with name="trash" %}Move to deleted</button></form>{% endif %}
+</div>
+</section>
+</div>
+<section aria-labelledby="versions-heading">
+  <div class="section-heading">
+    <h2 id="versions-heading">Version history <span class="count">{{ versions|length }}</span></h2>
+  </div>
+  <div class="table-wrap"
+       tabindex="0"
+       role="region"
+       aria-label="Version history; scroll horizontally for more columns">
+    <table class="document-table version-table">
+      <caption class="sr-only">Uploaded versions and processing results</caption>
+      <thead>
+        <tr>
+          <th scope="col">File</th>
+          <th scope="col">Uploaded</th>
+          <th scope="col">Status</th>
+          <th scope="col">Processing</th>
+        </tr>
+      </thead>
+      <tbody>{% for version in versions %}<tr><td class="version-name">{{ version.original_name }}{% if version.pk == document.active_version_id %}<span class="badge">Current</span>{% endif %}<small class="helptext">{{ version.size|filesizeformat }}</small></td><td class="date-cell"><time datetime="{{ version.uploaded_at|date:'c' }}">{{ version.uploaded_at|date:'M j, Y' }}<br>{{ version.uploaded_at|date:'H:i' }}</time></td><td><span class="status {% if version.status == 'ready' %}status-ready{% elif version.status == 'rejected' %}status-deleted{% else %}status-pending{% endif %}">{{ version.get_status_display }}</span></td><td>{{ version.processing_note }}{% if version.status == "ready" and version.pk != document.active_version_id and not document.deleted_at %}<form method="post"
+      action="{% url 'restore_version' document.pk version.pk %}"
+      data-progress="Restoring version…">{% csrf_token %}<button class="button secondary" type="submit">Restore this version</button></form>{% endif %}</td></tr>{% empty %}<tr><td colspan="4">No versions uploaded yet.</td></tr>{% endfor %}</tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

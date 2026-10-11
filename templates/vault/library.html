@@ -1,15 +1,121 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
+{% load static %}
+{% block head %}
+  <link rel="stylesheet" href="{% static 'css/import.css' %}">
+  {% if not request.user.can_manage %}<link rel="stylesheet" href="{% static 'css/staff-library.css' %}">{% endif %}
+{% endblock %}
+{% block scripts %}
+  <script type="module" src="{% static 'js/import.mjs' %}"></script>
+{% endblock %}
 {% block title %}{{ folder.name|default:'Document library' }}{% endblock %}
 {% block content %}
-<div class="breadcrumb"><a href="{% url 'library' %}">Workspace</a>{% for crumb in breadcrumbs %}<span>/</span><a href="{% url 'folder' crumb.pk %}">{{ crumb.name }}</a>{% endfor %}</div>
-<div class="page-heading"><div><span class="eyebrow">DOCUMENT LIBRARY</span><h1>{{ folder.name|default:'Your documents' }}</h1><p class="muted">A secure place for the information you need.</p></div><div class="heading-actions">{% if can_upload %}<a class="button secondary" href="{% url 'create_folder' folder.pk %}">New folder</a><a class="button" href="{% url 'upload' folder.pk %}">＋ Upload document</a>{% elif request.user.is_portal_admin and not folder %}<a class="button" href="{% url 'create_root_folder' %}">＋ New folder</a>{% endif %}</div></div>
-<div class="library-banner"><div class="banner-icon" aria-hidden="true">◇</div><div><strong>Knowledge, kept in good hands.</strong><p>Browse your approved files and open a document to preview it.</p></div><span class="badge">STAFF ACCESS</span></div>
-<form class="toolbar" method="get"><div class="search-field"><span aria-hidden="true">⌕</span><label class="sr-only" for="search">Search documents</label><input id="search" name="q" value="{{ search }}" placeholder="Search documents…" type="search"></div><label class="sr-only" for="type">File type</label><select id="type" name="type"><option value="">All file types</option><option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF documents</option><option value="image" {% if file_type == 'image' %}selected{% endif %}>Images</option></select><label class="sr-only" for="sort">Sort order</label><select id="sort" name="sort"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Recently updated</option><option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option><option value="name" {% if sort == 'name' %}selected{% endif %}>Name A–Z</option></select><input type="hidden" name="view" value="{{ mode }}"><button class="button secondary" type="submit">Search</button></form>
-{% if folders %}<div class="section-heading"><h2>Folders</h2></div><div class="folder-grid">{% for child in folders %}<a class="folder-card" href="{% url 'folder' child.pk %}"><span class="folder-icon" aria-hidden="true">▰</span><strong>{{ child.name }}</strong><span aria-hidden="true">↗</span></a>{% endfor %}</div>{% endif %}
-<div class="section-heading"><h2>Documents <span class="count">{{ total }}</span></h2><div class="view-toggle" aria-label="Document display"><a class="{% if mode == 'list' %}selected{% endif %}" href="?q={{ search|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}&amp;view=list" aria-label="List view">☰</a><a class="{% if mode == 'gallery' %}selected{% endif %}" href="?q={{ search|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}&amp;view=gallery" aria-label="Gallery view">▦</a></div></div>
-{% if page %}
-{% if mode == 'gallery' %}<div class="document-grid">{% for doc in page %}<a class="document-card" href="{% url 'preview' doc.pk %}"><div class="document-cover">{% if doc.active_version.thumbnail_key %}<img src="{% url 'thumbnail' doc.pk %}" alt="" loading="lazy">{% else %}<span class="pdf-illustration">PDF<span>▤</span></span>{% endif %}</div><div class="document-card-info"><strong>{{ doc.title }}</strong><p>{{ doc.active_version.size|filesizeformat }} <span>·</span> {{ doc.modified_at|date:'M j, Y' }}</p></div></a>{% endfor %}</div>
-{% else %}<div class="table-wrap"><table class="document-table"><thead><tr><th>Document name</th><th>Type</th><th>Size</th><th>Last updated</th><th><span class="sr-only">Open</span></th></tr></thead><tbody>{% for doc in page %}<tr><td><a class="document-name" href="{% url 'preview' doc.pk %}"><span class="file-icon {% if doc.active_version.mime_type == 'application/pdf' %}pdf{% else %}image{% endif %}">{% if doc.active_version.mime_type == 'application/pdf' %}PDF{% else %}IMG{% endif %}</span><span><strong>{{ doc.title }}</strong><small>{{ doc.folder.name }}</small></span></a></td><td>{% if doc.active_version.mime_type == 'application/pdf' %}PDF{% else %}Image{% endif %}</td><td>{{ doc.active_version.size|filesizeformat }}</td><td>{{ doc.modified_at|date:'M j, Y' }}</td><td><a class="open-link" href="{% url 'preview' doc.pk %}" aria-label="Open {{ doc.title }}">↗</a></td></tr>{% endfor %}</tbody></table></div>{% endif %}
-{% else %}<div class="empty-state"><span aria-hidden="true">▤</span><h3>{% if search %}No matching documents{% else %}Room for what matters.{% endif %}</h3><p>{% if search %}Try another search or file type.{% else %}Open a folder to browse documents, or ask your administrator for access.{% endif %}</p></div>{% endif %}
-{% include 'vault/pagination.html' %}
+  <div class="{% if not request.user.can_manage %}staff-library{% endif %}">
+  {% if folder %}
+    <nav class="breadcrumb" aria-label="Breadcrumb">
+      <a href="{% url 'library' %}">Document library</a>
+      {% for crumb in breadcrumbs %}{% include "components/icon.html" with name="chevron" %}{% if forloop.last %}<span aria-current="page">{{ crumb.name }}</span>{% else %}<a href="{% url 'folder' crumb.pk %}">{{ crumb.name }}</a>{% endif %}{% endfor %}
+    </nav>
+  {% endif %}
+  <div class="page-heading">
+    <div>{% if request.user.can_manage %}<span class="eyebrow">Document library</span>{% else %}<span class="eyebrow">Your workspace</span>{% endif %}<h1>{{ folder.name|default:'Document library' }}</h1><p class="muted">{% if folder %}Browse the documents shared in this folder.{% else %}Browse shared folders or find the document you need.{% endif %}</p></div>
+    <div class="heading-actions">
+      {% if can_upload %}<a class="button secondary" href="{% url 'create_folder' folder.pk %}">{% include "components/icon.html" with name="plus" %}New folder</a><a class="button secondary" href="{% url 'upload' folder.pk %}">{% include "components/icon.html" with name="upload" %}Upload document</a>{% elif request.user.is_portal_admin and not folder %}<a class="button secondary" href="{% url 'create_root_folder' %}">{% include "components/icon.html" with name="plus" %}New folder</a>{% endif %}
+      {% if request.user.can_manage %}<a class="button"
+         href="#import-documents">{% include "components/icon.html" with name="plus" %}Add documents</a>
+      {% endif %}
+    </div>
+  </div>
+  {% if request.user.can_manage %}{% include "vault/import_panel.html" %}{% endif %}
+  {% if folders %}
+    <section class="folder-section" aria-labelledby="folders-heading">
+      <div class="section-heading">
+        <div><h2 id="folders-heading">Folders <span class="count">{{ folders|length }}</span></h2>{% if not request.user.can_manage %}<p class="section-description">{% if folder %}Explore folders within {{ folder.name }}.{% else %}Browse by folder to find related documents.{% endif %}</p>{% endif %}</div>
+      </div>
+      <div class="folder-grid">{% for child in folders %}<a class="folder-card" href="{% url 'folder' child.pk %}">{% include "components/icon.html" with name="folder" class="folder-icon" %}<strong>{{ child.name }}</strong>{% include "components/icon.html" with name="chevron" %}</a>{% endfor %}</div>
+    </section>
+  {% endif %}
+  <section class="library-documents" aria-labelledby="documents-heading">
+    <div class="section-heading">
+      <div><h2 id="documents-heading">Documents <span class="count">{{ total }}</span></h2>{% if not request.user.can_manage %}<p class="section-description">Select a document to open its preview.</p>{% endif %}</div>
+      <nav class="view-toggle" aria-label="Document display">
+        <a class="{% if mode == 'list' %}selected{% endif %}"
+           {% if mode == 'list' %}aria-current="true"{% endif %}
+           href="?q={{ search|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}&amp;view=list"
+           aria-label="List view">{% include "components/icon.html" with name="list" %}</a>
+        <a class="{% if mode == 'gallery' %}selected{% endif %}"
+           {% if mode == 'gallery' %}aria-current="true"{% endif %}
+           href="?q={{ search|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}&amp;view=gallery"
+           aria-label="Gallery view">{% include "components/icon.html" with name="library" %}</a>
+      </nav>
+    </div>
+  <form class="toolbar"
+        method="get"
+        role="search"
+        aria-label="Find documents">
+    <div class="search-field">{% include "components/icon.html" with name="search" %}<label class="sr-only" for="search">Search documents</label><input id="search"
+       name="q"
+       value="{{ search }}"
+       placeholder="Search documents"
+       type="search"
+       maxlength="200"><button class="text-button search-submit" type="submit">Search</button></div>
+    <div class="filter-control"><label for="type">File type</label><select id="type" name="type"><option value="">All file types</option><option value="pdf" {% if file_type == 'pdf' %}selected{% endif %}>PDF documents</option><option value="image" {% if file_type == 'image' %}selected{% endif %}>Images</option></select></div>
+    <div class="filter-control"><label for="sort">Sort by</label><select id="sort" name="sort"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Recently updated</option><option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option><option value="name" {% if sort == 'name' %}selected{% endif %}>Name A–Z</option></select></div>
+    <input type="hidden" name="view" value="{{ mode }}">
+  </form>
+  {% if search or file_type %}<div class="filter-summary"><span>{{ total }} result{{ total|pluralize }}{% if search %} for “{{ search }}”{% endif %}{% if file_type == "pdf" %} · PDF documents{% elif file_type == "image" %} · Images{% endif %}</span><a class="back-link"
+   href="?view={{ mode|urlencode }}&amp;sort={{ sort|urlencode }}">Clear filters</a></div>{% endif %}
+    {% if page %}
+      {% if mode == "gallery" %}
+        <div class="document-grid">
+          {% for doc in page %}
+            <a class="document-card" href="{% url 'preview' doc.pk %}">
+              <div class="document-cover">{% if doc.active_version.thumbnail_key %}<img src="{% url 'thumbnail' doc.pk %}"
+     alt=""
+     loading="lazy"
+     decoding="async">{% else %}<span class="file-placeholder">{% if doc.active_version.mime_type == "application/pdf" %}{% include "components/icon.html" with name="file" %}PDF document{% else %}{% include "components/icon.html" with name="image" %}Image{% endif %}</span>{% endif %}</div>
+              <div class="document-card-info">
+                <strong>{{ doc.title }}</strong>
+                <p>{{ doc.active_version.size|filesizeformat }} <span>·</span> <time datetime="{{ doc.modified_at|date:'c' }}">{{ doc.modified_at|date:'M j, Y' }}</time></p>
+              </div>
+            </a>
+          {% endfor %}
+        </div>
+      {% else %}
+        <div class="table-wrap">
+          <table class="document-table library-table">
+            <caption class="sr-only">Documents available to your account</caption>
+            <thead>
+              <tr>
+                <th scope="col">Document name</th>
+                <th scope="col" class="type-cell">Type</th>
+                <th scope="col" class="size-cell numeric">Size</th>
+                <th scope="col" class="date-cell">Last updated</th>
+                <th scope="col"><span class="sr-only">Open</span></th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for doc in page %}
+                <tr>
+                  <td><a class="document-name" href="{% url 'preview' doc.pk %}"><span class="file-icon">{% if doc.active_version.mime_type == "application/pdf" %}{% include "components/icon.html" with name="file" %}{% else %}{% include "components/icon.html" with name="image" %}{% endif %}</span><span><strong>{{ doc.title }}</strong><small>{{ doc.folder.name }}</small><small class="mobile-metadata">{% if doc.active_version.mime_type == "application/pdf" %}PDF{% else %}Image{% endif %} · {{ doc.active_version.size|filesizeformat }} · {{ doc.modified_at|date:'M j, Y' }}</small></span></a></td>
+                  <td class="type-cell">{% if doc.active_version.mime_type == "application/pdf" %}PDF{% else %}Image{% endif %}</td><td class="size-cell numeric">{{ doc.active_version.size|filesizeformat }}</td><td class="date-cell"><time datetime="{{ doc.modified_at|date:'c' }}">{{ doc.modified_at|date:'M j, Y' }}</time></td><td class="row-action"><a class="icon-button open-link"
+   href="{% url 'preview' doc.pk %}"
+   aria-label="Open {{ doc.title }}">{% include "components/icon.html" with name="open" %}</a></td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% endif %}
+    {% else %}
+      <div class="empty-state">
+        {% include "components/icon.html" with name="file" %}
+        <h3>{% if search or file_type %}No matching documents{% else %}No documents yet{% endif %}</h3>
+        <p>{% if search or file_type %}Try a different search or clear your filters to see all documents.{% elif can_upload %}Upload a document to share it with staff who have access to this folder.{% elif folder %}Documents shared in this folder will appear here.{% else %}Browse a shared folder, or contact your administrator for document access.{% endif %}</p>
+        {% if search or file_type %}<a class="button secondary"
+   href="?view={{ mode|urlencode }}&amp;sort={{ sort|urlencode }}">Clear filters</a>{% elif can_upload %}<a class="button" href="{% url 'upload' folder.pk %}">Upload document</a>{% endif %}
+      </div>
+    {% endif %}
+    {% include "vault/pagination.html" %}
+  </section>
+  </div>
 {% endblock %}

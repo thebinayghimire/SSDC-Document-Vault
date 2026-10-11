@@ -1,6 +1,12 @@
 # Architecture
 
-Browser -> HTTPS reverse proxy -> Django/Gunicorn -> PostgreSQL and private volume.
+Browser -> HTTPS reverse proxy -> Django/Gunicorn -> PostgreSQL and Google Drive API.
+Google Drive is primary storage for new accepted documents and image previews;
+PostgreSQL owns filenames, hashes, sizes, MIME, processing status, folder relationships,
+version history and SSDC grants. `DriveObject` records remote IDs and durable upload
+intents. A private local volume stages validation/scanning and pending retries.
+Each version records its provider so existing filesystem versions continue to work.
+The storage-provider interface retains private filesystem support and recovery.
 The browser never addresses private storage. Nginx serves application static
 assets only. Application endpoints stream authorized originals or sanitized
 thumbnails. PDF.js and its worker are self-hosted and version pinned.
@@ -35,6 +41,10 @@ Deployment separates proxy/public and internal service networks. App containers
 are non-root with dropped capabilities, resource limits, and private volumes.
 Production startup runs migrations as an explicit release step, not per worker.
 Backup pairs database and storage in a maintenance window to ensure consistency.
+`export_storage` includes server-fetched Drive blobs in that pair; Drive alone is
+not a backup. Owner credentials use offline OAuth with `drive.file`, encrypted
+in the database under a separate key. Staff Google accounts are unnecessary.
+See [owner setup and independent recovery](GOOGLE_DRIVE_SETUP.md).
 
 References: [Django custom users](https://docs.djangoproject.com/en/5.2/topics/auth/customizing/),
 [PDF.js](https://mozilla.github.io/pdf.js/getting_started/),

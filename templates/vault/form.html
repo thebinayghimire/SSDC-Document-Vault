@@ -1,2 +1,22 @@
-{% extends 'base.html' %}
-{% block content %}<a class="back-link" href="{% url 'library' %}">← Document library</a><section class="form-card"><span class="eyebrow">DOCUMENT MANAGEMENT</span><h1>{{ title }}</h1><form method="post" {% if multipart %}enctype="multipart/form-data"{% endif %}>{% csrf_token %}{{ form.as_p }}<button class="button" type="submit">Save</button></form>{% if multipart %}<p class="muted">PDF, JPEG, PNG, or WebP. Up to 25 MiB. Files are checked before becoming available.</p>{% endif %}</section>{% endblock %}
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'library' %}">Document library</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">{{ title }}</span></nav>
+  <div class="page-heading"><div><span class="eyebrow">Document management</span><h1>{{ title }}</h1><p class="muted">{% if multipart %}Add a file and give it a clear, recognisable title.{% else %}Keep related documents together in a shared folder.{% endif %}</p></div></div>
+  <div class="form-layout">
+    <section class="form-panel" aria-label="{{ title }}">
+      <form method="post"
+            data-progress="{% if multipart %}Uploading and checking…{% else %}Creating folder…{% endif %}"
+            {% if multipart %}enctype="multipart/form-data"{% endif %}>
+        {% csrf_token %}
+        {% include "components/form_fields.html" %}
+        <div class="form-actions"><button class="button" type="submit">{% if multipart %}Upload document{% else %}Create folder{% endif %}</button><a class="button secondary" href="{% url 'library' %}">Cancel</a></div>
+      </form>
+    </section>
+    <aside class="form-hint">
+      {% include "components/icon.html" with name="shield" %}
+      {% if multipart %}<h2>Before you upload</h2><p>PDF, JPEG, PNG, or WebP. Up to {{ max_upload_bytes|filesizeformat }} per file.</p><p>Files are checked before they become available. You can review the result in document management.</p>{% if title == "Replace document" %}<p>The previous version remains in the version history. Change the document title in document management.</p>{% endif %}
+    {% else %}<h2>Folder access</h2><p>New folders normally inherit access from their parent folder.</p>{% if request.user.is_portal_admin %}<p>A restricted folder uses its own grants. Manage staff access in Administration.</p>{% endif %}{% endif %}
+  </aside>
+</div>
+{% endblock %}

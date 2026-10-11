@@ -24,10 +24,17 @@ def decrypt(secret):
     return cipher().decrypt(secret.encode()).decode()
 
 
-def verify(user, token, allow_recovery=True):
+def verify(user, token, allow_recovery=True, *, expected_auth_version=None):
+    expected_auth_version = (
+        user.auth_version if expected_auth_version is None else expected_auth_version
+    )
     with transaction.atomic():
         locked = User.objects.select_for_update().get(pk=user.pk)
-        if not locked.is_active or not locked.mfa_confirmed:
+        if (
+            not locked.is_active
+            or not locked.mfa_confirmed
+            or locked.auth_version != expected_auth_version
+        ):
             return False
         if token.isdigit() and len(token) == 6:
             totp = pyotp.TOTP(decrypt(locked.mfa_secret))

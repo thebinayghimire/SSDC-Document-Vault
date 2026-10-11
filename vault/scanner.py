@@ -8,6 +8,23 @@ class ScanUnavailable(Exception):
     pass
 
 
+def scanner_version():
+    with socket.create_connection(
+        (settings.CLAMAV_HOST, settings.CLAMAV_PORT), timeout=2
+    ) as connection:
+        connection.settimeout(2)
+        connection.sendall(b"zVERSION\0")
+        reply = bytearray()
+        while len(reply) < 4096:
+            block = connection.recv(1024)
+            if not block:
+                break
+            reply.extend(block)
+            if b"\0" in block:
+                break
+        return bytes(reply).strip(b"\0\r\n ").decode("ascii")
+
+
 def scan(path):
     if settings.SCAN_MODE == "skip-development" and not settings.PRODUCTION:
         return "development-skip"

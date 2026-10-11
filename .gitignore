@@ -22,4 +22,6 @@ artifacts/
 backups/
 *.log
 secrets/
+recovery-secrets/
+client_secret*.json
 *.ssdcbackup

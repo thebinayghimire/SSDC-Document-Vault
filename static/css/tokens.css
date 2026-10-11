@@ -1,0 +1,78 @@
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter/InterVariable.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Inter";
+  src: url("../fonts/inter/InterVariable-Italic.woff2") format("woff2");
+  font-weight: 100 900;
+  font-style: italic;
+  font-display: swap;
+}
+
+:root {
+  --color-primary: #0066cc;
+  --color-primary-focus: #0071e3;
+  --color-primary-hover: #005bb5;
+  --color-primary-soft: #edf5fd;
+  --color-primary-on-dark: #2997ff;
+  --color-text: #1d1d1f;
+  --color-secondary: #6e6e73;
+  --color-tertiary: #76767b;
+  --color-white: #ffffff;
+  --color-canvas: #ffffff;
+  --color-canvas-secondary: #f5f5f7;
+  --color-surface-soft: #fafafc;
+  --color-dark: #272729;
+  --color-border: rgba(0, 0, 0, .08);
+  --color-border-strong: rgba(0, 0, 0, .14);
+  --color-nav-selected: rgba(0, 0, 0, .045);
+  --color-frosted: rgba(255, 255, 255, .88);
+  --color-overlay: rgba(0, 0, 0, .3);
+  --color-success: #216e43;
+  --color-success-soft: #f0f7f2;
+  --color-warning: #805b14;
+  --color-warning-soft: #faf5e9;
+  --color-danger: #b42318;
+  --color-danger-soft: #fff3f1;
+  --font-system: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --text-xs: .75rem;
+  --text-sm: .875rem;
+  --text-base: 1.0625rem;
+  --text-lg: 1.25rem;
+  --text-title: clamp(1.75rem, 2.5vw, 2.125rem);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --radius-xs: 5px;
+  --radius-sm: 8px;
+  --radius-md: 11px;
+  --radius-lg: 18px;
+  --radius-pill: 9999px;
+  --content-readable: 980px;
+  --content-standard: 1200px;
+  --content-wide: 1440px;
+  --sidebar-width: 240px;
+  --duration-fast: 120ms;
+  --duration-panel: 180ms;
+  --ease: cubic-bezier(.2, .8, .2, 1);
+  --z-base: 0;
+  --z-sticky: 20;
+  --z-dropdown: 40;
+  --z-overlay: 60;
+  --z-modal: 80;
+  --z-toast: 100;
+  --shadow-preview: 0 8px 32px rgba(0, 0, 0, .12);
+  /* Breakpoints: 419px phone, 640px phone, 833px tablet,
+     1068px small desktop, 1440px content lock. Media queries use literals. */
+}

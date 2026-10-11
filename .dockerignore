@@ -1,4 +1,8 @@
 .git
+.kilo
+.codex
+.idea
+.vscode
 .venv
 .env
 .env.*
@@ -12,5 +16,7 @@ __pycache__
 test-results
 artifacts
 secrets
+recovery-secrets
+client_secret*.json
 backups
 *.ssdcbackup

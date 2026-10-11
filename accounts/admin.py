@@ -15,11 +15,13 @@ class CreationForm(AdminUserCreationForm):
     class Meta(AdminUserCreationForm.Meta):
         model = User
         fields = ("username", "role")
+        labels = {"username": "Staff ID"}
 
 
 class ChangeForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = User
+        labels = {"username": "Staff ID"}
 
     def clean(self):
         data = super().clean()
@@ -64,8 +66,20 @@ class PortalUserAdmin(UserAdmin):
         with transaction.atomic():
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock(731011)")
-            old = User.objects.filter(pk=obj.pk).first() if change else None
-            if old and old.is_portal_admin and not obj.is_portal_admin:
+            old = User.objects.select_for_update().get(pk=obj.pk) if change else None
+            was_admin = old and old.is_portal_admin
+            fields = set(form.changed_data) & {
+                "username",
+                "first_name",
+                "last_name",
+                "email",
+                "role",
+                "is_active",
+            }
+            if old:
+                for field in fields:
+                    setattr(old, field, getattr(obj, field))
+            if was_admin and not old.is_portal_admin:
                 others = (
                     User.objects.filter(is_active=True)
                     .exclude(pk=obj.pk)
@@ -75,29 +89,45 @@ class PortalUserAdmin(UserAdmin):
                     raise ValidationError(
                         "The last active administrator cannot be disabled or demoted."
                     )
-            super().save_model(request, obj, form, change)
+            if old:
+                old.save(update_fields=fields)
+                obj.refresh_from_db()
+            else:
+                super().save_model(request, obj, form, change)
             record(request.user, "account_changed" if change else "account_created", obj.pk)
 
     def user_change_password(self, request, id, form_url=""):
-        response = super().user_change_password(request, id, form_url)
-        if request.method == "POST" and response.status_code == 302:
-            record(request.user, "admin_password_reset", id)
-        return response
+        with transaction.atomic():
+            request._vault_password_change = True
+            try:
+                return super().user_change_password(request, id, form_url)
+            finally:
+                del request._vault_password_change
+
+    def log_change(self, request, obj, message):
+        result = super().log_change(request, obj, message)
+        # Django calls this after a valid password form actually saves. A redirect
+        # from a cancelled/conflicting submission must not create a success event.
+        if getattr(request, "_vault_password_change", False):
+            record(request.user, "admin_password_reset", obj.pk)
+        return result
 
     @admin.action(description="Revoke selected users' sessions")
     def revoke_sessions(self, request, queryset):
-        for user in queryset:
-            User.objects.filter(pk=user.pk).update(auth_version=F("auth_version") + 1)
-            record(request.user, "sessions_revoked", user.pk)
+        with transaction.atomic():
+            for user in queryset.order_by("pk").select_for_update(no_key=True):
+                User.objects.filter(pk=user.pk).update(auth_version=F("auth_version") + 1)
+                record(request.user, "sessions_revoked", user.pk)
 
     @admin.action(description="Reset MFA after verified identity recovery (revokes sessions)")
     def reset_mfa(self, request, queryset):
-        for user in queryset:
-            User.objects.filter(pk=user.pk).update(
-                mfa_secret="",
-                mfa_confirmed=False,
-                mfa_last_step=-1,
-                recovery_hashes=[],
-                auth_version=F("auth_version") + 1,
-            )
-            record(request.user, "mfa_reset", user.pk)
+        with transaction.atomic():
+            for user in queryset.order_by("pk").select_for_update(no_key=True):
+                User.objects.filter(pk=user.pk).update(
+                    mfa_secret="",
+                    mfa_confirmed=False,
+                    mfa_last_step=-1,
+                    recovery_hashes=[],
+                    auth_version=F("auth_version") + 1,
+                )
+                record(request.user, "mfa_reset", user.pk)

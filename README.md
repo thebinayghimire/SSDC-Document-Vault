@@ -1,18 +1,38 @@
 # SSDC Document Vault
 
 Private document library for Siddhartha Social Development Centre: Django,
-PostgreSQL, private storage, ClamAV, self-hosted PDF.js, and Docker/Nginx.
+PostgreSQL, private Google Drive storage, ClamAV, self-hosted PDF.js, and Docker/Nginx.
 Original requirements and segments: `ssdc-conversation.md`.
 
 Staff can sign in, browse/search permitted folders and documents, switch between
-list/gallery, and preview PDFs/images with personalized watermarks. Managers have
+list/gallery, and preview PDFs/images. Managers have
 scoped uploads, replacement/version history, archive/deletion/restoration. Admins
 manage accounts/grants and review audit events. Privileged roles require MFA.
 Every content/thumbnail/range request checks current authorization. Removed
 download/print controls discourage copying; authorized users can still extract
 bytes or take screenshots. See the threat model for residual risks.
 
+Managers and administrators can use **Add documents** in the sidebar or the import
+section in the library. Staff can see the entry point and upload-access guidance.
+Choose a destination folder, select files or a local folder,
+drag files/folders into the drop area, or paste copied files when the browser exposes
+them. Review document titles and import up to 50 files per batch with individual
+progress and results. Folder imports include supported files from subfolders and
+save them all to the selected vault folder. PDF, JPEG, PNG, and WebP are supported;
+the default limit is 25 MiB per file. Uploads retain folder permissions, scanning,
+storage quotas, and audit records. If no upload destination is available, create a
+folder as an administrator or request a manage grant. **Choose files** also works
+when clipboard access is unavailable; a single-file form is available without JavaScript.
+
 ## Start locally
+
+New uploads now select Google Drive. Complete the private owner setup in
+[docs/GOOGLE_DRIVE_SETUP.md](docs/GOOGLE_DRIVE_SETUP.md), including the local
+Compose overlay and exact OAuth callback, before uploading. Existing private
+filesystem versions remain readable. For synthetic filesystem-only development,
+explicitly set `DOCUMENT_STORAGE_PROVIDER=filesystem` in the app environment.
+Implementation is mock-tested; no live Google account connection or deployment
+has been verified. The website/database still need hosting, and Drive is not a backup.
 
 Docker Desktop must be running. In a fresh PowerShell terminal here:
 
@@ -23,7 +43,9 @@ docker compose exec app python manage.py createsuperuser
 ```
 
 Open **http://127.0.0.1:8080**. Complete authenticator enrollment and save recovery
-codes. In Administration, create folders/accounts and assign grants. Managers
+codes when MFA is enabled. Local Compose temporarily uses password-only login;
+set `MFA_ENABLED=1` in `.env` and recreate the app to restore authenticator prompts.
+Production always requires MFA. In Administration, create folders/accounts and assign grants. Managers
 need a manage grant in addition to their role. Upload from a folder page. Files
 become viewable after scanning; ClamAV's first startup may take several minutes.
 Run `retry_scans` to retry an early quarantined upload.

@@ -16,6 +16,7 @@ def isolated_storage(settings, tmp_path):
     settings.PRIVATE_STORAGE_ROOT = tmp_path / "private"
     settings.SCAN_MODE = "skip-development"
     settings.PRODUCTION = False
+    settings.DOCUMENT_STORAGE_PROVIDER = "filesystem"
     settings.STORAGES = {
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},

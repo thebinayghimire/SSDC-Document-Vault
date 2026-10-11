@@ -1,34 +1,64 @@
 {% load static %}
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Document Vault{% endblock %} · SSDC</title>
-  <link rel="stylesheet" href="{% static 'css/app.css' %}">
-  {% block head %}{% endblock %}
-</head>
-<body>
-<a class="skip" href="#main">Skip to content</a>
-{% if request.user.is_authenticated %}
-<aside class="sidebar">
-  <a class="brand" href="{% url 'library' %}"><span class="brand-mark">S</span><span>SSDC<span class="brand-sub">DOCUMENT VAULT</span></span></a>
-  <div class="nav-label">WORKSPACE</div>
-  <nav aria-label="Main navigation">
-    <a href="{% url 'library' %}" class="nav-link"><span aria-hidden="true">▦</span> Document library</a>
-    {% if request.user.can_manage %}<a class="nav-link" href="{% url 'management' %}"><span aria-hidden="true">▤</span> Manage documents</a>{% endif %}
-    {% if request.user.is_portal_admin %}<a class="nav-link" href="{% url 'admin:index' %}"><span aria-hidden="true">⚙</span> Administration</a>{% endif %}
-    <a class="nav-link" href="{% url 'password_change' %}"><span aria-hidden="true">◇</span> Account security</a>
-  </nav>
-  <div class="sidebar-bottom"><div class="security-note"><span class="status-dot"></span> Private workspace</div><p>Access is limited to approved staff.</p></div>
-</aside>
-<div class="workspace">
-<header class="topbar"><span class="organization">Siddhartha Social Development Centre</span><div class="user-menu"><span class="avatar">{{ request.user.username|first|upper }}</span><span>{{ request.user.username }}<small>{{ request.user.get_role_display }}</small></span><form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form></div></header>
-{% endif %}
-<main id="main" class="{% if request.user.is_authenticated %}content{% else %}auth-page{% endif %}">
-{% for message in messages %}<div class="notice" role="status">{{ message }}</div>{% endfor %}
-{% block content %}{% endblock %}
-</main>
-{% if request.user.is_authenticated %}<footer class="footer">SSDC Document Vault <span>For authorized staff use only</span></footer></div>{% endif %}
-{% block scripts %}{% endblock %}
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <title>{% block title %}Document Vault{% endblock %} · SSDC</title>
+    {% include "components/font_preload.html" %}
+    <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script type="module" src="{% static 'js/app.mjs' %}"></script>
+    {% block head %}{% endblock %}
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    {% if request.user.is_authenticated %}
+      <aside class="sidebar">
+        <a class="brand" href="{% url 'library' %}"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC<span class="brand-sub">Document Vault</span></span></a>
+        <div class="nav-label">Workspace</div>
+        <nav aria-label="Main navigation">
+          {% include "components/navigation.html" %}
+        </nav>
+        <div class="sidebar-bottom"><div class="security-note">{% include "components/icon.html" with name="shield" %}Private workspace</div><p>For approved SSDC staff.</p></div>
+      </aside>
+      <div class="workspace">
+        <header class="topbar">
+          <details class="mobile-navigation">
+            <summary aria-label="Workspace navigation">{% include "components/icon.html" with name="menu" %}<span>SSDC Vault</span></summary>
+            <nav aria-label="Mobile navigation">
+              {% include "components/navigation.html" %}
+            </nav>
+          </details>
+          <span class="organization">Siddhartha Social Development Centre</span>
+          <div class="user-menu">
+            <span class="avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
+            <span class="user-identity"><span class="user-name">{{ request.user.username }}</span><small>{{ request.user.get_role_display }}</small></span>
+            <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form>
+          </div>
+        </header>
+    {% endif %}
+    <main id="main"
+          tabindex="-1"
+          class="{% if request.user.is_authenticated %}content{% else %}auth-page{% endif %}">
+      {% for message in messages %}
+        <div class="notice notice-{{ message.tags }}"
+             role="{% if message.tags == 'error' %}alert{% else %}status{% endif %}">{% include "components/icon.html" with name="info" %}<span>{{ message }}</span></div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+    {% if request.user.is_authenticated %}<footer class="footer">SSDC Document Vault<span>{% include "components/icon.html" with name="lock" %}For authorized staff use only</span></footer></div>{% endif %}
+  <dialog id="confirm-dialog"
+          class="confirm-dialog"
+          aria-labelledby="confirm-title"
+          aria-describedby="confirm-description">
+    <h2 id="confirm-title">Move to deleted?</h2>
+    <p id="confirm-description">This document will leave the library. You can restore it from document management while it is retained.</p>
+    <div class="form-actions">
+      <button class="button secondary" id="confirm-cancel" type="button" autofocus>Cancel</button><button class="button danger" id="confirm-submit" type="button">Move to deleted</button>
+    </div>
+  </dialog>
+  {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,0 +1,13 @@
+[Unit]
+Description=Renew SSDC HTTPS certificate and reload the proxy
+After=network-online.target docker.service
+Wants=network-online.target
+Requires=docker.service
+
+[Service]
+Type=oneshot
+EnvironmentFile=/etc/ssdc-hosting.conf
+ExecStart=/usr/bin/certbot renew --cert-name ${SSDC_PORTAL_HOST} --webroot --webroot-path /srv/ssdc/acme --non-interactive --deploy-hook "/usr/bin/python3 /srv/ssdc/app/scripts/install_tls.py --reload-proxy"
+TimeoutStartSec=600
+UMask=0077
+# Add an operator-owned OnFailure drop-in for the approved alert destination.

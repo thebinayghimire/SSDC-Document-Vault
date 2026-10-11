@@ -13,7 +13,10 @@ class VaultAdminSite(AdminSite):
         return (
             request.user.is_authenticated
             and request.user.is_portal_admin
-            and request.session.get("mfa_verified", False)
+            and (
+                not request.user.requires_authenticator
+                or request.session.get("mfa_verified", False)
+            )
             and time.time() - request.session.get("reauth_at", 0) <= 600
         )
 

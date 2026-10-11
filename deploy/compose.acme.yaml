@@ -1,0 +1,6 @@
+# Optional production overlay for host Certbot HTTP-01 renewals.
+# The host timer writes only challenge files here; Nginx reads them.
+services:
+  proxy:
+    volumes:
+      - ${ACME_WEBROOT:?Set dedicated ACME challenge directory}:/var/www/acme:ro

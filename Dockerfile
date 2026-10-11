@@ -10,8 +10,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 RUN groupadd -g 10001 app && useradd -u 10001 -g app -m app
 WORKDIR /app
 COPY requirements.txt ./
-RUN pip install --no-cache-dir -r requirements.txt && python -m pip uninstall -y pip
-COPY . .
+RUN pip install --no-cache-dir --require-hashes -r requirements.txt && python -m pip uninstall -y pip
+COPY manage.py pyproject.toml ./
+COPY accounts/ accounts/
+COPY audit/ audit/
+COPY config/ config/
+COPY vault/ vault/
+COPY templates/ templates/
+COPY static/ static/
 COPY --from=assets /assets/static/vendor/pdfjs/ /app/static/vendor/pdfjs/
 RUN mkdir -p /data/private /app/staticfiles && chown -R app:app /data /app
 USER app
