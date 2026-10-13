@@ -25,3 +25,19 @@ secrets/
 recovery-secrets/
 client_secret*.json
 *.ssdcbackup
+
+# GitHub publication: keep local files private
+.next/
+.next-dev/
+venv/
+*.tsbuildinfo
+.kilo/
+!*.env.example
+*.pem
+*.key
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+.DS_Store
+Thumbs.db
