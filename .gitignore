@@ -23,3 +23,21 @@ backups/
 *.log
 secrets/
 *.ssdcbackup
+
+# GitHub publication: keep local files private
+.next/
+.next-dev/
+venv/
+*.tsbuildinfo
+.kilo/
+!*.env.example
+*.pem
+*.key
+client_secret*.json
+recovery-secrets/
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+.DS_Store
+Thumbs.db
