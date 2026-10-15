@@ -1,5 +1,9 @@
 # Deployment and operations
 
+For the Supabase PostgreSQL pilot use [HOSTED_PILOT.md](HOSTED_PILOT.md) and
+standalone `compose.pilot.yaml`. Commands below using `compose.prod.yaml`
+describe the existing self-hosted database stack. Do not combine the two files.
+
 The primary document store is personal Google Drive through confidential owner
 OAuth. Follow [the exact setup/release/backup guide](GOOGLE_DRIVE_SETUP.md) before
 uploading. Apply vault migration 0005 with all old writers stopped. Production

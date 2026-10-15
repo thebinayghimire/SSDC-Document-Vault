@@ -29,3 +29,13 @@ def test_readiness_detects_scanner_outage(settings):
     settings.SCAN_MODE = "clamav"
     with patch("config.readiness.scanner_version", side_effect=OSError):
         assert "scanner_unavailable" in readiness_failures()
+
+
+@pytest.mark.django_db
+def test_readiness_skips_scanner_checks_when_scanning_is_disabled(settings):
+    settings.SCAN_MODE = "disabled"
+    settings.PRODUCTION = True
+    with patch("config.readiness.scanner_version", side_effect=AssertionError("not called")):
+        failures = readiness_failures()
+    assert "scanner_unavailable" not in failures
+    assert "scanner_signatures_stale" not in failures

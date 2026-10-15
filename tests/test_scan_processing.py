@@ -372,3 +372,14 @@ def test_retry_command_skips_a_version_removed_after_its_initial_query(users, fo
         call_command("retry_scans", stdout=output)
     assert "removed; skipped" in output.getvalue()
     assert not Version.objects.filter(pk=version.pk).exists()
+
+
+def test_disabled_scanning_publishes_without_contacting_the_scanner(users, folder, settings):
+    """SSDC accepted the risk of no malware scanning; uploads must still publish."""
+    settings.SCAN_MODE = "disabled"
+    with patch("vault.scanner.socket.create_connection", side_effect=AssertionError("no scanner")):
+        version = services.upload_document(users["manager"], folder, pdf_upload(), "Unscanned")
+        published = services.process_version(version)
+    assert published.status == Version.Status.READY
+    assert published.scan_result == "disabled"
+    assert published.processing_note == "Validated; malware scanning disabled"

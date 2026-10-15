@@ -21,7 +21,15 @@ def switch(directory, target):
     os.replace(candidate, directory / "current")
 
 
-def install(lineage, directory, hostname, reload_proxy=False, release=None, environment=None):
+def install(
+    lineage,
+    directory,
+    hostname,
+    reload_proxy=False,
+    release=None,
+    environment=None,
+    compose_file="compose.prod.yaml",
+):
     if not hostname or not re.fullmatch(r"[A-Za-z0-9.-]+", hostname):
         raise ValueError("Provide the canonical DNS hostname")
     lineage, directory = Path(lineage).resolve(), Path(directory).resolve()
@@ -69,7 +77,7 @@ def install(lineage, directory, hostname, reload_proxy=False, release=None, envi
             "--env-file",
             str(Path(environment).resolve()),
             "-f",
-            str(release / "compose.prod.yaml"),
+            str(release / compose_file),
             "-f",
             str(release / "deploy/compose.acme.yaml"),
             "exec",
@@ -96,6 +104,11 @@ def main():
     parser.add_argument("--tls-directory", default="/srv/ssdc/tls")
     parser.add_argument("--release-directory", default="/srv/ssdc/app")
     parser.add_argument("--env-file", default="/srv/ssdc/.env.production")
+    parser.add_argument(
+        "--compose",
+        choices=["compose.prod.yaml", "compose.pilot.yaml"],
+        default="compose.prod.yaml",
+    )
     parser.add_argument("--reload-proxy", action="store_true")
     args = parser.parse_args()
     if not args.lineage or not args.hostname:
@@ -108,6 +121,7 @@ def main():
             args.reload_proxy,
             args.release_directory,
             args.env_file,
+            args.compose,
         )
     except (OSError, ValueError, subprocess.SubprocessError, RuntimeError) as exc:
         parser.exit(1, f"TLS installation failed: {exc}\n")

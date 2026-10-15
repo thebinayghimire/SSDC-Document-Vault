@@ -11,6 +11,12 @@ class Command(BaseCommand):
     help = "Verify real antivirus INSTREAM with harmless clean and EICAR test fixtures."
 
     def handle(self, *args, **options):
+        if settings.SCAN_MODE == "disabled":
+            self.stdout.write(
+                "Malware scanning is disabled by configuration (SCAN_MODE=disabled). "
+                "Uploads are not scanned; see docs/SECURITY.md for the recorded risk acceptance."
+            )
+            return
         if settings.SCAN_MODE != "clamav":
             raise CommandError("Self-test requires real ClamAV scanning")
         with tempfile.TemporaryDirectory() as temporary:

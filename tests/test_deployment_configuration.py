@@ -11,7 +11,7 @@ from scripts.smoke_safety import require_isolated_smoke
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def compose_config(smoke=False):
+def compose_config(smoke=False, pilot=False, oracle=False):
     environment = dict(os.environ)
     environment.update(
         {
@@ -27,6 +27,9 @@ def compose_config(smoke=False):
             "TLS_DIRECTORY": str(ROOT / "artifacts" / "synthetic"),
             "CSRF_TRUSTED_ORIGINS": "https://localhost",
             "GOOGLE_DRIVE_REDIRECT_URI": "https://localhost/storage/google/callback/",
+            "POSTGRES_HOST": "synthetic.pooler.supabase.com",
+            "POSTGRES_MIGRATION_USER": "ssdc_migrator.synthetic",
+            "POSTGRES_SSLROOTCERT_FILE": str(ROOT / "artifacts" / "synthetic" / "root.crt"),
         }
     )
     for name in (
@@ -42,7 +45,14 @@ def compose_config(smoke=False):
         "GOOGLE_DRIVE_CREDENTIAL_KEY",
     ):
         environment[name + "_FILE"] = str(ROOT / "artifacts" / "synthetic" / name.lower())
-    command = ["docker", "compose", "--profile", "operations", "-f", "compose.prod.yaml"]
+    command = [
+        "docker",
+        "compose",
+        "--profile",
+        "operations",
+        "-f",
+        "compose.oracle.yaml" if oracle else ("compose.pilot.yaml" if pilot else "compose.prod.yaml"),
+    ]
     if smoke:
         command += ["-f", "deploy/compose.smoke.yaml"]
     result = subprocess.run(
@@ -108,6 +118,56 @@ def test_only_proxy_publishes_ports_in_production():
     for name in ("app", "migrate", "db", "clamav"):
         assert not services[name].get("ports"), name
     assert {port["published"] for port in services["proxy"]["ports"]} == {"80", "443"}
+
+
+def test_pilot_uses_remote_verified_database_and_private_scanner():
+    config = compose_config(pilot=True)
+    services = config["services"]
+    assert "db" not in services
+    assert "db-data" not in config["volumes"]
+    assert "db" not in services["app"]["depends_on"]
+    for name in ("app", "migrate"):
+        environment = services[name]["environment"]
+        assert environment["POSTGRES_SSLMODE"] == "verify-full"
+        assert environment["POSTGRES_CONNECTION_MODE"] == "session"
+        assert environment["POSTGRES_PORT"] == "5432"
+        assert environment["POSTGRES_SSLROOTCERT"] == "/run/secrets/postgres_root_cert"
+        assert environment["SCAN_MODE"] == "clamav"
+        assert environment["DOCUMENT_STORAGE_PROVIDER"] == "gdrive"
+        assert services[name]["read_only"]
+        assert not services[name].get("ports")
+    assert int(services["clamav"]["mem_limit"]) == 4 * 1024**3
+    assert not services["clamav"].get("ports")
+    assert services["dbtools"]["environment"]["PGSSLMODE"] == "verify-full"
+    assert services["dbtools"]["command"] == [
+        "pg_dump",
+        "--format=custom",
+        "--schema=public",
+        "--no-owner",
+        "--no-acl",
+    ]
+
+
+def test_oracle_target_runs_without_a_scanner_and_keeps_production_isolation():
+    """SSDC accepted running without malware scanning; everything else must hold."""
+    config = compose_config(oracle=True)
+    services = config["services"]
+    assert config["name"] == "ssdc-vault-oracle"
+    assert "clamav" not in services
+    assert "clam-data" not in config["volumes"]
+    assert "updates" not in config["networks"]
+    assert "clamav" not in services["app"]["depends_on"]
+    for name in ("app", "migrate"):
+        environment = services[name]["environment"]
+        # Disabling scanning must be explicit on both settings it depends on.
+        assert environment["SCAN_MODE"] == "disabled"
+        assert environment["ACCEPT_NO_MALWARE_SCANNING"] == "1"
+        assert environment["APP_ENV"] == "production"
+        assert services[name]["read_only"]
+        assert not services[name].get("ports")
+    assert not services["db"].get("ports")
+    assert {port["published"] for port in services["proxy"]["ports"]} == {"80", "443"}
+    assert config["networks"]["backend"]["internal"]
 
 
 def test_generation_keeps_backup_key_separate_and_refuses_overwrite(tmp_path):

@@ -1,0 +1,12 @@
+[Unit]
+Description=Retry SSDC pilot scans and check readiness every five minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+RandomizedDelaySec=30s
+Persistent=true
+Unit=ssdc-pilot-operations.service
+
+[Install]
+WantedBy=timers.target

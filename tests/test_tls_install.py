@@ -108,6 +108,30 @@ class TLSInstallerTests(unittest.TestCase):
                 )
         self.assertEqual(previous, (self.destination / "current").readlink())
 
+    def test_pilot_rotation_reloads_the_pilot_stack(self):
+        install(self.first, self.destination, "vault.example.org")
+        real_run, commands = subprocess.run, []
+
+        def run(command, **kwargs):
+            if command[0] == "docker":
+                commands.append(command)
+                return subprocess.CompletedProcess(command, 0)
+            return real_run(command, **kwargs)
+
+        with patch("scripts.install_tls.subprocess.run", side_effect=run):
+            install(
+                certificate(self.root / "second"),
+                self.destination,
+                "vault.example.org",
+                True,
+                self.root,
+                self.root / "pilot.env",
+                compose_file="compose.pilot.yaml",
+            )
+        self.assertEqual(len(commands), 2)
+        self.assertTrue(all(str(self.root / "compose.pilot.yaml") in c for c in commands))
+        self.assertTrue(all(str(self.root / "compose.prod.yaml") not in c for c in commands))
+
 
 if __name__ == "__main__":
     unittest.main()

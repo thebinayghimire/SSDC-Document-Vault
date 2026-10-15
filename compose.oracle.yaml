@@ -1,0 +1,134 @@
+name: ssdc-vault-oracle
+# Oracle Cloud Always Free ARM target (VM.Standard.A1.Flex, aarch64).
+#
+# Differences from compose.prod.yaml:
+#   * No ClamAV service. Malware scanning is disabled by SSDC decision; the app
+#     requires SCAN_MODE=disabled together with ACCEPT_NO_MALWARE_SCANNING=1 so
+#     this cannot be reached accidentally. See docs/SECURITY.md.
+#   * No `updates` network: nothing needs outbound signature downloads.
+#   * Memory limits sized for a 2 OCPU / 12 GB Always Free allocation.
+# Everything else (isolation, secrets, read-only roots, dropped capabilities,
+# non-root users, published-port policy) matches production unchanged.
+services:
+  db:
+    image: ${DB_IMAGE:?Set exact DB release image reference}
+    build: {context: ., dockerfile: deploy/Dockerfile.db}
+    cap_drop: [ALL]
+    group_add: ["11001", "11002", "11003"]
+    security_opt: [no-new-privileges:true]
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_bootstrap_password
+    secrets: [db_bootstrap_password, db_password, db_migration_password]
+    volumes:
+      - db-data:/var/lib/postgresql/data
+      - ./deploy/init-db.sh:/docker-entrypoint-initdb.d/10-roles.sh:ro
+    networks: [backend]
+    restart: unless-stopped
+    mem_limit: 2g
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}
+    healthcheck:
+      test: [CMD-SHELL, 'pg_isready -U "$${POSTGRES_USER}" -d "$${POSTGRES_DB}"']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  app: &app
+    image: ${APP_IMAGE:?Set exact app release image reference}
+    build: .
+    environment: &app_environment
+      APP_ENV: production
+      SECRET_KEY_FILE: /run/secrets/django_key
+      MFA_ENCRYPTION_KEY_FILE: /run/secrets/mfa_key
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+      POSTGRES_USER: ssdc_runtime
+      POSTGRES_HOST: db
+      # Self-hosted DB is isolated on the internal Docker network.
+      POSTGRES_SSLMODE: disable
+      ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set ALLOWED_HOSTS}
+      CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?Set HTTPS origin}
+      PRIVATE_STORAGE_ROOT: /data/private
+      SCAN_MODE: disabled
+      ACCEPT_NO_MALWARE_SCANNING: "1"
+      MFA_ALL_STAFF: ${MFA_ALL_STAFF:-0}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-26214400}
+      MAX_STORAGE_BYTES: ${MAX_STORAGE_BYTES:-10737418240}
+      MAX_IMAGE_PIXELS: ${MAX_IMAGE_PIXELS:-20000000}
+      MAX_PDF_PAGES: ${MAX_PDF_PAGES:-500}
+      MAX_FOLDERS: ${MAX_FOLDERS:-1000}
+      SESSION_ABSOLUTE_SECONDS: ${SESSION_ABSOLUTE_SECONDS:-28800}
+      SESSION_IDLE_SECONDS: ${SESSION_IDLE_SECONDS:-1800}
+      LOGIN_IP_LIMIT: ${LOGIN_IP_LIMIT:-300}
+      LOGIN_ACCOUNT_LIMIT: ${LOGIN_ACCOUNT_LIMIT:-10}
+      PARSER_CONCURRENCY: ${PARSER_CONCURRENCY:-1}
+      DOCUMENT_STORAGE_PROVIDER: ${DOCUMENT_STORAGE_PROVIDER:-gdrive}
+      GOOGLE_DRIVE_CLIENT_ID_FILE: /run/secrets/google_client_id
+      GOOGLE_DRIVE_CLIENT_SECRET_FILE: /run/secrets/google_client_secret
+      GOOGLE_DRIVE_CREDENTIAL_KEY_FILE: /run/secrets/google_credential_key
+      GOOGLE_DRIVE_REDIRECT_URI: ${GOOGLE_DRIVE_REDIRECT_URI:?Set exact HTTPS OAuth callback URI}
+    secrets: [django_key, mfa_key, db_password, google_client_id, google_client_secret, google_credential_key]
+    depends_on:
+      db: {condition: service_healthy}
+    volumes: [private-data:/data/private]
+    networks: [backend, frontend]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=512m"]
+    cap_drop: [ALL]
+    group_add: ["11001"]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 128
+    mem_limit: 2g
+    stop_grace_period: 150s
+    restart: unless-stopped
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; r=urllib.request.Request('http://127.0.0.1:8000/health/', headers={'Host':'${HEALTHCHECK_HOST:?Set HEALTHCHECK_HOST to an allowed hostname}','X-Forwarded-Proto':'https'}); urllib.request.urlopen(r, timeout=3)"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+  migrate:
+    <<: *app
+    profiles: [operations]
+    environment:
+      <<: *app_environment
+      POSTGRES_USER: ssdc_migrator
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_migration_password
+    secrets: [django_key, mfa_key, db_migration_password, google_client_id, google_client_secret, google_credential_key]
+    group_add: ["11001", "11003"]
+    command: [python, manage.py, migrate, --noinput]
+    restart: "no"
+    healthcheck: {disable: true}
+  proxy:
+    image: ${PROXY_IMAGE:?Set exact proxy release image reference}
+    build: {context: ., dockerfile: deploy/Dockerfile.proxy}
+    entrypoint: [/bin/sh, /opt/ssdc/render-proxy.sh]
+    environment:
+      PORTAL_HOST: ${PORTAL_HOST:?Set canonical HTTPS hostname}
+      HTTPS_PORT: ${HTTPS_PORT:-443}
+      MAX_UPLOAD_BYTES: ${MAX_UPLOAD_BYTES:-26214400}
+    ports: [80:8080, 443:8443]
+    volumes:
+      - ./deploy/nginx.prod.conf.template:/etc/nginx/templates/portal.conf.template:ro
+      - ./deploy/render-proxy.sh:/opt/ssdc/render-proxy.sh:ro
+      - ${TLS_DIRECTORY:?Set directory containing cert.pem and key.pem}:/etc/nginx/tls:ro
+    networks: [frontend]
+    depends_on: [app]
+    restart: unless-stopped
+    mem_limit: 128m
+    logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}
+secrets:
+  db_bootstrap_password: {file: '${DB_BOOTSTRAP_PASSWORD_FILE:?Set bootstrap password file path}'}
+  db_migration_password: {file: '${DB_MIGRATION_PASSWORD_FILE:?Set migration password file path}'}
+  db_password: {file: '${DB_PASSWORD_FILE:?Set DB_PASSWORD_FILE}'}
+  django_key: {file: '${DJANGO_KEY_FILE:?Set DJANGO_KEY_FILE}'}
+  mfa_key: {file: '${MFA_KEY_FILE:?Set MFA_KEY_FILE}'}
+  google_client_id: {file: '${GOOGLE_DRIVE_CLIENT_ID_FILE:?Set private client ID file path}'}
+  google_client_secret: {file: '${GOOGLE_DRIVE_CLIENT_SECRET_FILE:?Set private client secret file path}'}
+  google_credential_key: {file: '${GOOGLE_DRIVE_CREDENTIAL_KEY_FILE:?Set separate Fernet key file path}'}
+volumes:
+  db-data:
+  private-data:
+networks:
+  backend: {internal: true}
+  frontend:

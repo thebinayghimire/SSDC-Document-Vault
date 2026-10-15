@@ -1,0 +1,13 @@
+[Unit]
+Description=SSDC pilot scan retries and operational checks
+After=docker.service network-online.target
+Requires=docker.service
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/srv/ssdc/app
+ExecStart=/usr/bin/docker compose --env-file /srv/ssdc/.env.pilot -f compose.pilot.yaml run --rm --no-deps -T app python manage.py run_scheduled_maintenance
+TimeoutStartSec=600
+UMask=0077
+# Add an OnFailure drop-in with the approved alert destination.

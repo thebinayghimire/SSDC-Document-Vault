@@ -1,5 +1,8 @@
 # Google Drive owner setup and recovery
 
+For the Supabase PostgreSQL hosted pilot, see [HOSTED_PILOT.md](HOSTED_PILOT.md).
+Its production hostname is pending; do not register its placeholder callback.
+
 Google Drive is the primary document store for new uploads. Django/PostgreSQL,
 HTTPS hosting, ClamAV and the private staging volume are still required. Existing
 versions retain their filesystem provider and remain readable. Staff use SSDC

@@ -6,6 +6,9 @@ from pathlib import Path
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 
+from config.database import database_transport
+from config.scanning import scan_mode
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 ENVIRONMENT = os.getenv("APP_ENV", "development")
 if ENVIRONMENT not in {"development", "test", "production"}:
@@ -105,8 +108,7 @@ DATABASES = {
         "PASSWORD": env("POSTGRES_PASSWORD", "local-development-only"),
         "HOST": env("POSTGRES_HOST", "127.0.0.1"),
         "PORT": os.getenv("POSTGRES_PORT", "5432"),
-        "CONN_MAX_AGE": 60 if PRODUCTION else 0,
-        "OPTIONS": {"connect_timeout": 5},
+        **database_transport(os.environ, PRODUCTION),
     }
 }
 AUTH_USER_MODEL = "accounts.User"
@@ -185,9 +187,7 @@ FILE_UPLOAD_HANDLERS = [
     "django.core.files.uploadhandler.MemoryFileUploadHandler",
     "vault.upload_handlers.BudgetedTemporaryFileUploadHandler",
 ]
-SCAN_MODE = os.getenv("SCAN_MODE", "clamav")
-if SCAN_MODE not in {"clamav", "skip-development"} or (PRODUCTION and SCAN_MODE != "clamav"):
-    raise ImproperlyConfigured("Production requires ClamAV scanning")
+SCAN_MODE = scan_mode(os.environ, PRODUCTION)
 CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
 CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
 DOCUMENT_STORAGE_PROVIDER = os.getenv("DOCUMENT_STORAGE_PROVIDER", "gdrive")

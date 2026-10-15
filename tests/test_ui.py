@@ -2,6 +2,7 @@
 
 import base64
 import json
+import mimetypes
 import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -25,7 +26,11 @@ WIDTHS = (375, 390, 430, 768, 1024, 1280, 1440, 1920)
 
 
 @pytest.fixture
-def browser_page(live_server, users, folder, document):
+def browser_page(live_server, users, folder, document, monkeypatch):
+    # Windows registry associations can override .mjs with text/plain. Match the
+    # production WhiteNoise MIME type so the test server can load ES modules.
+    mimetypes.init()
+    monkeypatch.setitem(mimetypes.types_map, ".mjs", "text/javascript")
     ARTIFACTS.mkdir(parents=True, exist_ok=True)
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch()

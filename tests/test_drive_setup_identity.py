@@ -1,3 +1,5 @@
+from urllib.parse import urlencode
+
 import pytest
 
 from .conftest import authenticate_client
@@ -18,10 +20,18 @@ def test_storage_setup_returns_to_connection_after_password_confirmation(client,
     assert client.get(response.url).status_code == 200
 
 
-def test_password_confirmation_does_not_redirect_outside_the_vault(client, users, settings):
+@pytest.mark.parametrize(
+    "destination",
+    ["https://example.com/", "//example.com/", "/\\example.com/", "/\n/example.com/"],
+)
+def test_password_confirmation_does_not_redirect_outside_the_vault(
+    client, users, settings, destination
+):
     settings.MFA_ENABLED = False
     authenticate_client(client, users["admin"], mfa=False)
     response = client.post(
-        "/accounts/confirm/?next=https://example.com/", {"password": "Strong-Admin-Password-42"}
+        "/accounts/confirm/",
+        {"password": "Strong-Admin-Password-42"},
+        QUERY_STRING=urlencode({"next": destination}),
     )
     assert response.url == "/"

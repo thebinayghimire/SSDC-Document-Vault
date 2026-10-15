@@ -1,5 +1,6 @@
 import uuid
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from django.core.exceptions import SuspiciousFileOperation, ValidationError
@@ -272,12 +273,20 @@ def test_metadata_cannot_move_to_ungranted_folder(client, users, document):
     assert users["manager"].role == "manager"
 
 
-def test_upload_requires_recent_identity(client, users, folder):
+def test_upload_requires_recent_identity(client, users, folder, settings):
+    settings.MFA_ENABLED = False
     authenticate_client(client, users["manager"])
     session = client.session
     session["reauth_at"] = 0
     session.save()
-    assert client.get(f"/folders/{folder.pk}/upload/").url == "/accounts/confirm/"
+    path = f"/folders/{folder.pk}/upload/"
+    response = client.get(path)
+    redirect = urlsplit(response.url)
+    assert redirect.path == "/accounts/confirm/"
+    assert parse_qs(redirect.query) == {"next": [path]}
+    response = client.post(response.url, {"password": "Strong-Manager-Password-42"})
+    assert response.url == path
+    assert client.get(path).status_code == 200
 
 
 def test_explicit_document_manager_can_edit_title_without_folder_grant(

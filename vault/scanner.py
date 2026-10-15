@@ -26,6 +26,8 @@ def scanner_version():
 
 
 def scan(path):
+    if settings.SCAN_MODE == "disabled":
+        return "disabled"
     if settings.SCAN_MODE == "skip-development" and not settings.PRODUCTION:
         return "development-skip"
     try:

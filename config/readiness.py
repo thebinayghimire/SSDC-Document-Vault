@@ -39,7 +39,7 @@ def readiness_failures():
             except OSError:
                 if "storage_unavailable" not in failures:
                     failures.append("storage_unavailable")
-    if settings.SCAN_MODE == "clamav" or settings.PRODUCTION:
+    if settings.SCAN_MODE != "disabled" and (settings.SCAN_MODE == "clamav" or settings.PRODUCTION):
         try:
             version = scanner_version()
             date = version.rsplit("/", 1)[-1].strip()

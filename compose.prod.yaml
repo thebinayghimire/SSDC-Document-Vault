@@ -47,6 +47,8 @@ services:
       POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
       POSTGRES_USER: ssdc_runtime
       POSTGRES_HOST: db
+      # Self-hosted DB is isolated on the internal Docker network.
+      POSTGRES_SSLMODE: disable
       ALLOWED_HOSTS: ${ALLOWED_HOSTS:?Set ALLOWED_HOSTS}
       CSRF_TRUSTED_ORIGINS: ${CSRF_TRUSTED_ORIGINS:?Set HTTPS origin}
       PRIVATE_STORAGE_ROOT: /data/private

@@ -97,6 +97,10 @@ previews, check scanner readiness and run `scanner_selftest`.
 
 ## Documentation and release status
 
+- [Supabase/Drive hosted pilot](docs/HOSTED_PILOT.md): VM Compose, secure
+  configuration, deployment and restore commands. [Validation](docs/PILOT_VALIDATION.md)
+  records executed results and remaining blockers.
+
 - `docs/PRODUCT_SPEC.md`, `ARCHITECTURE.md`, `THREAT_MODEL.md`: design and limits.
 - `docs/SECURITY.md`, `TEST_PLAN.md`: controls and verification strategy.
 - `docs/DEPLOYMENT.md`: HTTPS, release, backup, restore and operator procedures.

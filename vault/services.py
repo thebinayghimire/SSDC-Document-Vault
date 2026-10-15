@@ -205,9 +205,10 @@ def _process_claimed_version(version, actor=None):
             version.thumbnail_sha256 = (
                 hashlib.sha256(thumbnail).hexdigest() if thumbnail_key else ""
             )
-            version.processing_note = (
-                "Validated and scanned" if result == "clean" else "Development-only scan bypass"
-            )
+            version.processing_note = {
+                "clean": "Validated and scanned",
+                "disabled": "Validated; malware scanning disabled",
+            }.get(result, "Development-only scan bypass")
             version.save(
                 update_fields=[
                     "status",

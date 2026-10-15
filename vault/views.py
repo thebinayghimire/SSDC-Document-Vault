@@ -13,7 +13,6 @@ from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpRespon
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
-from django.utils import timezone
 from django.views.decorators.http import require_http_methods, require_POST
 
 from audit.services import allow_rate, record
