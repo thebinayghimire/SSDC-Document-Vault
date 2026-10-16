@@ -131,3 +131,27 @@ docker scout cves local://ssdc-proxy:pilot-candidate --format sarif --output art
 
 The application scan currently exits 2. Do not filter it into a passing result or
 describe all vulnerability audits as clean.
+
+## Base-image recheck — 16 October 2026 (F10 acceptance path 1)
+
+Rechecked whether a vendor-patched base removes the high finding before asking
+for a release decision. Pulled `python:3.13-slim-trixie` fresh and queried the
+package database inside it:
+
+```text
+installed: 1:1.3.dfsg+really1.3.1-1+b1
+zlib1g:
+  Installed: 1:1.3.dfsg+really1.3.1-1+b1
+  Candidate: 1:1.3.dfsg+really1.3.1-1+b1
+```
+
+The current base carries a binary rebuild (`+b1`) of the same source version the
+audit recorded; `apt` offers no higher candidate, so **no supported fixed Debian
+package exists today** and rebuilding on the latest base cannot clear
+CVE-2026-85091. Debian bug 1146895 remains open with no DSA.
+
+Consequence for F10: acceptance path 1 (supported patched images/packages) is
+unavailable. Closure now depends solely on path 2 — a qualified, documented
+applicability determination with a named owner and revisit date, decided by the
+SSDC release owner. No waiver, VEX exception or suppression was created in this
+step; the application image scan still exits 2.
