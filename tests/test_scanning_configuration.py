@@ -9,6 +9,19 @@ def test_scanning_is_on_by_default_everywhere():
     assert scan_mode({}, True) == "clamav"
 
 
+def test_render_free_defaults_to_disabled_and_enable_clamav_is_explicit():
+    assert scan_mode({"RENDER": "true"}, True) == "disabled"
+    assert scan_mode({"RENDER": "true", "ENABLE_CLAMAV": "true"}, True) == "clamav"
+    assert scan_mode({"ENABLE_CLAMAV": "false"}, True) == "disabled"
+
+
+@pytest.mark.parametrize("value", ["", "enabled", "2", "secret-canary"])
+def test_invalid_enable_clamav_values_fail_without_leaking_values(value):
+    with pytest.raises(ImproperlyConfigured) as error:
+        scan_mode({"ENABLE_CLAMAV": value}, True)
+    assert "secret-canary" not in str(error.value)
+
+
 def test_development_bypass_is_rejected_in_production():
     assert scan_mode({"SCAN_MODE": "skip-development"}) == "skip-development"
     with pytest.raises(ImproperlyConfigured):

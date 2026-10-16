@@ -23,7 +23,9 @@ def test_staff_login_and_logout(client, users):
     assert client.session["auth_version"] == users["alice"].auth_version
     assert client.get("/accounts/logout/").status_code == 405
     assert client.post("/accounts/logout/").status_code == 302
-    assert client.get("/").status_code == 302
+    response = client.get("/")
+    assert response.status_code == 200
+    assert b"SSDC Document Vault" in response.content
     assert Event.objects.filter(kind="login", actor=users["alice"]).exists()
 
 
@@ -44,7 +46,7 @@ def test_disabled_existing_session(client, users):
     authenticate_client(client, users["alice"])
     users["alice"].is_active = False
     users["alice"].save()
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 @pytest.mark.parametrize("field", ["last_seen", "auth_started"])
@@ -53,7 +55,7 @@ def test_session_expiry(client, users, field):
     session = client.session
     session[field] = time.time() - 100000
     session.save()
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 def test_role_change_revokes_session(client, users):
@@ -61,7 +63,7 @@ def test_role_change_revokes_session(client, users):
     authenticate_client(client, user)
     user.role = User.Role.MANAGER
     user.save()
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 def test_privileged_login_requires_enrollment(client, users):
@@ -135,7 +137,7 @@ def test_password_change_revokes_other_sessions(client, users):
     )
     assert response.status_code == 302
     assert client.get("/").status_code == 200
-    assert other.get("/").status_code == 302
+    assert other.get("/documents/import/").status_code == 302
 
 
 def test_admin_needs_recent_mfa_session(client, users):

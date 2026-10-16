@@ -3,17 +3,24 @@ import hashlib
 import os
 from pathlib import Path
 
+import dj_database_url
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
+from dotenv import load_dotenv
 
 from config.database import database_transport
 from config.scanning import scan_mode
 
 BASE_DIR = Path(__file__).resolve().parent.parent
+# Neon writes local branch credentials here. Explicit process/container values
+# always win, and neither ignored file is required in production.
+load_dotenv(BASE_DIR / ".env.local", override=False)
+load_dotenv(BASE_DIR / ".env", override=False)
 ENVIRONMENT = os.getenv("APP_ENV", "development")
 if ENVIRONMENT not in {"development", "test", "production"}:
     raise ImproperlyConfigured("Unknown APP_ENV")
 PRODUCTION = ENVIRONMENT == "production"
+RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "")
 
 
 def positive_int(name, default, maximum):
@@ -56,8 +63,14 @@ if (
 ):
     raise ImproperlyConfigured("Production cannot use the development MFA key")
 DEBUG = os.getenv("DEBUG", "0") == "1" and not PRODUCTION
-ALLOWED_HOSTS = env("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver").split(",")
-if PRODUCTION and ("*" in ALLOWED_HOSTS or len(SECRET_KEY) < 50):
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver").split(",")
+    if host.strip()
+]
+if ".onrender.com" not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(".onrender.com")
+if PRODUCTION and ("*" in ALLOWED_HOSTS or len(SECRET_KEY) < 44):
     raise ImproperlyConfigured("Production needs explicit hosts and a strong SECRET_KEY")
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -100,17 +113,31 @@ TEMPLATES = [
         },
     }
 ]
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": env("POSTGRES_DB", "ssdc"),
-        "USER": env("POSTGRES_USER", "ssdc"),
-        "PASSWORD": env("POSTGRES_PASSWORD", "local-development-only"),
-        "HOST": env("POSTGRES_HOST", "127.0.0.1"),
-        "PORT": os.getenv("POSTGRES_PORT", "5432"),
-        **database_transport(os.environ, PRODUCTION),
+# Upload processing and policy writes use PostgreSQL session advisory locks.
+# Neon's transaction pooler cannot preserve that session state, so prefer the
+# direct URL Neon supplies and retain DATABASE_URL for non-Neon deployments.
+DATABASE_URL = os.getenv("DATABASE_URL_UNPOOLED") or os.getenv("DATABASE_URL")
+if DATABASE_URL:
+    DATABASES = {
+        "default": dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            ssl_require=not DEBUG,
+        )
     }
-}
+    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": env("POSTGRES_DB", "ssdc"),
+            "USER": env("POSTGRES_USER", "ssdc"),
+            "PASSWORD": env("POSTGRES_PASSWORD", "local-development-only"),
+            "HOST": env("POSTGRES_HOST", "127.0.0.1"),
+            "PORT": os.getenv("POSTGRES_PORT", "5432"),
+            **database_transport(os.environ, PRODUCTION),
+        }
+    }
 AUTH_USER_MODEL = "accounts.User"
 AUTH_PASSWORD_VALIDATORS = [
     {"NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"},
@@ -162,11 +189,14 @@ SECURE_HSTS_PRELOAD = False
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_REFERRER_POLICY = "same-origin"
 X_FRAME_OPTIONS = "DENY"
-if PRODUCTION:
-    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-CSRF_TRUSTED_ORIGINS = (
-    os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if os.getenv("CSRF_TRUSTED_ORIGINS") else []
-)
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()
+]
+if RENDER_EXTERNAL_HOSTNAME:
+    render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
+    if render_origin not in CSRF_TRUSTED_ORIGINS:
+        CSRF_TRUSTED_ORIGINS.append(render_origin)
 MFA_ALL_STAFF = os.getenv("MFA_ALL_STAFF", "0") == "1"
 # Local development can temporarily use password-only login. Production always uses MFA.
 MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
@@ -188,6 +218,7 @@ FILE_UPLOAD_HANDLERS = [
     "vault.upload_handlers.BudgetedTemporaryFileUploadHandler",
 ]
 SCAN_MODE = scan_mode(os.environ, PRODUCTION)
+ENABLE_CLAMAV = SCAN_MODE == "clamav"
 CLAMAV_HOST = os.getenv("CLAMAV_HOST", "127.0.0.1")
 CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
 DOCUMENT_STORAGE_PROVIDER = os.getenv("DOCUMENT_STORAGE_PROVIDER", "gdrive")
@@ -195,27 +226,46 @@ if DOCUMENT_STORAGE_PROVIDER not in {"gdrive", "filesystem"}:
     raise ImproperlyConfigured("Unknown DOCUMENT_STORAGE_PROVIDER")
 
 
-def drive_secret(name):
-    file = os.getenv(f"{name}_FILE")
-    return Path(file).read_text().strip() if file else os.getenv(name, "")
+def drive_secret(name, *aliases):
+    """Prefer runtime secrets, then fall back to mounted files for local/Compose use."""
+    names = (name, *aliases)
+    for candidate in names:
+        value = os.getenv(candidate)
+        if value:
+            return value.strip()
+    for candidate in names:
+        file = os.getenv(f"{candidate}_FILE")
+        if file:
+            return Path(file).read_text().strip()
+    return ""
 
 
-GOOGLE_DRIVE_CLIENT_ID = drive_secret("GOOGLE_DRIVE_CLIENT_ID")
-GOOGLE_DRIVE_CLIENT_SECRET = drive_secret("GOOGLE_DRIVE_CLIENT_SECRET")
-GOOGLE_DRIVE_CREDENTIAL_KEY = drive_secret("GOOGLE_DRIVE_CREDENTIAL_KEY")
-GOOGLE_DRIVE_REDIRECT_URI = os.getenv("GOOGLE_DRIVE_REDIRECT_URI", "")
+GOOGLE_DRIVE_CLIENT_ID = drive_secret("GOOGLE_DRIVE_CLIENT_ID", "GOOGLE_CLIENT_ID")
+GOOGLE_DRIVE_CLIENT_SECRET = drive_secret("GOOGLE_DRIVE_CLIENT_SECRET", "GOOGLE_CLIENT_SECRET")
+GOOGLE_DRIVE_CREDENTIAL_KEY = drive_secret(
+    "GOOGLE_DRIVE_CREDENTIAL_KEY", "DRIVE_TOKEN_ENCRYPTION_KEY"
+)
+GOOGLE_DRIVE_REDIRECT_URI = os.getenv(
+    "GOOGLE_DRIVE_REDIRECT_URI",
+    f"https://{RENDER_EXTERNAL_HOSTNAME}/storage/google/callback/"
+    if RENDER_EXTERNAL_HOSTNAME
+    else "",
+)
 if GOOGLE_DRIVE_CLIENT_SECRET or GOOGLE_DRIVE_CREDENTIAL_KEY:
     # Technical debug pages can disclose inner library locals, even with sensitive_variables.
     DEBUG = False
+if GOOGLE_DRIVE_CREDENTIAL_KEY:
+    try:
+        Fernet(GOOGLE_DRIVE_CREDENTIAL_KEY.encode())
+    except (ValueError, TypeError) as exc:
+        raise ImproperlyConfigured(
+            "DRIVE_TOKEN_ENCRYPTION_KEY (or GOOGLE_DRIVE_CREDENTIAL_KEY) must be a valid Fernet key"
+        ) from exc
 if PRODUCTION and DOCUMENT_STORAGE_PROVIDER == "gdrive":
     if not all((GOOGLE_DRIVE_CLIENT_ID, GOOGLE_DRIVE_CLIENT_SECRET, GOOGLE_DRIVE_CREDENTIAL_KEY)):
         raise ImproperlyConfigured("Google Drive server secrets must be configured")
     if not GOOGLE_DRIVE_REDIRECT_URI.startswith("https://"):
         raise ImproperlyConfigured("Google Drive production redirect URI must use HTTPS")
-    try:
-        Fernet(GOOGLE_DRIVE_CREDENTIAL_KEY.encode())
-    except (ValueError, TypeError) as exc:
-        raise ImproperlyConfigured("Google Drive credential key must be a Fernet key") from exc
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,

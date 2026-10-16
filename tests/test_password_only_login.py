@@ -28,7 +28,7 @@ def test_local_admin_password_login_and_reauthentication(client, users, settings
     user.refresh_from_db()
     assert user.mfa_confirmed == enrolled
     settings.MFA_ENABLED = True
-    assert client.get("/").url == "/accounts/login/?next=/"
+    assert client.get("/documents/import/").url == "/accounts/login/?next=/documents/import/"
 
 
 def test_disabled_authenticator_routes_return_to_login_and_wrong_password_fails(

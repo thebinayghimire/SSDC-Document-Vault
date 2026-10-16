@@ -14,6 +14,17 @@ MODES = {"clamav", "skip-development", "disabled"}
 
 
 def scan_mode(environ, production=False):
+    if "ENABLE_CLAMAV" in environ:
+        enabled = environ["ENABLE_CLAMAV"].strip().lower()
+        if enabled in {"1", "true", "yes", "on"}:
+            return "clamav"
+        if enabled in {"0", "false", "no", "off"}:
+            return "disabled"
+        raise ImproperlyConfigured("ENABLE_CLAMAV must be a boolean")
+    # Render's 512 MB free service cannot safely run the ClamAV daemon. Keep
+    # the established fail-closed default for every other production target.
+    if production and environ.get("RENDER"):
+        return "disabled"
     mode = environ.get("SCAN_MODE", "clamav")
     if mode not in MODES:
         raise ImproperlyConfigured("Unknown SCAN_MODE")

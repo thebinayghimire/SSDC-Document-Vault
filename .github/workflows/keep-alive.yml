@@ -1,0 +1,60 @@
+name: Keep alive (Nepal office hours)
+# Render's free web service spins down after 15 minutes without traffic, and the
+# next request then waits for a cold start. This pings the service during SSDC
+# office hours so staff do not pay that wait.
+#
+# Nepal Standard Time is UTC+05:45.
+#   03:00-11:56 UTC  ->  08:45-17:41 NPT
+#   12:00 UTC        ->  17:45 NPT
+# Cron day-of-week 0-5 is Sunday-Friday, matching the SSDC working week. These
+# UTC windows stay inside the same calendar day, so no day shift is needed.
+#
+# Cost: about 240 runs per month, each a few seconds. GitHub bills a one-minute
+# minimum per run on private repositories, so budget roughly 240 of the 2,000
+# free minutes. Well inside Render's 750 free instance-hours as well, since this
+# only keeps the service awake for about 9 hours a day, 6 days a week.
+on:
+  schedule:
+    # Every 14 minutes across office hours (fires at :00, :14, :28, :42, :56).
+    - cron: "*/14 3-11 * * 0-5"
+    # Final ping at the end of the working day.
+    - cron: "0 12 * * 0-5"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: keep-alive
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping the public URL
+        env:
+          # Repository variable preferred; secret used as a fallback. The URL is
+          # not a credential, but either source works.
+          APP_PUBLIC_URL: ${{ vars.APP_PUBLIC_URL || secrets.APP_PUBLIC_URL }}
+        run: |
+          set -o errexit -o nounset -o pipefail
+          if [ -z "${APP_PUBLIC_URL:-}" ]; then
+            echo "APP_PUBLIC_URL is not configured; skipping without failing."
+            echo "Set it under Settings > Secrets and variables > Actions." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          url="${APP_PUBLIC_URL%/}/"
+          echo "Pinging ${url}"
+          # A cold start can exceed a single 30 s request, so allow two retries.
+          for attempt in 1 2 3; do
+            if curl -fsS --max-time 30 -o /dev/null -w 'HTTP %{http_code} in %{time_total}s\n' "${url}"; then
+              echo "Keep-alive ping succeeded on attempt ${attempt}." >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            echo "Attempt ${attempt} failed."
+            [ "${attempt}" -lt 3 ] && sleep 15
+          done
+          echo "Keep-alive ping failed after 3 attempts." >> "$GITHUB_STEP_SUMMARY"
+          exit 1

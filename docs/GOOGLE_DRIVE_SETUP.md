@@ -4,7 +4,9 @@ For the Supabase PostgreSQL hosted pilot, see [HOSTED_PILOT.md](HOSTED_PILOT.md)
 Its production hostname is pending; do not register its placeholder callback.
 
 Google Drive is the primary document store for new uploads. Django/PostgreSQL,
-HTTPS hosting, ClamAV and the private staging volume are still required. Existing
+HTTPS hosting and the private staging area are still required. Full-size hosted
+profiles use ClamAV; the documented 512 MB Render Free profile explicitly disables
+it while retaining strict type, structure and size validation. Existing
 versions retain their filesystem provider and remain readable. Staff use SSDC
 accounts; only the storage owner authorizes Google. Personal paid Drive storage
 is supported through owner OAuth, not a service account or shared drive.

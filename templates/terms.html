@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Terms of Service{% endblock %}
+{% block content %}
+  <article class="auth-card" aria-labelledby="terms-heading">
+    <span class="eyebrow">SSDC Document Vault</span>
+    <h1 id="terms-heading">Terms of Service</h1>
+    <p>SSDC Document Vault is provided by Siddhartha Social Development Centre solely for authorized staff and approved organizational work.</p>
+    <p>Users must protect their credentials, follow SSDC information-handling policies, access only documents needed for their duties, and must not upload unlawful, malicious, or unauthorized material. Access may be suspended or revoked by SSDC administrators.</p>
+    <p>The service may be changed, interrupted, or withdrawn for maintenance, security, or operational reasons. Use of the service is subject to applicable SSDC policies and law.</p>
+    <p><a href="{% url 'library' %}">Return to SSDC Document Vault</a> · <a href="{% url 'privacy' %}">Privacy Policy</a></p>
+  </article>
+{% endblock %}

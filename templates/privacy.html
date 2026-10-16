@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Privacy Policy{% endblock %}
+{% block content %}
+  <article class="auth-card" aria-labelledby="privacy-heading">
+    <span class="eyebrow">SSDC Document Vault</span>
+    <h1 id="privacy-heading">Privacy Policy</h1>
+    <p>SSDC Document Vault is an internal document library operated by Siddhartha Social Development Centre for authorized staff using organization-issued accounts.</p>
+    <p>The application requests the Google Drive <code>drive.file</code> permission only for the single storage-owner Google account. Staff do not connect their personal Google accounts. The permission is used to create, store, retrieve, and manage only the document files that SSDC Document Vault creates in that storage-owner account.</p>
+    <p>OAuth refresh and access tokens are encrypted at rest in the managed PostgreSQL database. The encryption key is held separately as an isolated application environment secret and is not included in the database or its backups. Tokens are used only to communicate with Google's OAuth and Drive services over HTTPS and are never displayed or logged.</p>
+    <p>Document contents remain in the storage owner's Google Drive. The application stores document metadata, staff permission grants, and audit records. Uploaded files are validated by type, structure, and size before publication, and each document request is checked against the staff member's current permissions.</p>
+    <p>SSDC does not sell Google user data or document data, use it for advertising, or share it with data brokers or unrelated third parties. If the organization disconnects the integration, the stored OAuth credentials are deleted; files already stored in Google Drive remain under the storage owner's control.</p>
+    <p><a href="{% url 'library' %}">Return to SSDC Document Vault</a> · <a href="{% url 'terms' %}">Terms of Service</a></p>
+  </article>
+{% endblock %}

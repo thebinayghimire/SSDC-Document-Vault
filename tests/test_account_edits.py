@@ -42,7 +42,7 @@ def test_profile_save_cannot_revive_revoked_session(users):
     user.refresh_from_db()
     assert user.first_name == "Updated name"
     assert user.auth_version == stale.auth_version == 2
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 @pytest.mark.django_db

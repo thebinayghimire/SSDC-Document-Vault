@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}SSDC Document Vault{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="home-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>Document Vault</small></span></div>
+    <span class="eyebrow">Siddhartha Social Development Centre</span>
+    <h1 id="home-heading">SSDC Document Vault</h1>
+    <p class="muted">An internal document library operated by Siddhartha Social Development Centre for authorized staff.</p>
+    <div class="form-actions"><a class="button full" href="{% url 'login' %}">Staff sign in {% include "components/icon.html" with name="arrow" %}</a></div>
+    <div class="auth-foot"><a href="{% url 'privacy' %}">Privacy Policy</a> · <a href="{% url 'terms' %}">Terms of Service</a></div>
+  </section>
+{% endblock %}

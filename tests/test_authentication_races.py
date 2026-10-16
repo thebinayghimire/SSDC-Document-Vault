@@ -62,7 +62,7 @@ def assert_signed_out(client):
     assert "_auth_user_id" not in session
     assert not session.get("mfa_verified")
     assert all(field not in session for field in PENDING_FIELDS)
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 @pytest.mark.django_db(transaction=True)
@@ -312,7 +312,7 @@ def test_verification_and_completion_share_account_lock(users, monkeypatch, flow
     assert client.get("/").status_code == 200
     # A later revocation invalidates the established session on its next use.
     revoke(user.pk, "revoke", users["admin"])
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
 
 
 @pytest.mark.django_db
@@ -430,7 +430,7 @@ def test_password_hash_upgrade_cannot_overwrite_concurrent_admin_reset(users, mo
     assert user.password.startswith("argon2$")
     assert client.get("/").status_code == 200
     revoke(user.pk, "password", users["admin"])
-    assert client.get("/").status_code == 302
+    assert client.get("/documents/import/").status_code == 302
     user.refresh_from_db()
     assert user.check_password("Administrator-Reset-Password-82")
     assert not user.check_password("Strong-Staff-Password-42")

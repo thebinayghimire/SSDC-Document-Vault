@@ -1,7 +1,8 @@
 # SSDC Document Vault
 
 Private document library for Siddhartha Social Development Centre: Django,
-PostgreSQL, private Google Drive storage, ClamAV, self-hosted PDF.js, and Docker/Nginx.
+PostgreSQL, private Google Drive storage, optional ClamAV, self-hosted PDF.js, and
+Docker/Nginx or Render hosting.
 Original requirements and segments: `ssdc-conversation.md`.
 
 Staff can sign in, browse/search permitted folders and documents, switch between
@@ -97,6 +98,10 @@ previews, check scanner readiness and run `scanner_selftest`.
 
 ## Documentation and release status
 
+- [Render Free deployment](docs/RENDER_DEPLOYMENT.md): Blueprint, managed
+  PostgreSQL, environment secrets, automatic administrator bootstrap, and OAuth URLs.
+- [Google OAuth verification text](docs/GOOGLE_OAUTH_VERIFICATION.md): production
+  data-handling disclosure for the Cloud Console review.
 - [Supabase/Drive hosted pilot](docs/HOSTED_PILOT.md): VM Compose, secure
   configuration, deployment and restore commands. [Validation](docs/PILOT_VALIDATION.md)
   records executed results and remaining blockers.

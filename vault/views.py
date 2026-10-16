@@ -68,9 +68,10 @@ def breadcrumbs(folder, visible):
     return list(reversed(result))
 
 
-@login_required
 @require_http_methods(["GET", "HEAD"])
 def library(request, folder_id=None):
+    if not request.user.is_authenticated:
+        return render(request, "home.html")
     throttled = request_limit(request, "library", 120)
     if throttled:
         return throttled

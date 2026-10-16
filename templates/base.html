@@ -48,7 +48,11 @@
       {% endfor %}
       {% block content %}{% endblock %}
     </main>
-    {% if request.user.is_authenticated %}<footer class="footer">SSDC Document Vault<span>{% include "components/icon.html" with name="lock" %}For authorized staff use only</span></footer></div>{% endif %}
+    {% if request.user.is_authenticated %}
+      <footer class="footer">SSDC Document Vault<span><a href="{% url 'privacy' %}">Privacy Policy</a><a href="{% url 'terms' %}">Terms of Service</a>{% include "components/icon.html" with name="lock" %}For authorized staff use only</span></footer></div>
+    {% else %}
+      <footer class="footer public-footer"><span>SSDC Document Vault</span><span><a href="{% url 'privacy' %}">Privacy Policy</a><a href="{% url 'terms' %}">Terms of Service</a></span></footer>
+    {% endif %}
   <dialog id="confirm-dialog"
           class="confirm-dialog"
           aria-labelledby="confirm-title"

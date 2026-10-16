@@ -1,0 +1,40 @@
+services:
+  - type: web
+    name: ssdc-document-vault
+    runtime: python
+    region: singapore
+    plan: free
+    buildCommand: ./build.sh
+    startCommand: gunicorn config.wsgi:application --workers 2 --threads 2 --timeout 120
+    healthCheckPath: /live/
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: DEBUG
+        value: "0"
+      - key: ENABLE_CLAMAV
+        value: "false"
+      - key: DOCUMENT_STORAGE_PROVIDER
+        value: gdrive
+      - key: SECRET_KEY
+        generateValue: true
+      - key: MFA_ENCRYPTION_KEY
+        generateValue: true
+      - key: DATABASE_URL
+        sync: false
+      - key: DRIVE_TOKEN_ENCRYPTION_KEY
+        sync: false
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
+      - key: DJANGO_SUPERUSER_USERNAME
+        sync: false
+      - key: DJANGO_SUPERUSER_EMAIL
+        sync: false
+      - key: DJANGO_SUPERUSER_PASSWORD
+        sync: false
+      - key: ALLOWED_HOSTS
+        value: .onrender.com
+      - key: CSRF_TRUSTED_ORIGINS
+        sync: false
