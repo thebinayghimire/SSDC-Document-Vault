@@ -2,6 +2,7 @@
 DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["test_*.py"]
 testpaths = ["tests"]
+addopts = "--reuse-db"
 
 [tool.ruff]
 line-length = 100

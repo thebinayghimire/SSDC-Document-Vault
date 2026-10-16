@@ -51,7 +51,9 @@ def compose_config(smoke=False, pilot=False, oracle=False):
         "--profile",
         "operations",
         "-f",
-        "compose.oracle.yaml" if oracle else ("compose.pilot.yaml" if pilot else "compose.prod.yaml"),
+        "compose.oracle.yaml"
+        if oracle
+        else ("compose.pilot.yaml" if pilot else "compose.prod.yaml"),
     ]
     if smoke:
         command += ["-f", "deploy/compose.smoke.yaml"]

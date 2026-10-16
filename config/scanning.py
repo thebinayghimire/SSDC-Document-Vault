@@ -19,11 +19,7 @@ def scan_mode(environ, production=False):
         raise ImproperlyConfigured("Unknown SCAN_MODE")
     if production and mode == "skip-development":
         raise ImproperlyConfigured("Production cannot use the development scan bypass")
-    if (
-        mode == "disabled"
-        and production
-        and environ.get("ACCEPT_NO_MALWARE_SCANNING", "0") != "1"
-    ):
+    if mode == "disabled" and production and environ.get("ACCEPT_NO_MALWARE_SCANNING", "0") != "1":
         raise ImproperlyConfigured(
             "SCAN_MODE=disabled requires ACCEPT_NO_MALWARE_SCANNING=1 in production"
         )
