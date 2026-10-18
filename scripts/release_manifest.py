@@ -107,11 +107,24 @@ def release_references(config, target):
 def _verify_and_publish_manifest(*, manifest, output, output_dir):
     """Verify that every referenced report exists and matches its recorded hash, then publish manifest atomically."""
     for service, image_info in manifest.get("images", {}).items():
+        if not isinstance(image_info, dict):
+            raise ReleaseManifestError(
+                f"Malformed manifest entry for service '{service}': expected dict, got {type(image_info).__name__}"
+            )
         report_rel = image_info.get("report_path") or image_info.get("scan_report_path")
+        if not report_rel:
+            raise ReleaseManifestError(
+                f"Malformed manifest entry for service '{service}': missing report_path"
+            )
         expected_hash = image_info.get("scan_sha256")
-        if not report_rel or not expected_hash:
-            continue
-        report_path = (output_dir / report_rel).resolve()
+        if not expected_hash:
+            raise ReleaseManifestError(
+                f"Malformed manifest entry for service '{service}': missing scan_sha256"
+            )
+
+        report_path = Path(report_rel)
+        if not report_path.is_absolute():
+            report_path = (output_dir / report_path).resolve()
         if not report_path.is_file():
             raise ReleaseManifestError(
                 f"Evidence report missing for service '{service}' at: {report_path}"
@@ -138,16 +151,23 @@ def generate_manifest(
 ):
     output = Path(output).resolve()
     output_dir = output.parent
-    output_dir.mkdir(parents=True, exist_ok=True)
 
     if evidence_dir is not None:
-        evidence_dir = Path(evidence_dir).resolve()
+        evidence_parent = Path(evidence_dir).resolve()
     else:
-        invocation_id = uuid.uuid4().hex
-        evidence_dir = output_dir / f"{output.stem}-evidence-{invocation_id}"
+        evidence_parent = output_dir
+
+    invocation_id = uuid.uuid4().hex
+    evidence_invocation_dir = evidence_parent / f"{output.stem}-evidence-{invocation_id}"
 
     # Reject output and evidence locations within directories included in source hashing
-    for check_path, label in [(output, "Output path"), (evidence_dir, "Evidence directory")]:
+    # BEFORE any filesystem mutation (no mkdir, lock creation, or file deletion)
+    for check_path, label in [
+        (output, "Output path"),
+        (output_dir, "Output directory"),
+        (evidence_parent, "Evidence directory"),
+        (evidence_invocation_dir, "Evidence invocation directory"),
+    ]:
         for folder in SOURCE_DIRECTORIES:
             source_folder = (ROOT / folder).resolve()
             try:
@@ -157,6 +177,10 @@ def generate_manifest(
                 )
             except ValueError:
                 pass
+
+    # Ensure parent directories exist
+    output_dir.mkdir(parents=True, exist_ok=True)
+    evidence_parent.mkdir(parents=True, exist_ok=True)
 
     # Prevent concurrent runs from mixing manifests and scan reports
     lock_path = output_dir / f".{output.name}.lock"
@@ -192,7 +216,8 @@ def generate_manifest(
         if output.exists():
             output.unlink()
 
-        evidence_dir.mkdir(parents=True, exist_ok=True)
+        # Atomically create a unique invocation subdirectory beneath evidence_parent
+        evidence_invocation_dir.mkdir(parents=True, exist_ok=False)
 
         policy = TARGET_IMAGE_POLICIES[target]
         selected_inputs = resolve_compose_inputs(compose_filenames or policy["default_compose"])
@@ -222,12 +247,7 @@ def generate_manifest(
             files.extend(
                 path
                 for path in (ROOT / folder).rglob("*")
-                if path.is_file()
-                and "__pycache__" not in path.parts
-                and "vendor" not in path.parts
-                and not path.name.endswith(".lock")
-                and not path.name.endswith("-cves.txt")
-                and not path.name.startswith(".tmp-")
+                if path.is_file() and "__pycache__" not in path.parts and "vendor" not in path.parts
             )
         files.extend(
             ROOT / name
@@ -256,9 +276,11 @@ def generate_manifest(
             cwd=ROOT,
         ).stdout
         try:
-            evidence_dir_rel = evidence_dir.relative_to(output_dir).as_posix()
+            evidence_dir_rel = os.path.relpath(evidence_invocation_dir, output_dir).replace(
+                "\\", "/"
+            )
         except ValueError:
-            evidence_dir_rel = str(evidence_dir)
+            evidence_dir_rel = str(evidence_invocation_dir)
 
         manifest = {
             "generated_utc": datetime.now(UTC).isoformat(),
@@ -333,11 +355,11 @@ def generate_manifest(
                         scans_by_image_id[image_id] = (scan.returncode, scan_bytes, scan_hash)
 
                     scan_returncode, scan_bytes, scan_hash = scans_by_image_id[image_id]
-                    # Publish completed report to unique evidence directory before manifest publication
-                    report_file = evidence_dir / f"{service}-cves.txt"
+                    # Publish completed report to unique evidence invocation directory before manifest publication
+                    report_file = evidence_invocation_dir / f"{service}-cves.txt"
                     report_file.write_bytes(scan_bytes)
                     try:
-                        report_rel = report_file.relative_to(output_dir).as_posix()
+                        report_rel = os.path.relpath(report_file, output_dir).replace("\\", "/")
                     except ValueError:
                         report_rel = str(report_file)
 

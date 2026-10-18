@@ -3,6 +3,7 @@ import hashlib
 import json
 import subprocess
 import threading
+import uuid
 from pathlib import Path
 
 import pytest
@@ -838,6 +839,293 @@ def test_release_manifest_rejects_output_or_evidence_within_source_directories(
             output=tmp_path / "manifest.json",
             evidence_dir=evidence_in_source,
         )
+
+
+def test_release_manifest_boundary_check_leaves_nonexistent_parent_absent():
+    nonexistent_parent = release_manifest.ROOT / "vault" / f"nonexistent_{uuid.uuid4().hex}"
+    output = nonexistent_parent / "manifest.json"
+    assert not nonexistent_parent.exists()
+    try:
+        with pytest.raises(
+            release_manifest.ReleaseManifestError,
+            match="cannot be within source directory 'vault'",
+        ):
+            release_manifest.generate_manifest(
+                target="prod",
+                compose_filenames=None,
+                env_file="synthetic.env",
+                project_name=None,
+                output=output,
+            )
+        assert not nonexistent_parent.exists()
+    finally:
+        if nonexistent_parent.exists():
+            import shutil
+
+            shutil.rmtree(nonexistent_parent)
+
+
+def test_release_manifest_explicit_evidence_dir_sequential(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    explicit_parent = tmp_path / "shared_evidence"
+    output1 = tmp_path / "manifest-1.json"
+    output2 = tmp_path / "manifest-2.json"
+
+    res1 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output1,
+        evidence_dir=explicit_parent,
+    )
+    res2 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output2,
+        evidence_dir=explicit_parent,
+    )
+
+    assert res1 == 0
+    assert res2 == 0
+    assert output1.exists()
+    assert output2.exists()
+
+    manifest1 = json.loads(output1.read_text())
+    manifest2 = json.loads(output2.read_text())
+
+    # Unique invocation subdirectories beneath explicit parent
+    ev1 = (output1.parent / manifest1["evidence_directory"]).resolve()
+    ev2 = (output2.parent / manifest2["evidence_directory"]).resolve()
+    assert ev1.parent == explicit_parent.resolve()
+    assert ev2.parent == explicit_parent.resolve()
+    assert ev1 != ev2
+
+    # Never write service reports directly into the shared parent
+    assert not any(p.is_file() for p in explicit_parent.iterdir())
+
+    # Verify both manifests' retained report hashes
+    for service, info in manifest1["images"].items():
+        report_path = (output1.parent / info["report_path"]).resolve()
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+    for service, info in manifest2["images"].items():
+        report_path = (output2.parent / info["report_path"]).resolve()
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+
+def test_release_manifest_explicit_evidence_dir_overlapping(tmp_path, monkeypatch):
+    explicit_parent = tmp_path / "shared_evidence_concurrent"
+    output_a = tmp_path / "manifest-a.json"
+    output_b = tmp_path / "manifest-b.json"
+
+    barrier = threading.Barrier(2)
+    base_runner = subprocess_runner(target_config("prod"))
+
+    def overlapping_runner(command, **kwargs):
+        if command[:3] == ["docker", "scout", "cves"]:
+            try:
+                barrier.wait(timeout=5)
+            except threading.BrokenBarrierError:
+                pass
+        return base_runner(command, **kwargs)
+
+    monkeypatch.setattr(release_manifest.subprocess, "run", overlapping_runner)
+
+    def run_gen(out):
+        return release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=out,
+            evidence_dir=explicit_parent,
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_a = executor.submit(run_gen, output_a)
+        f_b = executor.submit(run_gen, output_b)
+        assert f_a.result() == 0
+        assert f_b.result() == 0
+
+    assert output_a.exists()
+    assert output_b.exists()
+
+    manifest_a = json.loads(output_a.read_text())
+    manifest_b = json.loads(output_b.read_text())
+
+    ev_a = (output_a.parent / manifest_a["evidence_directory"]).resolve()
+    ev_b = (output_b.parent / manifest_b["evidence_directory"]).resolve()
+    assert ev_a.parent == explicit_parent.resolve()
+    assert ev_b.parent == explicit_parent.resolve()
+    assert ev_a != ev_b
+
+    # Never write service reports directly into the shared parent
+    assert not any(p.is_file() for p in explicit_parent.iterdir())
+
+    # Verify both manifests' retained report hashes
+    for service, info in manifest_a["images"].items():
+        report_path = (output_a.parent / info["report_path"]).resolve()
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+    for service, info in manifest_b["images"].items():
+        report_path = (output_b.parent / info["report_path"]).resolve()
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+
+def test_release_manifest_includes_legitimate_source_files_matching_artifact_patterns(
+    tmp_path, monkeypatch
+):
+    fake_root = tmp_path / "fake_repo"
+    vault_dir = fake_root / "vault"
+    vault_dir.mkdir(parents=True)
+
+    for name in (
+        "Dockerfile",
+        ".dockerignore",
+        "requirements.txt",
+        "package-lock.json",
+        "package.json",
+        "manage.py",
+        "pyproject.toml",
+    ):
+        (fake_root / name).write_text(f"{name}\n")
+
+    # Legitimate source files matching the three patterns: .lock, *-cves.txt, .tmp-*
+    lock_file = vault_dir / "poetry.lock"
+    lock_file.write_text("lock-data\n")
+    cves_file = vault_dir / "known-cves.txt"
+    cves_file.write_text("cve-data\n")
+    tmp_file = vault_dir / ".tmp-template.html"
+    tmp_file.write_text("<html>temp</html>\n")
+
+    compose_file = fake_root / "compose.prod.yaml"
+    compose_file.write_text("services: {}\n")
+
+    monkeypatch.setattr(release_manifest, "ROOT", fake_root)
+
+    def fake_run(command, **kwargs):
+        if command[:2] == ["docker", "compose"]:
+            return subprocess.CompletedProcess(
+                command, 0, stdout=json.dumps(target_config("prod")).encode()
+            )
+        if command[:3] == ["docker", "image", "inspect"]:
+            ref = command[-1]
+            return subprocess.CompletedProcess(
+                command,
+                0,
+                stdout=json.dumps([{"Id": f"sha256:{ref}", "RepoDigests": [ref]}]).encode(),
+            )
+        if command[:3] == ["docker", "scout", "cves"]:
+            kwargs["stdout"].write(b"scan report")
+            return subprocess.CompletedProcess(command, 0)
+        if command[0] == "git":
+            if command[1:] == ["rev-parse", "HEAD"]:
+                return subprocess.CompletedProcess(command, 0, stdout="fake-commit\n")
+            if command[1:] == ["status", "--porcelain"]:
+                return subprocess.CompletedProcess(command, 0, stdout="")
+        raise AssertionError(f"Unexpected: {command}")
+
+    monkeypatch.setattr(release_manifest.subprocess, "run", fake_run)
+    output = tmp_path / "out" / "manifest.json"
+
+    result = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=[str(compose_file)],
+        env_file="synthetic.env",
+        project_name=None,
+        output=output,
+    )
+    assert result == 0
+    manifest = json.loads(output.read_text())
+
+    assert "vault/poetry.lock" in manifest["source_sha256"]
+    assert manifest["source_sha256"]["vault/poetry.lock"] == release_manifest.digest(lock_file)
+
+    assert "vault/known-cves.txt" in manifest["source_sha256"]
+    assert manifest["source_sha256"]["vault/known-cves.txt"] == release_manifest.digest(cves_file)
+
+    assert "vault/.tmp-template.html" in manifest["source_sha256"]
+    assert manifest["source_sha256"]["vault/.tmp-template.html"] == release_manifest.digest(
+        tmp_file
+    )
+
+
+def test_release_manifest_rejects_missing_report_path(tmp_path, monkeypatch):
+    calls = []
+    cfg = target_config("prod")
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(cfg, calls=calls),
+    )
+
+    original_verify = release_manifest._verify_and_publish_manifest
+
+    def corrupt_report_path(*, manifest, output, output_dir):
+        manifest["images"]["app"].pop("report_path", None)
+        manifest["images"]["app"].pop("scan_report_path", None)
+        return original_verify(manifest=manifest, output=output, output_dir=output_dir)
+
+    monkeypatch.setattr(release_manifest, "_verify_and_publish_manifest", corrupt_report_path)
+
+    output = tmp_path / "manifest.json"
+    with pytest.raises(release_manifest.ReleaseManifestError) as exc_info:
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+
+    err = str(exc_info.value)
+    assert "app" in err
+    assert "missing report_path" in err
+    assert not output.exists()
+
+
+def test_release_manifest_rejects_missing_scan_sha256(tmp_path, monkeypatch):
+    calls = []
+    cfg = target_config("prod")
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(cfg, calls=calls),
+    )
+
+    original_verify = release_manifest._verify_and_publish_manifest
+
+    def corrupt_scan_sha256(*, manifest, output, output_dir):
+        manifest["images"]["app"].pop("scan_sha256", None)
+        return original_verify(manifest=manifest, output=output, output_dir=output_dir)
+
+    monkeypatch.setattr(release_manifest, "_verify_and_publish_manifest", corrupt_scan_sha256)
+
+    output = tmp_path / "manifest.json"
+    with pytest.raises(release_manifest.ReleaseManifestError) as exc_info:
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+
+    err = str(exc_info.value)
+    assert "app" in err
+    assert "missing scan_sha256" in err
+    assert not output.exists()
 
 
 @pytest.mark.parametrize("target", ["prod", "pilot", "oracle"])
