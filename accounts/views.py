@@ -16,6 +16,7 @@ from audit.services import allow_rate, identity_reference, record
 from .forms import CodeForm, LoginForm, ReauthenticateForm
 from .mfa import create_recovery_codes, decrypt, encrypt, verify
 from .models import User
+from .navigation import safe_return_destination
 
 
 def finish_login(request, user, mfa_verified=False):
@@ -286,15 +287,8 @@ def reauthenticate(request):
                     messages.success(
                         request, "Identity confirmed. You can continue your administrative action."
                     )
-                    destination = request.GET.get("next", "")
-                    if (
-                        destination.startswith("/")
-                        and not destination.startswith("//")
-                        and "\\" not in destination
-                        and not any(ord(character) < 32 for character in destination)
-                    ):
-                        return redirect(destination)
-                    return redirect("library")
+                    destination = safe_return_destination(request, request.GET.get("next"), "/")
+                    return redirect(destination)
         record(request.user, "reauthentication", outcome="denied")
         form.add_error(None, "Unable to confirm your identity.")
     return render(request, "accounts/form.html", {"form": form, "title": "Confirm your identity"})

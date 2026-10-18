@@ -1,6 +1,5 @@
 import re
 import time
-from urllib.parse import urlencode
 
 from django.conf import settings
 from django.contrib import messages
@@ -15,6 +14,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from accounts.navigation import reauthentication_url
 from audit.services import allow_rate, record
 
 from .forms import FolderForm, ImportForm, MetadataForm, UploadForm
@@ -34,6 +34,10 @@ from .validation import InvalidUpload
 
 def recent_identity(request):
     return time.time() - request.session.get("reauth_at", 0) <= 600
+
+
+def reauthentication_redirect(destination):
+    return redirect(reauthentication_url(destination))
 
 
 def request_limit(request, scope="content", limit=240):
@@ -146,15 +150,16 @@ def import_documents(request):
         return JsonResponse({"csrf_token": get_token(request)})
     if request.method == "POST":
         if not recent_identity(request):
+            return_url = reauthentication_url(request.get_full_path())
             if wants_json:
                 return JsonResponse(
                     {
                         "error": "Verify your identity, then continue your upload.",
-                        "reauth_url": reverse("reauthenticate"),
+                        "reauth_url": return_url,
                     },
                     status=401,
                 )
-            return redirect("reauthenticate")
+            return redirect(return_url)
         if not form.is_valid():
             if wants_json:
                 return JsonResponse({"errors": form.errors.get_json_data()}, status=400)
@@ -337,9 +342,7 @@ def upload(request, folder_id=None, document_id=None):
         _, manageable = folder_permissions(request.user)
         folder = get_object_or_404(Folder.objects.filter(pk__in=manageable), pk=folder_id)
     if not recent_identity(request):
-        return redirect(
-            reverse("reauthenticate") + "?" + urlencode({"next": request.get_full_path()})
-        )
+        return reauthentication_redirect(request.get_full_path())
     from .forms import ReplacementForm
 
     form = (ReplacementForm if document else UploadForm)(
@@ -386,7 +389,7 @@ def upload(request, folder_id=None, document_id=None):
 def manage_document(request, document_id):
     document = authorized_document(request, document_id, manage=True)
     if not recent_identity(request):
-        return redirect("reauthenticate")
+        return reauthentication_redirect(request.get_full_path())
     _, manageable = folder_permissions(request.user)
     form = MetadataForm(
         request.POST or None,
@@ -424,7 +427,7 @@ def manage_document(request, document_id):
 def lifecycle(request, document_id, action):
     document = authorized_document(request, document_id, manage=True)
     if not recent_identity(request):
-        return redirect("reauthenticate")
+        return reauthentication_redirect(reverse("manage_document", args=[document.pk]))
     actions = {"archive", "unarchive", "delete", "restore"}
     if action not in actions:
         raise Http404
@@ -449,7 +452,7 @@ def create_folder(request, folder_id=None):
     if not parent and not request.user.is_portal_admin:
         raise Http404
     if not recent_identity(request):
-        return redirect("reauthenticate")
+        return reauthentication_redirect(request.get_full_path())
     # Managers may create inherited children; restricted policies are administrator-owned.
     form = FolderForm(request.POST or None, initial={"restricted": False})
     if not request.user.is_portal_admin:
@@ -491,7 +494,7 @@ def management(request):
 def restore_version(request, document_id, version_id):
     document = authorized_document(request, document_id, manage=True)
     if not recent_identity(request):
-        return redirect("reauthenticate")
+        return reauthentication_redirect(reverse("manage_document", args=[document.pk]))
     try:
         document = restore_document_version(request.user, document, version_id)
     except (PermissionDenied, Document.DoesNotExist) as exc:
