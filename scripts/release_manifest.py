@@ -50,6 +50,9 @@ for policy in TARGET_IMAGE_POLICIES.values():
     policy["services"] = policy["required_services"]
 
 
+SOURCE_DIRECTORIES = ("accounts", "audit", "config", "vault", "templates", "static", "deploy")
+
+
 class ReleaseManifestError(RuntimeError):
     pass
 
@@ -101,29 +104,95 @@ def release_references(config, target):
     return references
 
 
-def generate_manifest(*, target, compose_filenames, env_file, project_name, output):
+def _verify_and_publish_manifest(*, manifest, output, output_dir):
+    """Verify that every referenced report exists and matches its recorded hash, then publish manifest atomically."""
+    for service, image_info in manifest.get("images", {}).items():
+        report_rel = image_info.get("report_path") or image_info.get("scan_report_path")
+        expected_hash = image_info.get("scan_sha256")
+        if not report_rel or not expected_hash:
+            continue
+        report_path = (output_dir / report_rel).resolve()
+        if not report_path.is_file():
+            raise ReleaseManifestError(
+                f"Evidence report missing for service '{service}' at: {report_path}"
+            )
+        actual_hash = hashlib.sha256(report_path.read_bytes()).hexdigest()
+        if actual_hash != expected_hash:
+            raise ReleaseManifestError(
+                f"Evidence report hash mismatch for service '{service}': expected {expected_hash}, got {actual_hash}"
+            )
+
+    temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
+    temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
+    temp_manifest.replace(output)
+
+
+def generate_manifest(
+    *,
+    target,
+    compose_filenames,
+    env_file,
+    project_name,
+    output,
+    evidence_dir=None,
+):
     output = Path(output).resolve()
     output_dir = output.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    if evidence_dir is not None:
+        evidence_dir = Path(evidence_dir).resolve()
+    else:
+        invocation_id = uuid.uuid4().hex
+        evidence_dir = output_dir / f"{output.stem}-evidence-{invocation_id}"
+
+    # Reject output and evidence locations within directories included in source hashing
+    for check_path, label in [(output, "Output path"), (evidence_dir, "Evidence directory")]:
+        for folder in SOURCE_DIRECTORIES:
+            source_folder = (ROOT / folder).resolve()
+            try:
+                check_path.relative_to(source_folder)
+                raise ReleaseManifestError(
+                    f"{label} cannot be within source directory '{folder}': {check_path}"
+                )
+            except ValueError:
+                pass
+
     # Prevent concurrent runs from mixing manifests and scan reports
     lock_path = output_dir / f".{output.name}.lock"
+    lock_fd = None
+    acquired_lock = False
     try:
         lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+        acquired_lock = True
+        try:
+            os.write(lock_fd, f"{os.getpid()}\n".encode())
+        except OSError:
+            pass
     except FileExistsError:
+        recorded_pid = "unknown"
+        try:
+            if lock_path.exists():
+                content = lock_path.read_text().strip()
+                if content:
+                    recorded_pid = content
+        except Exception:
+            pass
         raise ReleaseManifestError(
-            f"Concurrent run detected: output {output} is currently locked by another invocation"
+            f"Concurrent run detected: output '{output}' is locked by lockfile '{lock_path}' "
+            f"(recorded PID: {recorded_pid}). "
+            f"An interrupted or crashed process may have left a stale lock file. "
+            f"To recover manually, first verify and confirm that no process with PID {recorded_pid} "
+            f"(or any other active release manifest generator) is currently running, "
+            f"and then delete the lock file at '{lock_path}'."
         )
 
     try:
-        os.write(lock_fd, f"{os.getpid()}\n".encode())
-    except OSError:
-        pass
-
-    try:
-        # Invalidate preexisting output before processing
+        # Invalidate preexisting output manifest before processing
         if output.exists():
             output.unlink()
+
+        evidence_dir.mkdir(parents=True, exist_ok=True)
 
         policy = TARGET_IMAGE_POLICIES[target]
         selected_inputs = resolve_compose_inputs(compose_filenames or policy["default_compose"])
@@ -148,18 +217,17 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
             )
         references = release_references(config, target)
 
-        # Invocation-specific artifact ownership: invalidate only this invocation's owned scan files
-        for service in references:
-            service_report = output_dir / f"{service}-cves.txt"
-            if service_report.exists():
-                service_report.unlink()
-
         files = []
-        for folder in ("accounts", "audit", "config", "vault", "templates", "static", "deploy"):
+        for folder in SOURCE_DIRECTORIES:
             files.extend(
                 path
                 for path in (ROOT / folder).rglob("*")
-                if path.is_file() and "__pycache__" not in path.parts and "vendor" not in path.parts
+                if path.is_file()
+                and "__pycache__" not in path.parts
+                and "vendor" not in path.parts
+                and not path.name.endswith(".lock")
+                and not path.name.endswith("-cves.txt")
+                and not path.name.startswith(".tmp-")
             )
         files.extend(
             ROOT / name
@@ -187,6 +255,11 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
             capture_output=True,
             cwd=ROOT,
         ).stdout
+        try:
+            evidence_dir_rel = evidence_dir.relative_to(output_dir).as_posix()
+        except ValueError:
+            evidence_dir_rel = str(evidence_dir)
+
         manifest = {
             "generated_utc": datetime.now(UTC).isoformat(),
             "source_commit": commit,
@@ -201,6 +274,7 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
                 for path in sorted(set(files))
             },
             "image_policy": policy.get("required_services", policy["services"]),
+            "evidence_directory": evidence_dir_rel,
             "images": {},
             "invocation_completed": False,
             "container_scan_gate_passed": False,
@@ -259,14 +333,22 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
                         scans_by_image_id[image_id] = (scan.returncode, scan_bytes, scan_hash)
 
                     scan_returncode, scan_bytes, scan_hash = scans_by_image_id[image_id]
-                    # Preserve completed scan evidence in the output directory
-                    (output_dir / f"{service}-cves.txt").write_bytes(scan_bytes)
+                    # Publish completed report to unique evidence directory before manifest publication
+                    report_file = evidence_dir / f"{service}-cves.txt"
+                    report_file.write_bytes(scan_bytes)
+                    try:
+                        report_rel = report_file.relative_to(output_dir).as_posix()
+                    except ValueError:
+                        report_rel = str(report_file)
+
                     completed_service_reports[service] = {
                         "reference": reference,
                         "id": image_id,
                         "repo_digests": inspection.get("RepoDigests", []),
                         "scan_exit_code": scan_returncode,
                         "scan_sha256": scan_hash,
+                        "report_path": report_rel,
+                        "scan_report_path": report_rel,
                     }
 
                     blocked |= scan_returncode != 0
@@ -278,9 +360,11 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
                     manifest["invocation_completed"] = False
                     manifest["container_scan_gate_passed"] = False
                     manifest["failure_reason"] = f"Scanner failed on service {service}: {scan_exc}"
-                    temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
-                    temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
-                    temp_manifest.replace(output)
+                    _verify_and_publish_manifest(
+                        manifest=manifest,
+                        output=output,
+                        output_dir=output_dir,
+                    )
                 raise scan_exc
 
             manifest["invocation_completed"] = True
@@ -297,23 +381,28 @@ def generate_manifest(*, target, compose_filenames, env_file, project_name, outp
                     )
                 )
 
-            # Publish the completed result atomically
-            temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
-            temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
-            temp_manifest.replace(output)
+            # Verify that every referenced report exists and matches its recorded hash,
+            # then publish the completed manifest atomically.
+            _verify_and_publish_manifest(
+                manifest=manifest,
+                output=output,
+                output_dir=output_dir,
+            )
 
         print("Release manifest recorded; organizational sign-off remains separate.")
         return 1 if blocked else 0
     finally:
-        try:
-            os.close(lock_fd)
-        except OSError:
-            pass
-        try:
-            if lock_path.exists():
-                lock_path.unlink()
-        except OSError:
-            pass
+        if lock_fd is not None:
+            try:
+                os.close(lock_fd)
+            except OSError:
+                pass
+        if acquired_lock:
+            try:
+                if lock_path.exists():
+                    lock_path.unlink()
+            except OSError:
+                pass
 
 
 def main(argv=None):
@@ -323,6 +412,7 @@ def main(argv=None):
     parser.add_argument("--env-file", required=True)
     parser.add_argument("--project-name")
     parser.add_argument("--output", type=Path, default=Path("artifacts/release/manifest.json"))
+    parser.add_argument("--evidence-dir", type=Path, default=None)
     args = parser.parse_args(argv)
     return generate_manifest(
         target=args.target,
@@ -330,6 +420,7 @@ def main(argv=None):
         env_file=args.env_file,
         project_name=args.project_name,
         output=args.output,
+        evidence_dir=args.evidence_dir,
     )
 
 

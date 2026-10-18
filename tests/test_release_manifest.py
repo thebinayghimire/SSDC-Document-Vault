@@ -1,6 +1,8 @@
+import concurrent.futures
 import hashlib
 import json
 import subprocess
+import threading
 from pathlib import Path
 
 import pytest
@@ -259,7 +261,7 @@ def test_release_manifest_overlay_added_sidecar(tmp_path, monkeypatch):
     manifest = json.loads(output.read_text())
     assert "metrics-sidecar" in manifest["images"]
     assert manifest["images"]["metrics-sidecar"]["reference"] == "registry.example/sidecar:latest"
-    assert (tmp_path / "metrics-sidecar-cves.txt").exists()
+    assert (output.parent / manifest["images"]["metrics-sidecar"]["report_path"]).exists()
 
 
 def test_release_manifest_deduplicates_identical_images(tmp_path, monkeypatch):
@@ -307,8 +309,8 @@ def test_release_manifest_deduplicates_identical_images(tmp_path, monkeypatch):
     ]
     assert len(scan_calls) == 1
     # Both service reports exist
-    assert (tmp_path / "app-cves.txt").exists()
-    assert (tmp_path / "migrate-cves.txt").exists()
+    assert (output.parent / manifest["images"]["app"]["report_path"]).exists()
+    assert (output.parent / manifest["images"]["migrate"]["report_path"]).exists()
 
 
 def test_release_manifest_resolves_all_declared_profiles(tmp_path, monkeypatch):
@@ -363,7 +365,9 @@ def test_release_manifest_rejects_concurrent_runs_on_same_output(tmp_path, monke
         "run",
         subprocess_runner(target_config("prod")),
     )
-    with pytest.raises(release_manifest.ReleaseManifestError, match="Concurrent run detected"):
+    with pytest.raises(
+        release_manifest.ReleaseManifestError, match="Concurrent run detected"
+    ) as exc_info:
         release_manifest.generate_manifest(
             target="prod",
             compose_filenames=None,
@@ -371,6 +375,14 @@ def test_release_manifest_rejects_concurrent_runs_on_same_output(tmp_path, monke
             project_name=None,
             output=output,
         )
+    err_msg = str(exc_info.value)
+    assert str(lock_file) in err_msg
+    assert "99999" in err_msg
+    assert "stale lock" in err_msg
+    assert "delete the lock file" in err_msg
+    # Ensure rejected invocation cannot remove the existing lock
+    assert lock_file.exists()
+    assert lock_file.read_text().strip() == "99999"
 
 
 def test_release_manifest_preserves_completed_evidence_when_later_scanner_launch_fails(
@@ -406,13 +418,13 @@ def test_release_manifest_preserves_completed_evidence_when_later_scanner_launch
     assert manifest["container_scan_gate_passed"] is False
     assert "Scanner failed on service" in manifest.get("failure_reason", "")
 
-    # 2. Completed scan evidence from the first successful scan is preserved
+    # 2. Completed scan evidence from the first successful scan is preserved in evidence directory
     first_service = next(
         service
         for service, info in manifest["images"].items()
         if info.get("scan_exit_code") is not None
     )
-    first_report = tmp_path / f"{first_service}-cves.txt"
+    first_report = output.parent / manifest["images"][first_service]["report_path"]
     assert first_report.exists()
     assert b"synthetic scan output" in first_report.read_bytes()
 
@@ -469,7 +481,6 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
             output=output,
         )
     assert not output.exists()
-    assert not stale_report.exists()
 
     # 3. Scanner-launch failure on first service: preexisting manifest must be invalidated
     setup_preexisting()
@@ -487,7 +498,6 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
             output=output,
         )
     assert not output.exists()
-    assert not stale_report.exists()
 
     # 4. Completed scan with blocked gate preserves evidence and updates manifest
     setup_preexisting()
@@ -508,8 +518,326 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
     manifest = json.loads(output.read_text())
     assert manifest["container_scan_gate_passed"] is False
     assert manifest["invocation_completed"] is True
-    assert (tmp_path / "app-cves.txt").exists()
-    assert (tmp_path / "app-cves.txt").read_bytes() != b"stale scan report from previous run"
+    app_report = output.parent / manifest["images"]["app"]["report_path"]
+    assert app_report.exists()
+    assert b"synthetic scan output" in app_report.read_bytes()
+
+
+def test_release_manifest_two_outputs_same_directory_sequential(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    output1 = tmp_path / "manifest-1.json"
+    output2 = tmp_path / "manifest-2.json"
+
+    res1 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output1,
+    )
+    res2 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output2,
+    )
+
+    assert res1 == 0
+    assert res2 == 0
+    assert output1.exists()
+    assert output2.exists()
+
+    manifest1 = json.loads(output1.read_text())
+    manifest2 = json.loads(output2.read_text())
+
+    assert manifest1["evidence_directory"] != manifest2["evidence_directory"]
+
+    for service, info in manifest1["images"].items():
+        report_path = output1.parent / info["report_path"]
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+    for service, info in manifest2["images"].items():
+        report_path = output2.parent / info["report_path"]
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+
+def test_release_manifest_two_outputs_same_directory_overlapping(tmp_path, monkeypatch):
+    output_a = tmp_path / "manifest-a.json"
+    output_b = tmp_path / "manifest-b.json"
+
+    barrier = threading.Barrier(2)
+    base_runner = subprocess_runner(target_config("prod"))
+
+    def overlapping_runner(command, **kwargs):
+        if command[:3] == ["docker", "scout", "cves"]:
+            try:
+                barrier.wait(timeout=5)
+            except threading.BrokenBarrierError:
+                pass
+        return base_runner(command, **kwargs)
+
+    monkeypatch.setattr(release_manifest.subprocess, "run", overlapping_runner)
+
+    def run_gen(out):
+        return release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=out,
+        )
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+        f_a = executor.submit(run_gen, output_a)
+        f_b = executor.submit(run_gen, output_b)
+        assert f_a.result() == 0
+        assert f_b.result() == 0
+
+    assert output_a.exists()
+    assert output_b.exists()
+
+    manifest_a = json.loads(output_a.read_text())
+    manifest_b = json.loads(output_b.read_text())
+
+    assert manifest_a["evidence_directory"] != manifest_b["evidence_directory"]
+
+    for service, info in manifest_a["images"].items():
+        report_path = output_a.parent / info["report_path"]
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+    for service, info in manifest_b["images"].items():
+        report_path = output_b.parent / info["report_path"]
+        assert report_path.exists()
+        assert hashlib.sha256(report_path.read_bytes()).hexdigest() == info["scan_sha256"]
+
+
+def test_release_manifest_failed_second_run_preserves_first_run_manifest_and_evidence(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    output1 = tmp_path / "manifest-first.json"
+    result1 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output1,
+    )
+    assert result1 == 0
+    manifest1_bytes = output1.read_bytes()
+    manifest1 = json.loads(manifest1_bytes)
+    evidence_reports = {
+        service: (tmp_path / info["report_path"]).read_bytes()
+        for service, info in manifest1["images"].items()
+    }
+
+    # Second run targeting a different manifest in the same directory fails during scanner launch
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod"), scanner_launch_failure=True),
+    )
+    output2 = tmp_path / "manifest-second.json"
+    with pytest.raises(OSError, match="Scanner binary not found"):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output2,
+        )
+
+    # First run's manifest and all its evidence reports are preserved intact
+    assert output1.exists()
+    assert output1.read_bytes() == manifest1_bytes
+    for service, original_bytes in evidence_reports.items():
+        report_file = tmp_path / manifest1["images"][service]["report_path"]
+        assert report_file.exists()
+        assert report_file.read_bytes() == original_bytes
+    assert not output2.exists()
+
+
+def test_release_manifest_rerun_preserves_previously_generated_evidence(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    output = tmp_path / "manifest.json"
+    result1 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output,
+    )
+    assert result1 == 0
+    manifest1 = json.loads(output.read_text())
+    ev_dir1 = tmp_path / manifest1["evidence_directory"]
+    reports1 = {
+        service: (tmp_path / info["report_path"]).read_bytes()
+        for service, info in manifest1["images"].items()
+    }
+    assert ev_dir1.exists()
+
+    # Rerun the exact same output filename
+    result2 = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output,
+    )
+    assert result2 == 0
+    manifest2 = json.loads(output.read_text())
+    ev_dir2 = tmp_path / manifest2["evidence_directory"]
+    assert ev_dir1 != ev_dir2
+    assert ev_dir2.exists()
+
+    # Previously generated evidence in ev_dir1 is preserved
+    assert ev_dir1.exists()
+    for service, original_bytes in reports1.items():
+        report_file = tmp_path / manifest1["images"][service]["report_path"]
+        assert report_file.exists()
+        assert report_file.read_bytes() == original_bytes
+
+
+def test_release_manifest_report_hash_verification_fails_closed(tmp_path, monkeypatch):
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    real_write_bytes = Path.write_bytes
+    corrupted = [False]
+
+    def fake_write_bytes(self, data):
+        # Tamper with the report file written into evidence_dir
+        if self.name.endswith("-cves.txt") and not corrupted[0]:
+            corrupted[0] = True
+            return real_write_bytes(self, b"corrupted payload")
+        return real_write_bytes(self, data)
+
+    monkeypatch.setattr(Path, "write_bytes", fake_write_bytes)
+
+    output = tmp_path / "manifest.json"
+    with pytest.raises(
+        release_manifest.ReleaseManifestError, match="Evidence report hash mismatch"
+    ):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+
+    # Manifest must fail closed and NOT be published
+    assert not output.exists()
+
+
+def test_release_manifest_rejects_compose_input_change_during_resolution(tmp_path, monkeypatch):
+    compose_file = tmp_path / "docker-compose.yml"
+    compose_file.write_text("services: {}\n")
+
+    def run_with_mutation(command, **kwargs):
+        if command[:2] == ["docker", "compose"]:
+            compose_file.write_text("services: {tampered: true}\n")
+            cfg = target_config("prod")
+            return subprocess.CompletedProcess(command, 0, stdout=json.dumps(cfg).encode())
+        if command[:3] == ["docker", "image", "inspect"]:
+            return subprocess.CompletedProcess(
+                command, 0, stdout=json.dumps([{"Id": "sha256:1", "RepoDigests": []}]).encode()
+            )
+        if command[:3] == ["docker", "scout", "cves"]:
+            kwargs["stdout"].write(b"scan")
+            return subprocess.CompletedProcess(command, 0)
+        raise AssertionError(f"Unexpected: {command}")
+
+    monkeypatch.setattr(release_manifest.subprocess, "run", run_with_mutation)
+    output = tmp_path / "manifest.json"
+    with pytest.raises(
+        release_manifest.ReleaseManifestError,
+        match="A Compose input changed while the configuration was resolved",
+    ):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=[str(compose_file)],
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+    assert not output.exists()
+
+
+def test_release_manifest_reuses_verified_digest_snapshot_for_source_and_compose_inputs(
+    tmp_path, monkeypatch
+):
+    compose_file = tmp_path / "docker-compose.yml"
+    compose_file.write_text("services: {}\n")
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    output = tmp_path / "manifest.json"
+    result = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=[str(compose_file)],
+        env_file="synthetic.env",
+        project_name=None,
+        output=output,
+    )
+    assert result == 0
+    manifest = json.loads(output.read_text())
+    compose_entry = next(
+        item for item in manifest["compose_inputs"] if item["path"] == str(compose_file)
+    )
+    source_label = release_manifest.source_label(compose_file.resolve())
+    assert manifest["source_sha256"][source_label] == compose_entry["sha256"]
+
+
+def test_release_manifest_rejects_output_or_evidence_within_source_directories(
+    tmp_path, monkeypatch
+):
+    output_in_source = release_manifest.ROOT / "accounts" / "manifest.json"
+    with pytest.raises(
+        release_manifest.ReleaseManifestError,
+        match="Output path cannot be within source directory 'accounts'",
+    ):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output_in_source,
+        )
+
+    evidence_in_source = release_manifest.ROOT / "vault" / "evidence-dir"
+    with pytest.raises(
+        release_manifest.ReleaseManifestError,
+        match="Evidence directory cannot be within source directory 'vault'",
+    ):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=tmp_path / "manifest.json",
+            evidence_dir=evidence_in_source,
+        )
 
 
 @pytest.mark.parametrize("target", ["prod", "pilot", "oracle"])
