@@ -35,10 +35,12 @@ def subprocess_runner(
     inspect_failure=False,
     scan_exit_code=0,
     scanner_launch_failure=False,
+    fail_scan_on_call=None,
     calls=None,
     use_actual_compose=False,
 ):
     calls = calls if calls is not None else []
+    scan_count = [0]
 
     def run(command, **kwargs):
         calls.append(command)
@@ -58,8 +60,11 @@ def subprocess_runner(
             result = [{"Id": image_id, "RepoDigests": [reference]}]
             return subprocess.CompletedProcess(command, 0, stdout=json.dumps(result).encode())
         if command[:3] == ["docker", "scout", "cves"]:
+            scan_count[0] += 1
             if scanner_launch_failure:
                 raise OSError("Scanner binary not found")
+            if fail_scan_on_call is not None and scan_count[0] == fail_scan_on_call:
+                raise OSError(f"Scanner binary failed on scan call #{scan_count[0]}")
             kwargs["stdout"].write(b"synthetic scan output for " + command[-1].encode() + b"\n")
             return subprocess.CompletedProcess(command, scan_exit_code)
         raise AssertionError(f"Unexpected subprocess: {command}")
@@ -101,6 +106,7 @@ def test_release_manifest_applies_explicit_target_image_policy(
     assert set(manifest["images"]) == expected_services
     assert set(manifest["image_policy"]) == expected_services
     assert manifest["container_scan_gate_passed"] is True
+    assert manifest["invocation_completed"] is True
     assert manifest["release_approved"] is False
     inspected = {command[-1] for command in calls if command[:3] == ["docker", "image", "inspect"]}
     assert inspected == {cfg["services"][service]["image"] for service in expected_services}
@@ -187,6 +193,7 @@ def test_release_manifest_records_and_blocks_scan_failure(tmp_path, monkeypatch)
     assert result == 1
     manifest = json.loads(output.read_text())
     assert manifest["container_scan_gate_passed"] is False
+    assert manifest["invocation_completed"] is True
     assert {image["scan_exit_code"] for image in manifest["images"].values()} == {2}
 
 
@@ -326,16 +333,108 @@ def test_release_manifest_resolves_all_declared_profiles(tmp_path, monkeypatch):
     assert compose_call[profile_idx + 1] == "*"
 
 
+def test_release_manifest_invocation_specific_artifact_ownership(tmp_path, monkeypatch):
+    foreign_report = tmp_path / "unrelated-tool-cves.txt"
+    foreign_report.write_bytes(b"foreign report that must not be deleted")
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    output = tmp_path / "manifest.json"
+    result = release_manifest.generate_manifest(
+        target="prod",
+        compose_filenames=None,
+        env_file="synthetic.env",
+        project_name=None,
+        output=output,
+    )
+    assert result == 0
+    assert foreign_report.exists()
+    assert foreign_report.read_bytes() == b"foreign report that must not be deleted"
+
+
+def test_release_manifest_rejects_concurrent_runs_on_same_output(tmp_path, monkeypatch):
+    output = tmp_path / "manifest.json"
+    lock_file = tmp_path / ".manifest.json.lock"
+    lock_file.write_text("99999\n")
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(target_config("prod")),
+    )
+    with pytest.raises(release_manifest.ReleaseManifestError, match="Concurrent run detected"):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+
+
+def test_release_manifest_preserves_completed_evidence_when_later_scanner_launch_fails(
+    tmp_path, monkeypatch
+):
+    calls = []
+    config = target_config(
+        "prod",
+        overridden_images={
+            "app": "registry.example/app:v1",
+            "migrate": "registry.example/migrate:v2",
+        },
+    )
+    monkeypatch.setattr(
+        release_manifest.subprocess,
+        "run",
+        subprocess_runner(config, fail_scan_on_call=2, calls=calls),
+    )
+    output = tmp_path / "manifest.json"
+    with pytest.raises(OSError, match="Scanner binary failed on scan call #2"):
+        release_manifest.generate_manifest(
+            target="prod",
+            compose_filenames=None,
+            env_file="synthetic.env",
+            project_name=None,
+            output=output,
+        )
+
+    # 1. Output exists and is clearly marked incomplete
+    assert output.exists()
+    manifest = json.loads(output.read_text())
+    assert manifest["invocation_completed"] is False
+    assert manifest["container_scan_gate_passed"] is False
+    assert "Scanner failed on service" in manifest.get("failure_reason", "")
+
+    # 2. Completed scan evidence from the first successful scan is preserved
+    first_service = next(
+        service
+        for service, info in manifest["images"].items()
+        if info.get("scan_exit_code") is not None
+    )
+    first_report = tmp_path / f"{first_service}-cves.txt"
+    assert first_report.exists()
+    assert b"synthetic scan output" in first_report.read_bytes()
+
+
 def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
     output = tmp_path / "manifest.json"
     stale_report = tmp_path / "app-cves.txt"
 
     # Helper to set up preexisting successful state
     def setup_preexisting():
-        output.write_text(json.dumps({"stale": True, "container_scan_gate_passed": True}))
+        output.write_text(
+            json.dumps(
+                {
+                    "stale": True,
+                    "container_scan_gate_passed": True,
+                    "invocation_completed": True,
+                }
+            )
+        )
         stale_report.write_bytes(b"stale scan report from previous run")
 
-    # 1. Configuration failure: preexisting manifest and scan files must be invalidated
+    # 1. Configuration failure: preexisting manifest must be invalidated
     setup_preexisting()
     bad_config = target_config("prod")
     bad_config["services"].pop("app")  # missing required service
@@ -353,7 +452,6 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
             output=output,
         )
     assert not output.exists()
-    assert not stale_report.exists()
 
     # 2. Inspection failure: preexisting manifest must be invalidated
     setup_preexisting()
@@ -373,7 +471,7 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
     assert not output.exists()
     assert not stale_report.exists()
 
-    # 3. Scanner-launch failure: preexisting manifest must be invalidated
+    # 3. Scanner-launch failure on first service: preexisting manifest must be invalidated
     setup_preexisting()
     monkeypatch.setattr(
         release_manifest.subprocess,
@@ -409,6 +507,7 @@ def test_release_manifest_stale_artifacts_lifecycle(tmp_path, monkeypatch):
     assert output.exists()
     manifest = json.loads(output.read_text())
     assert manifest["container_scan_gate_passed"] is False
+    assert manifest["invocation_completed"] is True
     assert (tmp_path / "app-cves.txt").exists()
     assert (tmp_path / "app-cves.txt").read_bytes() != b"stale scan report from previous run"
 

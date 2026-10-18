@@ -3,6 +3,7 @@
 import argparse
 import hashlib
 import json
+import os
 import subprocess
 import tempfile
 import uuid
@@ -101,171 +102,218 @@ def release_references(config, target):
 
 
 def generate_manifest(*, target, compose_filenames, env_file, project_name, output):
-    output = Path(output)
+    output = Path(output).resolve()
     output_dir = output.parent
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    # Invalidate preexisting output and scan reports before processing
-    if output.exists():
-        output.unlink()
-    for existing_report in output_dir.glob("*-cves.txt"):
-        existing_report.unlink()
-
-    policy = TARGET_IMAGE_POLICIES[target]
-    selected_inputs = resolve_compose_inputs(compose_filenames or policy["default_compose"])
-    selected_input_hashes = {path: digest(path) for _, path in selected_inputs}
-    compose = ["docker", "compose", "--profile", "*"]
-    if env_file:
-        compose += ["--env-file", env_file]
-    if project_name:
-        compose += ["--project-name", project_name]
-    for _, path in selected_inputs:
-        compose += ["-f", str(path)]
-    config_result = subprocess.run(
-        compose + ["config", "--format", "json"],
-        check=True,
-        capture_output=True,
-        cwd=ROOT,
-    )
-    config = json.loads(config_result.stdout)
-    if any(digest(path) != selected_input_hashes[path] for _, path in selected_inputs):
-        raise ReleaseManifestError("A Compose input changed while the configuration was resolved")
-    references = release_references(config, target)
-
-    files = []
-    for folder in ("accounts", "audit", "config", "vault", "templates", "static", "deploy"):
-        files.extend(
-            path
-            for path in (ROOT / folder).rglob("*")
-            if path.is_file() and "__pycache__" not in path.parts and "vendor" not in path.parts
+    # Prevent concurrent runs from mixing manifests and scan reports
+    lock_path = output_dir / f".{output.name}.lock"
+    try:
+        lock_fd = os.open(str(lock_path), os.O_CREAT | os.O_EXCL | os.O_RDWR)
+    except FileExistsError:
+        raise ReleaseManifestError(
+            f"Concurrent run detected: output {output} is currently locked by another invocation"
         )
-    files.extend(
-        ROOT / name
-        for name in (
-            "Dockerfile",
-            ".dockerignore",
-            "requirements.txt",
-            "package-lock.json",
-            "package.json",
-            "manage.py",
-            "pyproject.toml",
+
+    try:
+        os.write(lock_fd, f"{os.getpid()}\n".encode())
+    except OSError:
+        pass
+
+    try:
+        # Invalidate preexisting output before processing
+        if output.exists():
+            output.unlink()
+
+        policy = TARGET_IMAGE_POLICIES[target]
+        selected_inputs = resolve_compose_inputs(compose_filenames or policy["default_compose"])
+        selected_input_hashes = {path: digest(path) for _, path in selected_inputs}
+        compose = ["docker", "compose", "--profile", "*"]
+        if env_file:
+            compose += ["--env-file", env_file]
+        if project_name:
+            compose += ["--project-name", project_name]
+        for _, path in selected_inputs:
+            compose += ["-f", str(path)]
+        config_result = subprocess.run(
+            compose + ["config", "--format", "json"],
+            check=True,
+            capture_output=True,
+            cwd=ROOT,
         )
-    )
-    files.extend(path for _, path in selected_inputs)
-    commit = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        check=True,
-        capture_output=True,
-        text=True,
-        cwd=ROOT,
-    ).stdout.strip()
-    dirty = subprocess.run(
-        ["git", "status", "--porcelain"],
-        check=True,
-        capture_output=True,
-        cwd=ROOT,
-    ).stdout
-    manifest = {
-        "generated_utc": datetime.now(UTC).isoformat(),
-        "source_commit": commit,
-        "source_dirty": bool(dirty),
-        "target": target,
-        "compose_inputs": [
-            {"path": filename, "sha256": selected_input_hashes[path]}
-            for filename, path in selected_inputs
-        ],
-        "source_sha256": {
-            source_label(path): selected_input_hashes.get(path) or digest(path)
-            for path in sorted(set(files))
-        },
-        "image_policy": policy.get("required_services", policy["services"]),
-        "images": {},
-        "release_approved": False,
-    }
-
-    blocked = False
-    inspections_by_ref = {}
-    scans_by_image_id = {}
-
-    with tempfile.TemporaryDirectory() as temp_dir:
-        temp_dir_path = Path(temp_dir)
-        # Deduplicate inspection by reference
-        for service, reference in references.items():
-            if reference not in inspections_by_ref:
-                inspection_result = subprocess.run(
-                    ["docker", "image", "inspect", reference],
-                    check=True,
-                    capture_output=True,
-                )
-                inspection_output = json.loads(inspection_result.stdout)
-                if (
-                    not isinstance(inspection_output, list)
-                    or not inspection_output
-                    or not isinstance(inspection_output[0].get("Id"), str)
-                    or not inspection_output[0]["Id"]
-                ):
-                    raise ReleaseManifestError(f"Docker returned no image ID for {service}")
-                inspections_by_ref[reference] = inspection_output[0]
-
-        # Deduplicate scans by image ID using invocation-specific temporary scan files
-        for service, reference in references.items():
-            inspection = inspections_by_ref[reference]
-            image_id = inspection["Id"]
-            if image_id not in scans_by_image_id:
-                safe_scan_name = image_id.replace(":", "_").replace("/", "_")
-                temp_scan_file = temp_dir_path / f"scan-{safe_scan_name}.txt"
-                with temp_scan_file.open("wb") as scan_output:
-                    scan = subprocess.run(
-                        [
-                            "docker",
-                            "scout",
-                            "cves",
-                            "--only-severity",
-                            "critical,high",
-                            "--exit-code",
-                            "local://" + image_id,
-                        ],
-                        stdout=scan_output,
-                        stderr=subprocess.STDOUT,
-                    )
-                scan_bytes = temp_scan_file.read_bytes()
-                scan_hash = hashlib.sha256(scan_bytes).hexdigest()
-                scans_by_image_id[image_id] = (scan.returncode, scan_bytes, scan_hash)
-
-        # Record every service-to-image mapping and preserve completed scan evidence
-        for service, reference in references.items():
-            inspection = inspections_by_ref[reference]
-            image_id = inspection["Id"]
-            scan_returncode, scan_bytes, scan_hash = scans_by_image_id[image_id]
-            report = output_dir / f"{service}-cves.txt"
-            report.write_bytes(scan_bytes)
-
-            blocked |= scan_returncode != 0
-            manifest["images"][service] = {
-                "reference": reference,
-                "id": image_id,
-                "repo_digests": inspection.get("RepoDigests", []),
-                "scan_exit_code": scan_returncode,
-                "scan_sha256": scan_hash,
-            }
-            print(
-                f"{service}: "
-                + (
-                    "scan passed"
-                    if scan_returncode == 0
-                    else "release gate blocked; see scan report"
-                )
+        config = json.loads(config_result.stdout)
+        if any(digest(path) != selected_input_hashes[path] for _, path in selected_inputs):
+            raise ReleaseManifestError(
+                "A Compose input changed while the configuration was resolved"
             )
+        references = release_references(config, target)
 
-        manifest["container_scan_gate_passed"] = not blocked
+        # Invocation-specific artifact ownership: invalidate only this invocation's owned scan files
+        for service in references:
+            service_report = output_dir / f"{service}-cves.txt"
+            if service_report.exists():
+                service_report.unlink()
 
-        # Publish the completed result atomically
-        temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
-        temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
-        temp_manifest.replace(output)
+        files = []
+        for folder in ("accounts", "audit", "config", "vault", "templates", "static", "deploy"):
+            files.extend(
+                path
+                for path in (ROOT / folder).rglob("*")
+                if path.is_file() and "__pycache__" not in path.parts and "vendor" not in path.parts
+            )
+        files.extend(
+            ROOT / name
+            for name in (
+                "Dockerfile",
+                ".dockerignore",
+                "requirements.txt",
+                "package-lock.json",
+                "package.json",
+                "manage.py",
+                "pyproject.toml",
+            )
+        )
+        files.extend(path for _, path in selected_inputs)
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            check=True,
+            capture_output=True,
+            text=True,
+            cwd=ROOT,
+        ).stdout.strip()
+        dirty = subprocess.run(
+            ["git", "status", "--porcelain"],
+            check=True,
+            capture_output=True,
+            cwd=ROOT,
+        ).stdout
+        manifest = {
+            "generated_utc": datetime.now(UTC).isoformat(),
+            "source_commit": commit,
+            "source_dirty": bool(dirty),
+            "target": target,
+            "compose_inputs": [
+                {"path": filename, "sha256": selected_input_hashes[path]}
+                for filename, path in selected_inputs
+            ],
+            "source_sha256": {
+                source_label(path): selected_input_hashes.get(path) or digest(path)
+                for path in sorted(set(files))
+            },
+            "image_policy": policy.get("required_services", policy["services"]),
+            "images": {},
+            "invocation_completed": False,
+            "container_scan_gate_passed": False,
+            "release_approved": False,
+        }
 
-    print("Release manifest recorded; organizational sign-off remains separate.")
-    return 1 if blocked else 0
+        blocked = False
+        inspections_by_ref = {}
+        scans_by_image_id = {}
+        completed_service_reports = {}
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+            temp_dir_path = Path(temp_dir)
+            # Deduplicate inspection by reference
+            for service, reference in references.items():
+                if reference not in inspections_by_ref:
+                    inspection_result = subprocess.run(
+                        ["docker", "image", "inspect", reference],
+                        check=True,
+                        capture_output=True,
+                    )
+                    inspection_output = json.loads(inspection_result.stdout)
+                    if (
+                        not isinstance(inspection_output, list)
+                        or not inspection_output
+                        or not isinstance(inspection_output[0].get("Id"), str)
+                        or not inspection_output[0]["Id"]
+                    ):
+                        raise ReleaseManifestError(f"Docker returned no image ID for {service}")
+                    inspections_by_ref[reference] = inspection_output[0]
+
+            # Run scans and deduplicate by image ID using isolated temp files
+            try:
+                for service, reference in references.items():
+                    inspection = inspections_by_ref[reference]
+                    image_id = inspection["Id"]
+                    if image_id not in scans_by_image_id:
+                        safe_scan_name = image_id.replace(":", "_").replace("/", "_")
+                        temp_scan_file = temp_dir_path / f"scan-{safe_scan_name}.txt"
+                        with temp_scan_file.open("wb") as scan_output:
+                            scan = subprocess.run(
+                                [
+                                    "docker",
+                                    "scout",
+                                    "cves",
+                                    "--only-severity",
+                                    "critical,high",
+                                    "--exit-code",
+                                    "local://" + image_id,
+                                ],
+                                stdout=scan_output,
+                                stderr=subprocess.STDOUT,
+                            )
+                        scan_bytes = temp_scan_file.read_bytes()
+                        scan_hash = hashlib.sha256(scan_bytes).hexdigest()
+                        scans_by_image_id[image_id] = (scan.returncode, scan_bytes, scan_hash)
+
+                    scan_returncode, scan_bytes, scan_hash = scans_by_image_id[image_id]
+                    # Preserve completed scan evidence in the output directory
+                    (output_dir / f"{service}-cves.txt").write_bytes(scan_bytes)
+                    completed_service_reports[service] = {
+                        "reference": reference,
+                        "id": image_id,
+                        "repo_digests": inspection.get("RepoDigests", []),
+                        "scan_exit_code": scan_returncode,
+                        "scan_sha256": scan_hash,
+                    }
+
+                    blocked |= scan_returncode != 0
+                    manifest["images"][service] = completed_service_reports[service]
+            except Exception as scan_exc:
+                # Preserve completed scan evidence if a later scanner launch fails,
+                # while clearly marking the invocation incomplete.
+                if completed_service_reports:
+                    manifest["invocation_completed"] = False
+                    manifest["container_scan_gate_passed"] = False
+                    manifest["failure_reason"] = f"Scanner failed on service {service}: {scan_exc}"
+                    temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
+                    temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
+                    temp_manifest.replace(output)
+                raise scan_exc
+
+            manifest["invocation_completed"] = True
+            manifest["container_scan_gate_passed"] = not blocked
+
+            for service in references:
+                scan_returncode = manifest["images"][service]["scan_exit_code"]
+                print(
+                    f"{service}: "
+                    + (
+                        "scan passed"
+                        if scan_returncode == 0
+                        else "release gate blocked; see scan report"
+                    )
+                )
+
+            # Publish the completed result atomically
+            temp_manifest = output_dir / f".{output.name}.tmp-{uuid.uuid4().hex}"
+            temp_manifest.write_text(json.dumps(manifest, indent=2) + "\n")
+            temp_manifest.replace(output)
+
+        print("Release manifest recorded; organizational sign-off remains separate.")
+        return 1 if blocked else 0
+    finally:
+        try:
+            os.close(lock_fd)
+        except OSError:
+            pass
+        try:
+            if lock_path.exists():
+                lock_path.unlink()
+        except OSError:
+            pass
 
 
 def main(argv=None):
