@@ -1,4 +1,17 @@
-# SSDC Document Vault
+﻿# SSDC Document Vault 🔐📁
+
+[![Django](https://img.shields.io/badge/Django-5.2-092E20.svg?logo=django&logoColor=white)](https://www.djangoproject.com/)
+[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
+[![Google Drive API](https://img.shields.io/badge/Storage-Google_Drive_API-4285F4.svg?logo=googledrive&logoColor=white)](https://developers.google.com/drive)
+[![Security](https://img.shields.io/badge/Security-MFA_%2B_ClamAV_%2B_RBAC-success.svg)](docs/)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED.svg?logo=docker&logoColor=white)](compose.yaml)
+[![PDF.js](https://img.shields.io/badge/Viewer-Self--Hosted_PDF.js-FF6F00.svg)](static/)
+[![Maintainer](https://img.shields.io/badge/Maintainer-thebinayghimire-blueviolet.svg)](https://github.com/thebinayghimire)
+
+> An institutional, secure document vault and digital library for **Siddhartha Social Development Centre (SSDC)** featuring granular RBAC, private Google Drive cloud storage, multi-factor authentication (MFA/TOTP), antivirus quarantine via ClamAV, and self-hosted PDF.js previewers with print/download leak mitigations.
+
+---
 
 Private document library for Siddhartha Social Development Centre: Django,
 PostgreSQL, private Google Drive storage, optional ClamAV, self-hosted PDF.js, and
