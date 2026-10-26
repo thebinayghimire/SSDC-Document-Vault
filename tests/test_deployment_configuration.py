@@ -187,3 +187,14 @@ def test_generation_keeps_backup_key_separate_and_refuses_overwrite(tmp_path):
 def test_generator_rejects_shared_recovery_directory(tmp_path):
     with pytest.raises(ValueError, match="separate directory"):
         generate(tmp_path, tmp_path)
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["deploy/nginx.dev.conf", "deploy/nginx.prod.conf", "deploy/nginx.prod.conf.template"],
+)
+def test_proxy_re_resolves_a_recreated_app_container(name):
+    config = (ROOT / name).read_text()
+    assert "resolver 127.0.0.11 valid=10s ipv6=off;" in config
+    assert "set $app_upstream http://app:8000;" in config
+    assert "proxy_pass $app_upstream;" in config

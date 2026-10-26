@@ -1,7 +1,7 @@
 ﻿# SSDC Document Vault 🔐📁
 
 [![Django](https://img.shields.io/badge/Django-5.2-092E20.svg?logo=django&logoColor=white)](https://www.djangoproject.com/)
-[![Python](https://img.shields.io/badge/Python-3.12-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
+[![Python](https://img.shields.io/badge/Python-3.13-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791.svg?logo=postgresql&logoColor=white)](https://www.postgresql.org/)
 [![Google Drive API](https://img.shields.io/badge/Storage-Google_Drive_API-4285F4.svg?logo=googledrive&logoColor=white)](https://developers.google.com/drive)
 [![Security](https://img.shields.io/badge/Security-MFA_%2B_ClamAV_%2B_RBAC-success.svg)](docs/)
@@ -61,13 +61,16 @@ codes when MFA is enabled. Local Compose temporarily uses password-only login;
 set `MFA_ENABLED=1` in `.env` and recreate the app to restore authenticator prompts.
 Production always requires MFA. In Administration, create folders/accounts and assign grants. Managers
 need a manage grant in addition to their role. Upload from a folder page. Files
-become viewable after scanning; ClamAV's first startup may take several minutes.
-Run `retry_scans` to retry an early quarantined upload.
+become viewable after scanning. A cold start downloads ClamAV signatures in the
+background, so the UI is available immediately but uploads remain quarantined
+until the scanner is healthy (often several minutes). Run `retry_scans` after
+the scanner is ready.
 
 Stop/restart: `docker compose stop` / `docker compose start`. After changing code,
-run `docker compose up -d --build app` and `docker compose exec proxy nginx -s reload`.
-Data stays in private named volumes. Use synthetic documents locally. Production
-uses a separate Compose file and explicit secrets/HTTPS.
+run `docker compose up -d --build app`; the proxy re-resolves the recreated app
+container automatically. Restart or reload the proxy only after changing its own
+configuration or certificates. Data stays in private named volumes. Use synthetic
+documents locally. Production uses a separate Compose file and explicit secrets/HTTPS.
 
 Optional demo: `docker compose exec app python manage.py seed_demo`. It refuses
 production and existing demo users. Random passwords are saved in the container
@@ -84,7 +87,8 @@ development dependencies are pinned separately; npm supplies PDF.js assets.
 ```powershell
 uv python install 3.13
 uv venv --python 3.13 .venv
-uv pip sync requirements-dev.txt
+uv pip sync requirements.txt
+uv pip install -r requirements-dev.txt
 npm.cmd ci --ignore-scripts
 npm.cmd run vendor
 .\.venv\Scripts\python.exe -m playwright install chromium

@@ -62,11 +62,11 @@ the local helper can prepare private secret files without displaying their value
 ```powershell
 .\.venv\Scripts\python.exe scripts/configure_drive_local.py --client-json "C:\path\to\client_secret.json"
 docker compose --env-file .env.drive.local -f compose.yaml -f compose.host.yaml -f compose.drive.local.yaml up -d --no-deps app
-docker compose exec proxy nginx -s reload
 ```
 
-The helper keeps the OAuth files under the operator's `.ssdc-vault/google-drive`
-directory and writes only their paths and callback to the ignored `.env.drive.local`.
+The proxy re-resolves the recreated app container automatically. The helper keeps
+the OAuth files under the operator's `.ssdc-vault/google-drive` directory and
+writes only their paths and callback to the ignored `.env.drive.local`.
 It preserves the credential encryption key on repeat runs and refuses to replace
 a different OAuth client. If the repository also uses `.env`, pass `--env-file .env`
 before `--env-file .env.drive.local` to retain those settings. Owner consent is still
@@ -191,10 +191,13 @@ published Drive copy before removing local bytes. Stop **all** uploads, scan
 retries, migrations and purges before cleanup, using a cutoff older than any
 in-flight operation. `cleanup_orphans --before <ISO-8601-time>` is dry-run by
 default. `--execute` only removes unreferenced recorded Drive objects after
-ownership/app/parent/checksum checks. It does not search or delete arbitrary
-owner Drive files. Quarantined originals and deterministic preview keys remain
-referenced. Interrupted purge deletion leaves ledger entries for a later cleanup.
-If ownership/integrity is uncertain, cleanup fails closed for operator investigation.
+ownership/app/parent checks (plus checksum checks for complete objects). It does
+not search or delete arbitrary owner Drive files. Quarantined originals and
+deterministic preview keys remain referenced while their staging bytes exist;
+a quarantined version older than the cutoff whose staging file is missing is
+discarded with its recorded Drive intents. Interrupted purge deletion leaves
+ledger entries for a later cleanup. If ownership/integrity is uncertain, cleanup
+fails closed for operator investigation.
 
 ## Independent encrypted backup and restore
 

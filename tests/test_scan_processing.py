@@ -374,6 +374,37 @@ def test_retry_command_skips_a_version_removed_after_its_initial_query(users, fo
     assert not Version.objects.filter(pk=version.pk).exists()
 
 
+def test_retry_command_skips_missing_staging_without_retrying(users, folder):
+    version = pending_version(users, folder)
+    note = version.processing_note
+    path_for(version.storage_key).unlink()
+
+    output = io.StringIO()
+    with patch("vault.management.commands.retry_scans.process_version") as process:
+        call_command("retry_scans", stdout=output)
+
+    process.assert_not_called()
+    assert "staging missing; run cleanup_orphans" in output.getvalue()
+    version.refresh_from_db()
+    assert version.status == Version.Status.QUARANTINED
+    assert version.processing_note == note
+
+
+def test_quota_transaction_ends_before_scanning_or_drive_io(users, folder, monkeypatch):
+    original = services.process_version
+    observed = {}
+
+    def process(version, actor=None):
+        observed["in_atomic_block"] = connection.in_atomic_block
+        observed["autocommit"] = connection.get_autocommit()
+        return original(version, actor=actor)
+
+    monkeypatch.setattr(services, "process_version", process)
+    result = services.upload_document(users["manager"], folder, pdf_upload(), "Scope check")
+    assert result.status == Version.Status.READY
+    assert observed == {"in_atomic_block": False, "autocommit": True}
+
+
 def test_disabled_scanning_publishes_without_contacting_the_scanner(users, folder, settings):
     """SSDC accepted the risk of no malware scanning; uploads must still publish."""
     settings.SCAN_MODE = "disabled"

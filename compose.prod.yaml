@@ -34,8 +34,17 @@ services:
     security_opt: [no-new-privileges:true]
     networks: [backend, updates]
     restart: unless-stopped
-    mem_limit: 2g
+    # Signature reloads briefly keep two engines in memory. The host needs at
+    # least 8 GiB total for this ceiling plus the app and OS.
+    mem_limit: 4g
     logging: {driver: json-file, options: {max-size: 10m, max-file: "5"}}
+    healthcheck:
+      test: [CMD, /usr/local/bin/clamdcheck.sh]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      # First startup downloads signatures and can take several minutes.
+      start_period: 600s
   app: &app
     image: ${APP_IMAGE:?Set exact app release image reference}
     build: .

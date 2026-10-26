@@ -21,10 +21,19 @@ from django.test import Client
 from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 
+from audit.models import Event
 from config.logging import SafeJSONFormatter
 from vault import drive_auth, drive_storage
 from vault.drive_auth import SCOPE, StorageError, access_token, cipher, decrypt
-from vault.models import DriveConnection, DriveOAuthAttempt, DriveObject, FolderGrant, Version
+from vault.models import (
+    Document,
+    DriveConnection,
+    DriveOAuthAttempt,
+    DriveObject,
+    FolderGrant,
+    Version,
+)
+from vault.scanner import ScanUnavailable
 from vault.services import process_version, upload_document
 from vault.storage import path_for
 
@@ -155,6 +164,7 @@ def drive(google_settings, monkeypatch):
     monkeypatch.setattr(drive_storage, "access_token", lambda **kw: "synthetic-access")
     monkeypatch.setattr(drive_storage.requests, "request", backend.request)
     monkeypatch.setattr(drive_storage.time, "sleep", lambda delay: None)
+    drive_storage.forget_metadata()
     return backend
 
 
@@ -339,6 +349,30 @@ def test_upload_preview_range_and_thumbnail(drive, users, folder, client):
     assert b"synthetic-access" not in html and b"synthetic-client-secret" not in html
 
 
+def test_drive_range_requests_reuse_metadata_without_caching_bytes(drive, users, folder, client):
+    version = upload_document(users["manager"], folder, pdf_upload(), "Synthetic")
+    authenticate_client(client, users["alice"])
+    url = f"/documents/{version.document_id}/content/"
+    drive.calls.clear()
+
+    response = client.get(url, HTTP_RANGE="bytes=0-9")
+    assert response.status_code == 206
+    assert len(b"".join(response.streaming_content)) == 10
+    first_metadata = [
+        call for call in drive.calls if call[0] == "GET" and call[2]["params"] != {"alt": "media"}
+    ]
+    assert len(first_metadata) == 2  # Private folder plus document metadata.
+
+    calls_after_first = len(drive.calls)
+    response = client.get(url, HTTP_RANGE="bytes=10-19")
+    assert response.status_code == 206
+    assert len(b"".join(response.streaming_content)) == 10
+    later_calls = drive.calls[calls_after_first:]
+    assert [(method, kwargs["params"]) for method, _, kwargs in later_calls] == [
+        ("GET", {"alt": "media"})
+    ]
+
+
 @pytest.mark.parametrize("endpoint", ["", "content/", "thumbnail/", "manage/"])
 def test_drive_permission_revocation_and_disabled(drive, users, folder, client, endpoint):
     version = upload_document(users["manager"], folder, image_upload(), "Synthetic")
@@ -450,6 +484,9 @@ def test_orphan_cleanup_requires_ownership_and_no_reference(drive, users, folder
     drive.files[obj.file_id]["appProperties"] = {"ssdc_installation": "other"}
     with pytest.raises(StorageError):
         storage.delete_orphan(obj.key)
+    DriveObject.objects.filter(pk=obj.pk).update(complete=False, encrypted_session="synthetic")
+    with pytest.raises(StorageError):
+        storage.delete_orphan(obj.key, allow_incomplete=True)
     assert obj.file_id in drive.files
 
 
@@ -600,6 +637,67 @@ def test_remote_orphan_deletion_and_quarantined_preview_protection(drive, users,
     storage.delete_orphan(obj.key)
     assert obj.file_id not in drive.files
     assert not DriveObject.objects.filter(pk=obj.pk).exists()
+
+
+@pytest.mark.parametrize("complete", [True, False])
+@pytest.mark.django_db(transaction=True)
+def test_cleanup_orphans_discards_unrecoverable_quarantine_and_remote_intent(
+    drive, users, folder, complete
+):
+    with patch("vault.services.scan", side_effect=ScanUnavailable):
+        version = upload_document(users["manager"], folder, pdf_upload(), "Pending")
+    assert version.status == Version.Status.QUARANTINED
+    path = path_for(version.storage_key)
+    drive_storage.GoogleDriveStorage().put(
+        version.storage_key, path, version.mime_type, version.original_name
+    )
+    obj = DriveObject.objects.get(key=version.storage_key)
+    if not complete:
+        # Simulate an interrupted resumable upload: partial bytes, no digest,
+        # and a pre-allocated Drive intent that was never marked complete.
+        drive.files[obj.file_id]["size"] = str(version.size // 2)
+        drive.files[obj.file_id].pop("md5Checksum")
+        DriveObject.objects.filter(pk=obj.pk).update(complete=False, encrypted_session="synthetic")
+    document_id = version.document_id
+    Version.objects.filter(pk=version.pk).update(
+        uploaded_at=datetime.now(timezone.utc) - timedelta(days=2)
+    )
+    path.unlink()
+
+    output = io.StringIO()
+    call_command("cleanup_orphans", before="2099-01-01T00:00:00Z", stdout=output)
+    assert "Unrecoverable quarantined versions eligible: 1" in output.getvalue()
+    assert Version.objects.filter(pk=version.pk).exists()
+    assert path_for(version.storage_key).exists() is False
+
+    call_command(
+        "cleanup_orphans",
+        before="2099-01-01T00:00:00Z",
+        execute=True,
+        stdout=io.StringIO(),
+    )
+    assert not Version.objects.filter(pk=version.pk).exists()
+    assert not Document.objects.filter(pk=document_id).exists()
+    assert not DriveObject.objects.filter(pk=obj.pk).exists()
+    assert obj.file_id not in drive.files
+    assert Event.objects.filter(kind="quarantine_discarded", target=str(version.pk)).exists()
+
+
+@pytest.mark.django_db(transaction=True)
+def test_cleanup_orphans_keeps_quarantine_with_staging_bytes(drive, users, folder):
+    with patch("vault.services.scan", side_effect=ScanUnavailable):
+        version = upload_document(users["manager"], folder, pdf_upload(), "Pending")
+    Version.objects.filter(pk=version.pk).update(
+        uploaded_at=datetime.now(timezone.utc) - timedelta(days=2)
+    )
+    call_command(
+        "cleanup_orphans",
+        before="2099-01-01T00:00:00Z",
+        execute=True,
+        stdout=io.StringIO(),
+    )
+    assert Version.objects.filter(pk=version.pk).exists()
+    assert path_for(version.storage_key).is_file()
 
 
 @pytest.mark.django_db(transaction=True)

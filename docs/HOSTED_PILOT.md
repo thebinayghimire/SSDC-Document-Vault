@@ -28,9 +28,10 @@ flowchart LR
 
 ## Selected architecture and remaining inputs
 
-The user selected an x86-64 Linux VM with at least 4 GiB, preferring free hosting.
-Recommend **8 GiB RAM**: ClamAV gets a 4 GiB ceiling, app 1.5 GiB, plus OS/proxy
-and build headroom. Signature reloads briefly keep two engines in memory.
+The user selected an x86-64 Linux VM, preferring free hosting. **8 GiB is the
+minimum**, not the earlier 4 GiB target: ClamAV gets a 4 GiB ceiling, app 1.5 GiB,
+plus OS/proxy and build headroom. A 4 GiB host cannot fit the scanner ceiling
+and the application together. Signature reloads briefly keep two engines in memory.
 [ClamAV recommends 3 GiB minimum, 4 GiB preferred](https://docs.clamav.net/manual/Installing/Docker.html).
 
 The intended Supabase project is **SSDC**. The connected account exposes only
@@ -411,7 +412,8 @@ Use a fresh terminal with local PostgreSQL bindings; never source `.env.pilot`
 into tests. Run DB suites sequentially or use different local base DB names.
 
 ```powershell
-uv pip sync requirements-dev.txt
+uv pip sync requirements.txt
+uv pip install -r requirements-dev.txt
 npm.cmd ci --ignore-scripts
 npm.cmd run vendor
 .\.venv\Scripts\python.exe -m playwright install chromium

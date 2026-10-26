@@ -35,10 +35,14 @@ server {
     client_max_body_size ${REQUEST_BODY_BYTES};
     client_body_timeout 30s;
     access_log /var/log/nginx/access.log private;
+    # Docker's embedded DNS keeps this correct after app container recreation.
+    # The variable includes no URI, so sub-paths and query strings pass through.
+    resolver 127.0.0.11 valid=10s ipv6=off;
+    set $app_upstream http://app:8000;
     location / {
         limit_req zone=portal burst=60 nodelay;
         limit_req_status 429;
-        proxy_pass http://app:8000;
+        proxy_pass $app_upstream;
         proxy_set_header Host ${HTTPS_AUTHORITY};
         proxy_set_header X-Forwarded-Proto https;
         proxy_set_header X-Real-IP $remote_addr;

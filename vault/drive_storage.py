@@ -3,7 +3,9 @@
 import hashlib
 import random
 import re
+import threading
 import time
+from collections import OrderedDict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from functools import wraps
@@ -23,6 +25,12 @@ FIELDS = (
 )
 CHUNK = 1024 * 1024  # Multiple of Drive's 256 KiB resumable chunk size.
 DEADLINE = ContextVar("drive_deadline", default=None)
+# PDF.js issues many byte-range requests for one preview. Cache only Drive
+# metadata (never document bytes) briefly so each range needs one media call.
+METADATA_CACHE_SECONDS = 30
+METADATA_CACHE_LIMIT = 512
+_METADATA_CACHE = OrderedDict()
+_METADATA_CACHE_LOCK = threading.Lock()
 
 
 @contextmanager
@@ -108,10 +116,36 @@ def request(method, url, *, accepted=(200,), attempts=4, **kwargs):
     raise StorageError()
 
 
-def metadata(identifier):
-    return request(
+def forget_metadata(identifier=None):
+    """Drop cached metadata after a mutation or when tests replace the Drive backend."""
+    with _METADATA_CACHE_LOCK:
+        if identifier is None:
+            _METADATA_CACHE.clear()
+        else:
+            _METADATA_CACHE.pop(identifier, None)
+
+
+def metadata(identifier, *, cache_seconds=0):
+    now = time.monotonic()
+    if cache_seconds > 0:
+        with _METADATA_CACHE_LOCK:
+            cached = _METADATA_CACHE.get(identifier)
+            if cached is not None:
+                expires_at, data = cached
+                if expires_at > now:
+                    _METADATA_CACHE.move_to_end(identifier)
+                    return data
+                _METADATA_CACHE.pop(identifier, None)
+    data = request(
         "GET", f"{API}/files/{quote(identifier, safe='')}", params={"fields": FIELDS}
     ).json()
+    if cache_seconds > 0:
+        with _METADATA_CACHE_LOCK:
+            _METADATA_CACHE[identifier] = (now + cache_seconds, data)
+            _METADATA_CACHE.move_to_end(identifier)
+            while len(_METADATA_CACHE) > METADATA_CACHE_LIMIT:
+                _METADATA_CACHE.popitem(last=False)
+    return data
 
 
 def private_owned(data, installation, key, folder=None):
@@ -129,7 +163,7 @@ def private_owned(data, installation, key, folder=None):
 
 
 @bounded_operation
-def ensure_folder():
+def ensure_folder(cache_seconds=0):
     DriveConnection.objects.get_or_create(pk=1)
     with transaction.atomic():
         connection = DriveConnection.objects.select_for_update().get(pk=1)
@@ -146,7 +180,7 @@ def ensure_folder():
             connection.save(update_fields=["folder_id", "updated_at"])
         identifier, installation = connection.folder_id, connection.installation_id
     try:
-        data = metadata(identifier)
+        data = metadata(identifier, cache_seconds=cache_seconds)
     except StorageError as exc:
         if exc.code != "missing":
             raise
@@ -163,7 +197,8 @@ def ensure_folder():
             },
         )
         response.close()
-        data = metadata(identifier)
+        forget_metadata(identifier)
+        data = metadata(identifier, cache_seconds=cache_seconds)
     if (
         not private_owned(data, installation, "root")
         or data.get("mimeType") != "application/vnd.google-apps.folder"
@@ -205,8 +240,8 @@ class GoogleDriveStorage:
             raise StorageError("missing")
         return obj
 
-    def verified(self, obj):
-        data = metadata(obj.file_id)
+    def verified(self, obj, *, cache_seconds=0):
+        data = metadata(obj.file_id, cache_seconds=cache_seconds)
         if not (
             private_owned(data, obj.installation_id, obj.key, obj.folder_id)
             and int(data.get("size", -1)) == obj.size
@@ -254,6 +289,7 @@ class GoogleDriveStorage:
             elif exc.code != "missing":
                 raise
             self.upload(obj, path, name)
+            forget_metadata(obj.file_id)
             self.verified(obj)
         DriveObject.objects.filter(pk=obj.pk).update(complete=True, encrypted_session="")
 
@@ -390,8 +426,10 @@ class GoogleDriveStorage:
         obj = self.object(key)
         if not obj.complete:
             raise StorageError()
-        ensure_folder()  # Fail closed if the owner changed folder sharing outside SSDC.
-        self.verified(obj)
+        # Fail closed if the owner changed folder sharing outside SSDC. A short
+        # metadata-only cache avoids two extra Drive calls for every PDF.js range.
+        ensure_folder(cache_seconds=METADATA_CACHE_SECONDS)
+        self.verified(obj, cache_seconds=METADATA_CACHE_SECONDS)
         return obj.size
 
     def exists(self, key):
@@ -426,14 +464,34 @@ class GoogleDriveStorage:
             raise StorageError("integrity")
         return RemoteStream(response, expected)
 
-    def delete_orphan(self, key):
+    def delete_orphan(self, key, *, allow_incomplete=False):
         from .storage import key_is_referenced
 
         if key_is_referenced(key):
             raise StorageError("integrity")
         obj = self.object(key)
         try:
-            self.verified(obj)  # Both app ownership and digest must match before removal.
+            if allow_incomplete and not obj.complete:
+                # An interrupted resumable upload cannot have the final digest.
+                # Ownership, key, parent and a bounded partial size still prove
+                # this is the private object reserved for this unreferenced key.
+                data = metadata(obj.file_id)
+                size = data.get("size")
+                if size is None or size in {"0", 0}:
+                    valid = True
+                else:
+                    try:
+                        valid = 0 <= int(size) <= obj.size
+                    except (TypeError, ValueError):
+                        valid = False
+                if not (
+                    valid
+                    and private_owned(data, obj.installation_id, obj.key, obj.folder_id)
+                    and data.get("mimeType") in {None, obj.mime_type}
+                ):
+                    raise StorageError("integrity")
+            else:
+                self.verified(obj)  # Both app ownership and digest must match before removal.
             response = request(
                 "DELETE", f"{API}/files/{quote(obj.file_id, safe='')}", accepted=(204, 404)
             )
@@ -441,4 +499,5 @@ class GoogleDriveStorage:
         except StorageError as exc:
             if exc.code != "missing":
                 raise
+        forget_metadata(obj.file_id)
         obj.delete()

@@ -294,6 +294,8 @@ def upload_document(actor, folder, upload, title, document=None):
                 if not can_manage_document(user, document) or document.deleted_at:
                     raise PermissionDenied
             # Serialize global quota reservation across all application workers.
+            # This short transaction ends before process_version() streams bytes
+            # to ClamAV or Google Drive; no network I/O holds the quota lock.
             with connection.cursor() as cursor:
                 cursor.execute("SELECT pg_advisory_xact_lock(731009)")
             totals = Version.objects.exclude(status=Version.Status.REJECTED).aggregate(

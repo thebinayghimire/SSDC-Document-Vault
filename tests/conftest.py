@@ -1,7 +1,9 @@
 import io
+import os
 import time
 
 import pytest
+from django.conf import settings as django_settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from pypdf import PdfWriter
@@ -9,6 +11,45 @@ from pypdf import PdfWriter
 from accounts.models import User
 from vault.models import Folder, FolderGrant
 from vault.services import upload_document
+
+LOCAL_TEST_DATABASE_HOSTS = frozenset({"", "localhost", "127.0.0.1", "::1", "db"})
+
+
+def require_local_test_database(database=None, environment=None):
+    """Refuse to create/drop a test database on a remote host without explicit consent."""
+    database = database or django_settings.DATABASES["default"]
+    if "sqlite" in str(database.get("ENGINE", "")):
+        return
+    host = str(database.get("HOST") or "").strip()
+    if host.startswith("[") and host.endswith("]"):
+        host = host[1:-1]
+    # An empty host or an absolute path uses a local PostgreSQL Unix socket.
+    if host in LOCAL_TEST_DATABASE_HOSTS or host.startswith("/"):
+        return
+    if (environment or os.environ).get("ALLOW_REMOTE_TEST_DB") == "1":
+        return
+    raise RuntimeError(
+        f"Refusing to run database tests against non-local host {host!r}. "
+        "Set ALLOW_REMOTE_TEST_DB=1 only when the target test database is disposable."
+    )
+
+
+def _test_uses_database(item):
+    database_fixtures = {
+        "db",
+        "transactional_db",
+        "django_db_setup",
+        "django_db_reset_sequences",
+    }
+    return bool(item.get_closest_marker("django_db")) or bool(
+        database_fixtures.intersection(item.fixturenames)
+    )
+
+
+def pytest_runtest_setup(item):
+    # Runs before fixture setup, including the session-scoped test database creation.
+    if _test_uses_database(item):
+        require_local_test_database()
 
 
 @pytest.fixture(autouse=True)

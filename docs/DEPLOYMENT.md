@@ -45,8 +45,10 @@ see [HOSTING_SETUP.md](HOSTING_SETUP.md). Its ACME overlay and timer are optiona
 they do not establish a provisioned host or close F16 without external evidence.
 
 SSDC must approve a Linux server/domain/operator, current Docker/Compose, TLS
-certificate/renewal, firewall, storage capacity and backup owner. Start with at
-least 4 GiB RAM and measure representative workloads. Allow HTTPS, HTTP redirect
+certificate/renewal, firewall, storage capacity and backup owner. For the
+ClamAV-enabled stack, start with at least 8 GiB RAM (16 GiB recommended) and
+measure representative workloads; a 4 GiB host cannot fit the 4 GiB scanner
+ceiling plus the application and OS. Allow HTTPS, HTTP redirect
 and restricted operator SSH; never publish 5432, 3310 or 8000. No public production
 server/domain has been supplied or deployed.
 
@@ -227,8 +229,10 @@ rotate (5 × 10 MiB). An SSDC-owned alert destination is still needed; none is
 invented. Run `clearsessions` and `clear_rates` regularly. Audit retention awaits organizational policy.
 Retry scans with `retry_scans --limit 20`. `cleanup_orphans --before <ISO timestamp>`
 is dry-run; stop uploads and choose a cutoff older than in-flight work before
-`--execute`. `purge_deleted --before ...` also defaults to dry-run and execution
-requires `--policy-reference <approved reference>`.
+`--execute`. It also discards quarantined versions older than the cutoff whose
+local staging file is missing (removing their private Drive intents), while
+versions whose staging bytes still exist remain untouched. `purge_deleted --before ...`
+also defaults to dry-run and execution requires `--policy-reference <approved reference>`.
 
 Executing orphan cleanup first commits an `operator_orphan_cleanup` event with
 outcome `started` and prints its operation ID. A matching `success` or `failed`

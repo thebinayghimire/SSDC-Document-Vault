@@ -224,6 +224,10 @@ CLAMAV_PORT = int(os.getenv("CLAMAV_PORT", "3310"))
 DOCUMENT_STORAGE_PROVIDER = os.getenv("DOCUMENT_STORAGE_PROVIDER", "gdrive")
 if DOCUMENT_STORAGE_PROVIDER not in {"gdrive", "filesystem"}:
     raise ImproperlyConfigured("Unknown DOCUMENT_STORAGE_PROVIDER")
+if PRODUCTION and os.getenv("RENDER") and DOCUMENT_STORAGE_PROVIDER == "filesystem":
+    raise ImproperlyConfigured(
+        "Render's container filesystem is ephemeral; use DOCUMENT_STORAGE_PROVIDER=gdrive."
+    )
 
 
 def drive_secret(name, *aliases):

@@ -26,6 +26,13 @@ services:
     volumes: [clam-data:/var/lib/clamav]
     restart: unless-stopped
     mem_limit: 2g
+    healthcheck:
+      test: [CMD, /usr/local/bin/clamdcheck.sh]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      # First startup downloads signatures and can take several minutes.
+      start_period: 600s
   app:
     build: .
     environment:
@@ -41,6 +48,9 @@ services:
       SCAN_MODE: clamav
     depends_on:
       db: {condition: service_healthy}
+      # Development prioritises a usable UI on a cold start. The app reports
+      # not-ready and quarantines uploads until the scanner passes its healthcheck.
+      clamav: {condition: service_started}
     volumes: [private-data:/data/private]
     networks: [backend, frontend]
     cap_drop: [ALL]

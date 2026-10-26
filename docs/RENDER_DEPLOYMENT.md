@@ -39,6 +39,13 @@ is disabled for this 512 MB profile with `ENABLE_CLAMAV=false`; extension,
 signature/MIME, strict PDF/image structure, pixel/page, upload-size, quota, and
 authorization checks remain active.
 
+Render's container filesystem is ephemeral. Published documents and image
+previews live in Google Drive, but each upload is staged under
+`PRIVATE_STORAGE_ROOT` until validation, scanning, upload and publication finish.
+If the instance is replaced while an upload is in flight, its staging file is
+lost and the quarantined row cannot be retried; the manager must upload that file
+again. Never set `DOCUMENT_STORAGE_PROVIDER=filesystem` on Render.
+
 Render supplies `RENDER_EXTERNAL_HOSTNAME`, which the app uses for its initial
 Google callback and CSRF origin. After adding a custom domain, set:
 

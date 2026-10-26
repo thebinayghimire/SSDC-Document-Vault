@@ -122,6 +122,37 @@ def test_neon_unpooled_url_is_preferred_for_session_advisory_locks():
     assert result.stdout.strip() == "direct.example.test"
 
 
+def test_render_rejects_ephemeral_filesystem_storage():
+    environment = dict(os.environ)
+    environment.update(
+        {
+            "APP_ENV": "production",
+            "RENDER": "true",
+            "DOCUMENT_STORAGE_PROVIDER": "filesystem",
+            "SECRET_KEY": "s" * 64,
+            "MFA_ENCRYPTION_KEY": Fernet.generate_key().decode(),
+            "ALLOWED_HOSTS": "vault.example.test",
+            "POSTGRES_DB": "vault",
+            "POSTGRES_USER": "vault",
+            "POSTGRES_PASSWORD": "synthetic-password",
+            "POSTGRES_HOST": "db.example.test",
+            "POSTGRES_SSLMODE": "verify-full",
+            "DATABASE_URL": "",
+            "DATABASE_URL_UNPOOLED": "",
+        }
+    )
+    result = subprocess.run(
+        [sys.executable, "-c", "import config.settings"],
+        cwd=ROOT,
+        env=environment,
+        check=False,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode != 0
+    assert "ephemeral" in result.stderr
+
+
 def test_render_blueprint_and_build_script_cover_free_tier_requirements():
     blueprint = (ROOT / "render.yaml").read_text()
     script = (ROOT / "build.sh").read_text()

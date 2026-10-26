@@ -120,8 +120,10 @@ from django.contrib.admin import AdminSite
 from django.shortcuts import redirect
 from django.urls import reverse
 
+
 class VaultAdminSite(AdminSite):
     ...
+
     def login(self, request, extra_context=None):
         if request.user.is_authenticated:
             return redirect(
