@@ -45,7 +45,7 @@ with sync_playwright() as playwright:
     page.goto(base + f"/documents/{credentials['pdf_id']}/")
     page.locator('canvas[data-rendered="true"]').wait_for(timeout=30000)
     expect(page.locator("#viewer-message")).to_be_hidden()
-    expect(page.locator(".watermark")).to_contain_text("demo.staff")
+    expect(page.locator(".watermark")).to_have_count(0)
     expect(page.get_by_role("button", name="Download", exact=True)).to_have_count(0)
     expect(page.get_by_role("button", name="Print", exact=True)).to_have_count(0)
     page.get_by_label("Next page", exact=True).click()
@@ -70,5 +70,5 @@ with sync_playwright() as playwright:
     assert not errors, "Browser JavaScript errors: " + "; ".join(errors)
     browser.close()
 print(
-    "Browser checks passed: login, ACL-filtered library, search, gallery, PDF pages/zoom, image, watermark, mobile, logout, cross-user denial."
+    "Browser checks passed: login, ACL-filtered library, search, gallery, PDF pages/zoom, image, no watermark, mobile, logout, cross-user denial."
 )

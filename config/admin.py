@@ -3,6 +3,8 @@ import time
 from django.contrib.admin import AdminSite
 from django.shortcuts import redirect
 
+from accounts.navigation import reauthentication_url, safe_admin_destination
+
 
 class VaultAdminSite(AdminSite):
     site_header = "SSDC Vault Administration"
@@ -21,7 +23,12 @@ class VaultAdminSite(AdminSite):
         )
 
     def login(self, request, extra_context=None):
-        return redirect("reauthenticate" if request.user.is_authenticated else "login")
+        if not request.user.is_authenticated:
+            return redirect("login")
+        if not request.user.is_portal_admin:
+            return redirect("library")
+        destination = safe_admin_destination(request, request.GET.get("next"))
+        return redirect(reauthentication_url(destination))
 
 
 site = VaultAdminSite(name="admin")

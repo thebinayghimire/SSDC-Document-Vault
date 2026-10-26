@@ -1,5 +1,6 @@
 import time
 from unittest.mock import patch
+from urllib.parse import parse_qs, urlsplit
 
 import pytest
 from django.core.exceptions import PermissionDenied
@@ -87,7 +88,12 @@ def test_expired_identity_returns_actionable_json_without_upload(client, users, 
         URL, {"folder": folder.pk, "title": "Wait", "file": pdf_upload()}, **JSON
     )
     assert response.status_code == 401
-    assert response.json()["reauth_url"] == "/accounts/confirm/"
+    payload = response.json()
+    assert set(payload) == {"error", "reauth_url"}
+    assert payload["error"] == "Verify your identity, then continue your upload."
+    redirect = urlsplit(payload["reauth_url"])
+    assert redirect.path == "/accounts/confirm/"
+    assert parse_qs(redirect.query) == {"next": [URL]}
     assert not Document.objects.exists()
 
 
