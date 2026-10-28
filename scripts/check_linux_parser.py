@@ -1,11 +1,15 @@
 """Exercise the production parser restrictions with synthetic Linux files only."""
 
+import argparse
 import json
 import subprocess
 from pathlib import Path
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--image", default="ssdc-vault-app")
+    options = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     setup = "from pathlib import Path; from PIL import Image; import runpy,socket; Image.new('RGB',(80,60),'green').save('/tmp/selected.png'); Path('/tmp/unrelated').write_text('synthetic'); "
     restrictions = "policy=runpy.run_path('/fixture-code/parser_sandbox.py'); policy['restrict_parser'](Path('/tmp/selected.png')); assert Path('/tmp/selected.png').read_bytes(); denied=0\nfor action in (lambda: Path('/tmp/unrelated').read_bytes(),lambda: Path('/run/secrets/unrelated').read_bytes(),lambda: Path('/tmp/selected.png').write_bytes(b'tampered'),lambda: socket.socket(),lambda: Path('/proc/self/fd').iterdir().__next__()):\n try: action()\n except (PermissionError,FileNotFoundError): denied+=1\nassert denied == 5, denied\nprint('Parser restrictions: unrelated files/secrets, input writes, sockets and process descriptors denied')"
@@ -24,7 +28,7 @@ def main():
         "/tmp:rw,noexec,nosuid,size=64m",
         "-v",
         str(root / "vault") + ":/fixture-code:ro",
-        "ssdc-vault-app",
+        options.image,
     ]
     result = subprocess.run(
         common + ["python", "-c", setup + restrictions], check=True, capture_output=True, text=True

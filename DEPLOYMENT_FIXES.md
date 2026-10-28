@@ -1,5 +1,9 @@
 # SSDC Document Vault: fixes required before deployment
 
+Current automated verification and container scan results are recorded in
+[docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md), dated 28 October 2026.
+Historical finding closure below does not replace that report or go-live review.
+
 Reviewed **7 October 2026 (Asia/Kathmandu)**, against commit `8c7d9f3eac76da64508d6da0948d35a45e143345`.
 
 **Release assessment: not ready for production.** The existing tests pass, but additional checks reproduced security and data-integrity defects that those tests do not cover. Fix the release blockers below before uploading confidential SSDC documents or opening the service to staff.

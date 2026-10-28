@@ -1,8 +1,14 @@
 name: Deployment checks
 on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   application:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     services:
       postgres:
         image: postgres:17
@@ -14,6 +20,8 @@ jobs:
         options: --health-cmd "pg_isready -U ssdc_ci -d ssdc_ci" --health-interval 5s --health-timeout 3s --health-retries 20
     env:
       APP_ENV: test
+      DATABASE_URL: ""
+      DATABASE_URL_UNPOOLED: ""
       POSTGRES_DB: ssdc_ci
       POSTGRES_USER: ssdc_ci
       POSTGRES_PASSWORD: synthetic-ci-only

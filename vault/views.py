@@ -7,7 +7,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied, ValidationError
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Exists, OuterRef, Q
 from django.http import Http404, HttpResponse, JsonResponse, StreamingHttpResponse
 from django.middleware.csrf import get_token
 from django.shortcuts import get_object_or_404, redirect, render
@@ -22,6 +22,7 @@ from .models import Document, Folder, Version
 from .policy import can_manage_document, folder_permissions, permitted_documents
 from .services import (
     change_document_lifecycle,
+    process_version,
     restore_document_version,
     upload_document,
 )
@@ -70,6 +71,12 @@ def breadcrumbs(folder, visible):
             result.append(folder)
         folder = folder.parent
     return list(reversed(result))
+
+
+def pagination_parameters(request):
+    parameters = request.GET.copy()
+    parameters.pop("page", None)
+    return parameters.urlencode()
 
 
 @require_http_methods(["GET", "HEAD"])
@@ -131,6 +138,7 @@ def library(request, folder_id=None):
             "max_upload_bytes": settings.MAX_UPLOAD_BYTES,
             "breadcrumbs": breadcrumbs(folder, viewable),
             "total": query.count(),
+            "pagination_query": pagination_parameters(request),
         },
     )
 
@@ -271,11 +279,13 @@ def content(request, document_id, thumbnail=False):
         expected_size = version.thumbnail_size if thumbnail else version.size
         if total != expected_size:
             raise StorageError("integrity")
-    except StorageError as exc:
+    except (StorageError, OSError) as exc:
+        if isinstance(exc, OSError):
+            exc = StorageError()
         return storage_failure(request, document, exc)
     range_header = request.headers.get("Range")
-    # No validators are emitted: an If-Range condition cannot match this response.
-    if request.headers.get("If-Range"):
+    etag = f'"{version.pk}{"-thumbnail" if thumbnail else ""}"'
+    if request.headers.get("If-Range") and request.headers["If-Range"] != etag:
         range_header = None
     start, end = 0, None
     if range_header and request.method != "HEAD":
@@ -307,7 +317,9 @@ def content(request, document_id, thumbnail=False):
                 content_type=mime,
                 status=206 if end is not None else 200,
             )
-    except StorageError as exc:
+    except (StorageError, OSError) as exc:
+        if isinstance(exc, OSError):
+            exc = StorageError()
         return storage_failure(request, document, exc)
     if end is not None:
         response["Content-Range"] = f"bytes {start}-{end}/{total}"
@@ -315,7 +327,7 @@ def content(request, document_id, thumbnail=False):
     response["Content-Disposition"] = 'inline; filename="preview"'
     response["Accept-Ranges"] = "bytes"
     response["X-Content-Type-Options"] = "nosniff"
-    response["ETag"] = f'"{version.pk}{"-thumbnail" if thumbnail else ""}"'
+    response["ETag"] = etag
     record(request.user, "thumbnail" if thumbnail else "document_bytes", document.pk)
     return response
 
@@ -362,7 +374,7 @@ def upload(request, folder_id=None, document_id=None):
                 form.cleaned_data["title"],
                 document,
             )
-        except InvalidUpload as exc:
+        except (InvalidUpload, StorageError) as exc:
             form.add_error("file", str(exc))
         except (PermissionDenied, Document.DoesNotExist) as exc:
             raise Http404 from exc
@@ -481,12 +493,85 @@ def create_folder(request, folder_id=None):
 def management(request):
     if not request.user.can_manage:
         raise Http404
-    docs = permitted_documents(request.user, manage=True).select_related("folder", "active_version")
+    throttled = request_limit(request, "management", 120)
+    if throttled:
+        return throttled
+    versions = Version.objects.filter(document_id=OuterRef("pk"))
+    docs = (
+        permitted_documents(request.user, manage=True)
+        .select_related("folder", "active_version")
+        .annotate(
+            has_pending=Exists(versions.filter(status=Version.Status.QUARANTINED)),
+            has_rejected=Exists(versions.filter(status=Version.Status.REJECTED)),
+        )
+    )
+    folders = Folder.objects.filter(pk__in=docs.values("folder_id")).order_by("name", "id")
+    search = request.GET.get("q", "")[:200].strip()
+    if search:
+        docs = docs.filter(Q(title__icontains=search) | Q(folder__name__icontains=search))
+    state = request.GET.get("state", "")
+    active = Q(archived=False, deleted_at__isnull=True)
+    states = {
+        "published": active & Q(active_version__status=Version.Status.READY),
+        "pending": active
+        & (Q(has_pending=True) | Q(active_version__isnull=True, has_rejected=False)),
+        "rejected": active & Q(active_version__isnull=True, has_rejected=True, has_pending=False),
+        "archived": Q(archived=True, deleted_at__isnull=True),
+        "deleted": Q(deleted_at__isnull=False),
+    }
+    if state in states:
+        docs = docs.filter(states[state])
+    else:
+        state = ""
+    selected_folder = str(request.GET.get("folder", ""))
+    if selected_folder:
+        try:
+            docs = docs.filter(folder_id=selected_folder)
+        except ValidationError:
+            docs = docs.none()
+    orders = {"newest": "-modified_at", "oldest": "modified_at", "name": "title"}
+    sort = request.GET.get("sort", "newest")
+    if sort not in orders:
+        sort = "newest"
     return render(
         request,
         "vault/management.html",
-        {"page": Paginator(docs, 24).get_page(request.GET.get("page"))},
+        {
+            "page": Paginator(docs.order_by(orders[sort], "id"), 24).get_page(
+                request.GET.get("page")
+            ),
+            "search": search,
+            "state": state,
+            "sort": sort,
+            "management_folders": folders,
+            "selected_folder": selected_folder,
+            "pagination_query": pagination_parameters(request),
+        },
     )
+
+
+@login_required
+@require_POST
+def retry_version(request, document_id, version_id):
+    document = authorized_document(request, document_id, manage=True)
+    if document.deleted_at:
+        raise Http404
+    if not recent_identity(request):
+        return reauthentication_redirect(reverse("manage_document", args=[document.pk]))
+    throttled = request_limit(request, "scan-retry", 10)
+    if throttled:
+        return throttled
+    version = get_object_or_404(
+        Version, pk=version_id, document=document, status=Version.Status.QUARANTINED
+    )
+    version = process_version(version, actor=request.user)
+    if version.status == Version.Status.READY:
+        messages.success(request, "Document checks completed.")
+    elif version.status == Version.Status.REJECTED:
+        messages.error(request, version.processing_note)
+    else:
+        messages.warning(request, version.processing_note or "Document checks are already running.")
+    return redirect("manage_document", document_id=document.pk)
 
 
 @login_required

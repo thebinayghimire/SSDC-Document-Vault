@@ -1,5 +1,9 @@
 # SSDC Document Vault — Production Readiness & Deployment Runbook
 
+This is a historical audit. Several code/configuration issues described below
+have since changed. Use [current release preparation](RELEASE_READINESS.md) and
+the linked deployment runbooks for the verified state and remaining gates.
+
 **Audit Date:** 18 October 2026  
 **Target Repository:** SSDC Document Vault (Django 5.2, PostgreSQL 17, ClamAV, Google Drive API, Nginx, Docker Compose)
 

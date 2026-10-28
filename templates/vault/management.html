@@ -2,8 +2,15 @@
 {% block title %}Manage documents{% endblock %}
 {% block content %}
   <div class="page-heading"><div><span class="eyebrow">Document management</span><h1>Manage your documents</h1><p class="muted">Review uploads, update details, and manage version history.</p></div><a class="button secondary" href="{% url 'library' %}">{% include "components/icon.html" with name="library" %}Browse library</a></div>
+  <form class="toolbar" method="get" role="search" aria-label="Find managed documents">
+    <div class="search-field">{% include "components/icon.html" with name="search" %}<label class="sr-only" for="management-search">Search managed documents</label><input id="management-search" name="q" value="{{ search }}" placeholder="Search documents or folders" type="search" maxlength="200"><button class="text-button search-submit" type="submit">Search</button></div>
+    <div class="filter-control"><label for="management-state">Document state</label><select id="management-state" name="state"><option value="">All states</option><option value="published" {% if state == 'published' %}selected{% endif %}>Published</option><option value="pending" {% if state == 'pending' %}selected{% endif %}>Awaiting checks</option><option value="rejected" {% if state == 'rejected' %}selected{% endif %}>Rejected</option><option value="archived" {% if state == 'archived' %}selected{% endif %}>Archived</option><option value="deleted" {% if state == 'deleted' %}selected{% endif %}>Deleted</option></select></div>
+    <div class="filter-control"><label for="management-folder">Folder</label><select id="management-folder" name="folder"><option value="">All folders</option>{% for folder in management_folders %}<option value="{{ folder.pk }}" {% if selected_folder == folder.pk|stringformat:'s' %}selected{% endif %}>{{ folder.name }}</option>{% endfor %}</select></div>
+    <div class="filter-control"><label for="management-sort">Sort by</label><select id="management-sort" name="sort"><option value="newest" {% if sort == 'newest' %}selected{% endif %}>Recently updated</option><option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Oldest first</option><option value="name" {% if sort == 'name' %}selected{% endif %}>Name A–Z</option></select></div>
+  </form>
+  {% if search or state or selected_folder %}<div class="filter-summary"><span>{{ page.paginator.count }} matching document{{ page.paginator.count|pluralize }}</span><a href="{% url 'management' %}">Clear filters</a></div>{% endif %}
   <div class="section-heading">
-    <h2>All documents <span class="count">{{ page.paginator.count }}</span></h2>
+    <h2>Documents <span class="count">{{ page.paginator.count }}</span></h2>
   </div>
   {% if page %}
     <div class="table-wrap">
@@ -17,11 +24,11 @@
             <th scope="col"><span class="sr-only">Actions</span></th>
           </tr>
         </thead>
-        <tbody>{% for doc in page %}<tr><td><a class="document-name" href="{% url 'manage_document' doc.pk %}"><span class="file-icon">{% include "components/icon.html" with name="file" %}</span><span><strong>{{ doc.title }}</strong><small class="mobile-metadata">{{ doc.folder.name }}</small></span></a></td><td class="folder-cell">{{ doc.folder.name }}</td><td><span class="status {% if doc.deleted_at %}status-deleted{% elif not doc.archived and doc.active_version %}status-ready{% elif not doc.archived %}status-pending{% endif %}">{% if doc.deleted_at %}Deleted{% elif doc.archived %}Archived{% elif doc.active_version %}Published{% else %}Awaiting publication{% endif %}</span></td><td class="row-action"><a class="button secondary manage-link"
+        <tbody>{% for doc in page %}<tr><td><a class="document-name" href="{% url 'manage_document' doc.pk %}"><span class="file-icon">{% include "components/icon.html" with name="file" %}</span><span><strong>{{ doc.title }}</strong><small class="mobile-metadata">{{ doc.folder.name }}</small></span></a></td><td class="folder-cell">{{ doc.folder.name }}</td><td><span class="status {% if doc.deleted_at %}status-deleted{% elif doc.has_rejected and not doc.has_pending and not doc.active_version %}status-deleted{% elif not doc.archived and doc.active_version %}status-ready{% elif not doc.archived %}status-pending{% endif %}">{% if doc.deleted_at %}Deleted{% elif doc.archived %}Archived{% elif doc.active_version %}Published{% elif doc.has_rejected and not doc.has_pending %}Rejected{% else %}Awaiting checks{% endif %}</span>{% if doc.has_pending and doc.active_version and not doc.deleted_at and not doc.archived %}<small class="helptext">Replacement awaiting checks</small>{% endif %}</td><td class="row-action"><a class="button secondary manage-link"
    href="{% url 'manage_document' doc.pk %}"
    aria-label="Manage {{ doc.title }}">Manage</a></td></tr>{% endfor %}</tbody>
       </table>
     </div>
-{% else %}<div class="empty-state">{% include "components/icon.html" with name="folder" %}<h3>No documents to manage yet</h3><p>Open a folder in the library to upload your first document. Your uploads and their versions will appear here.</p><a class="button" href="{% url 'library' %}">Browse folders</a></div>{% endif %}
+{% else %}<div class="empty-state">{% include "components/icon.html" with name="folder" %}{% if search or state or selected_folder %}<h3>No matching documents</h3><p>Try a different search or clear your filters.</p><a class="button secondary" href="{% url 'management' %}">Clear filters</a>{% else %}<h3>No documents to manage yet</h3><p>Open a folder in the library to upload your first document. Your uploads and their versions will appear here.</p><a class="button" href="{% url 'library' %}">Browse folders</a>{% endif %}</div>{% endif %}
 {% include "vault/pagination.html" %}
 {% endblock %}

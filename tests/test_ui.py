@@ -6,6 +6,7 @@ import mimetypes
 import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pyotp
@@ -256,6 +257,36 @@ def test_import_picker_drop_paste_and_batch(browser_page, users, folder, tmp_pat
     page.goto(base + "/documents/import/")
     no_overflow(page)
     page.screenshot(path=str(ARTIFACTS / "import-1440.png"), full_page=True)
+
+
+def test_manager_search_filters_and_retry_checks(browser_page, users, folder, document):
+    from vault.scanner import ScanUnavailable
+
+    page, context, base, _ = browser_page
+
+    def prepare():
+        with patch("vault.services.scan", side_effect=ScanUnavailable):
+            return upload_document(users["manager"], folder, pdf_upload(), "Awaiting review")
+
+    version = database_call(prepare)
+    browser_session(context, base, users["manager"])
+    page.goto(base + "/manage/")
+    page.get_by_label("Search managed documents", exact=True).fill("Awaiting")
+    page.get_by_label("Document state", exact=True).select_option("pending")
+    page.get_by_role("button", name="Search", exact=True).click()
+    expect(page.get_by_role("link", name="Awaiting review", exact=True)).to_be_visible()
+    expect(page.get_by_role("link", name="Project report", exact=False)).to_have_count(0)
+    page.set_viewport_size({"width": 375, "height": 844})
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "management-filters-375.png"), full_page=True)
+    page.get_by_role("link", name="Manage Awaiting review", exact=True).click()
+    page.get_by_role("button", name="Retry document checks", exact=True).click()
+    expect(page.get_by_text("Document checks completed.", exact=True)).to_be_visible(timeout=30000)
+    expect(page.get_by_role("button", name="Retry document checks", exact=True)).to_have_count(0)
+    assert (
+        database_call(lambda: Document.objects.get(pk=version.document_id).active_version_id)
+        == version.pk
+    )
 
 
 def test_routes_at_all_sizes(browser_page, users, folder, document):

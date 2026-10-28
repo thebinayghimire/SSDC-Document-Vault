@@ -2,10 +2,10 @@
   <nav class="pagination" aria-label="Pagination">
     {% if page.has_previous %}<a class="button secondary"
    rel="prev"
-   href="?page={{ page.previous_page_number }}&amp;q={{ search|urlencode }}&amp;view={{ mode|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}">Previous</a>{% else %}<span></span>{% endif %}
+   href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page.previous_page_number }}">Previous</a>{% else %}<span></span>{% endif %}
     <span>Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
     {% if page.has_next %}<a class="button secondary"
    rel="next"
-   href="?page={{ page.next_page_number }}&amp;q={{ search|urlencode }}&amp;view={{ mode|urlencode }}&amp;sort={{ sort|urlencode }}&amp;type={{ file_type|urlencode }}">Next</a>{% else %}<span></span>{% endif %}
+   href="?{% if pagination_query %}{{ pagination_query }}&amp;{% endif %}page={{ page.next_page_number }}">Next</a>{% else %}<span></span>{% endif %}
   </nav>
 {% endif %}
