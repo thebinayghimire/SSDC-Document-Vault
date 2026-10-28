@@ -40,11 +40,10 @@ jobs:
           mkdir -p artifacts/container-scans
           docker run --rm --cap-drop ALL --security-opt no-new-privileges:true \
             --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock,readonly \
-            --mount "type=bind,source=$PWD/artifacts/container-scans,target=/reports" \
             aquasec/trivy:latest@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
             image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
-            --format json --output '/reports/${{ matrix.name }}.json' \
-            'ssdc-release-${{ matrix.name }}'
+            --format json 'ssdc-release-${{ matrix.name }}' \
+            > 'artifacts/container-scans/${{ matrix.name }}.json'
       - uses: actions/upload-artifact@v4
         if: always()
         with:
