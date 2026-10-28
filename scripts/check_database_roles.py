@@ -1,5 +1,6 @@
 """Verify migrations and runtime SQL privileges in a fresh disposable PostgreSQL container."""
 
+import argparse
 import os
 import secrets
 import subprocess
@@ -14,6 +15,9 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--image", default="ssdc-postgres")
+    options = parser.parse_args()
     name = "ssdc-role-check-" + secrets.token_hex(6)
     bootstrap, runtime, migrator = [secrets.token_urlsafe(32) for _ in range(3)]
     with tempfile.TemporaryDirectory(prefix="ssdc-role-check-") as temporary:
@@ -46,7 +50,7 @@ def main():
             str(directory / "db-migration-password") + ":/run/secrets/db_migration_password:ro",
             "-v",
             str(ROOT / "deploy" / "init-db.sh") + ":/docker-entrypoint-initdb.d/10-roles.sh:ro",
-            "ssdc-postgres",
+            options.image,
         ]
         try:
             subprocess.run(arguments, check=True, capture_output=True)
@@ -162,7 +166,8 @@ def main():
                 "assert c.get(f'/documents/{d.pk}/').status_code==200; "
                 "assert c.get(f'/documents/{d.pk}/content/?version={d.active_version_id}',HTTP_RANGE='bytes=0-15').status_code==206; "
                 "assert c.post('/accounts/logout/').status_code==302; "
-                "assert c.get('/').status_code==302; "
+                "assert c.get('/').status_code==200; "
+                "assert c.get(f'/documents/{d.pk}/content/').status_code==302; "
                 "admin=Client(); r=admin.post('/accounts/login/',{'staff_id':u.username,'password':'Synthetic-Password-42'}); "
                 "assert r.url=='/accounts/mfa/'; "
                 "assert admin.post('/accounts/mfa/',{'code':pyotp.TOTP(seed).now()}).status_code==302; "

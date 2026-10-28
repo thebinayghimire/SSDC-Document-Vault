@@ -81,6 +81,21 @@ MFA enrollment. Keep demo accounts confined to local development.
 
 ## Development checks
 
+On macOS/Linux, create a native environment (a Windows `.venv` cannot be reused):
+
+```sh
+uv venv --python 3.13 .venv
+uv pip sync --python .venv/bin/python requirements.txt requirements-dev.txt
+npm ci --ignore-scripts && npm run vendor
+.venv/bin/python -m playwright install chromium
+.venv/bin/python scripts/run_checks.py
+```
+
+The check runner creates and removes its own PostgreSQL container, ignores saved
+database credentials, and leaves application databases untouched. Use OpenSSL 3
+on your `PATH` for certificate tests; on Homebrew macOS this is
+`PATH="$(brew --prefix openssl@3)/bin:$PATH"`. Docker must be running.
+
 Git, Node/npm, uv and Python 3.13 are needed for host development. Runtime and
 development dependencies are pinned separately; npm supplies PDF.js assets.
 
@@ -114,6 +129,13 @@ needs `compose.host.yaml`; normal DB networking is internal. For quarantined
 previews, check scanner readiness and run `scanner_selftest`.
 
 ## Documentation and release status
+
+Existing Docker databases require a logical migration for the patched database
+image. The startup guard preserves unverified volumes; follow the
+[database image migration guide](docs/DATABASE_IMAGE_MIGRATION.md).
+
+- [Current release preparation and evidence](docs/RELEASE_READINESS.md): production
+  fixes, added management filters/retry controls, verified checks and external setup.
 
 - [Render Free deployment](docs/RENDER_DEPLOYMENT.md): Blueprint, managed
   PostgreSQL, environment secrets, automatic administrator bootstrap, and OAuth URLs.

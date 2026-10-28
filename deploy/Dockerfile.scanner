@@ -1,10 +1,14 @@
-FROM clamav/clamav:stable@sha256:ebec5bc138401b36ae987caa1a3fa3c3b2a21ed3d51f0bfa5852825e663e67b0
-RUN apk upgrade --no-cache
+FROM alpine:3.24@sha256:be2656061b536c1883c4034790e21d0a09c5aaaf51968b89368a3c0371ea2c9a
+RUN apk add --no-cache clamav clamav-daemon freshclam tini
 COPY deploy/start-scanner.sh /opt/ssdc/start-scanner.sh
-RUN sed -i -e '/^LogFile /d' -e '/^[# ]*LocalSocket /d' -e '/^[# ]*SelfCheck /d' /etc/clamav/clamd.conf \
-    && printf '\nLocalSocket /run/clamav/clamd.sock\nSelfCheck 60\n' >> /etc/clamav/clamd.conf \
-    && sed -i -e '/^UpdateLogFile /d' -e '/^[# ]*NotifyClamd /d' /etc/clamav/freshclam.conf \
+COPY deploy/check-scanner.sh /usr/local/bin/clamdcheck.sh
+RUN chmod 0755 /usr/local/bin/clamdcheck.sh
+RUN sed -i -e '/^Example$/d' -e '/^LogFile /d' -e '/^[# ]*TCPSocket /d' -e '/^[# ]*TCPAddr /d' -e '/^[# ]*LocalSocket /d' -e '/^[# ]*SelfCheck /d' /etc/clamav/clamd.conf \
+    && printf '\nLocalSocket /run/clamav/clamd.sock\nTCPSocket 3310\nTCPAddr 0.0.0.0\nSelfCheck 60\n' >> /etc/clamav/clamd.conf \
+    && sed -i -e '/^Example$/d' -e '/^UpdateLogFile /d' -e '/^[# ]*NotifyClamd /d' /etc/clamav/freshclam.conf \
     && printf '\nNotifyClamd /etc/clamav/clamd.conf\n' >> /etc/clamav/freshclam.conf \
     && mkdir -p /run/clamav && chown clamav:clamav /run/clamav /var/lib/clamav
 USER clamav
 ENTRYPOINT ["/sbin/tini", "--", "/bin/sh", "/opt/ssdc/start-scanner.sh"]
+
+HEALTHCHECK --start-period=600s --interval=30s --timeout=5s CMD ["/usr/local/bin/clamdcheck.sh"]

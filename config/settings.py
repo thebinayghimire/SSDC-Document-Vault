@@ -3,23 +3,27 @@ import hashlib
 import os
 from pathlib import Path
 
-import dj_database_url
 from cryptography.fernet import Fernet
 from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
-from config.database import database_transport
+from config.database import database_from_url, database_transport
 from config.scanning import scan_mode
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 # Neon writes local branch credentials here. Explicit process/container values
 # always win, and neither ignored file is required in production.
-load_dotenv(BASE_DIR / ".env.local", override=False)
-load_dotenv(BASE_DIR / ".env", override=False)
-ENVIRONMENT = os.getenv("APP_ENV", "development")
+if not os.getenv("RENDER") and os.getenv("APP_ENV", "development") == "development":
+    load_dotenv(BASE_DIR / ".env.local", override=False)
+    load_dotenv(BASE_DIR / ".env", override=False)
+ENVIRONMENT = os.getenv("APP_ENV", "production" if os.getenv("RENDER") else "development")
 if ENVIRONMENT not in {"development", "test", "production"}:
     raise ImproperlyConfigured("Unknown APP_ENV")
 PRODUCTION = ENVIRONMENT == "production"
+if os.getenv("RENDER") and not PRODUCTION:
+    raise ImproperlyConfigured(
+        "Render requires APP_ENV=production; development settings are unsafe"
+    )
 RENDER_EXTERNAL_HOSTNAME = os.getenv("RENDER_EXTERNAL_HOSTNAME", "")
 
 
@@ -65,12 +69,18 @@ if (
 DEBUG = os.getenv("DEBUG", "0") == "1" and not PRODUCTION
 ALLOWED_HOSTS = [
     host.strip()
-    for host in os.getenv("ALLOWED_HOSTS", "localhost,127.0.0.1,[::1],testserver").split(",")
+    for host in os.getenv(
+        "ALLOWED_HOSTS", "" if PRODUCTION else "localhost,127.0.0.1,[::1],testserver"
+    ).split(",")
     if host.strip()
 ]
-if ".onrender.com" not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(".onrender.com")
-if PRODUCTION and ("*" in ALLOWED_HOSTS or len(SECRET_KEY) < 44):
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+if PRODUCTION and (
+    not ALLOWED_HOSTS
+    or any("*" in host or host.startswith(".") for host in ALLOWED_HOSTS)
+    or len(SECRET_KEY) < 44
+):
     raise ImproperlyConfigured("Production needs explicit hosts and a strong SECRET_KEY")
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -88,6 +98,7 @@ MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "config.middleware.MaintenanceMiddleware",
+    "config.middleware.UploadLimitMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -118,14 +129,7 @@ TEMPLATES = [
 # direct URL Neon supplies and retain DATABASE_URL for non-Neon deployments.
 DATABASE_URL = os.getenv("DATABASE_URL_UNPOOLED") or os.getenv("DATABASE_URL")
 if DATABASE_URL:
-    DATABASES = {
-        "default": dj_database_url.parse(
-            DATABASE_URL,
-            conn_max_age=600,
-            ssl_require=not DEBUG,
-        )
-    }
-    DATABASES["default"]["CONN_HEALTH_CHECKS"] = True
+    DATABASES = {"default": database_from_url(DATABASE_URL, os.environ, PRODUCTION, DEBUG)}
 else:
     DATABASES = {
         "default": {
@@ -214,6 +218,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = 1024 * 1024
 FILE_UPLOAD_PERMISSIONS = 0o600
 FILE_UPLOAD_DIRECTORY_PERMISSIONS = 0o700
 FILE_UPLOAD_HANDLERS = [
+    "vault.upload_handlers.UploadBudgetHandler",
     "django.core.files.uploadhandler.MemoryFileUploadHandler",
     "vault.upload_handlers.BudgetedTemporaryFileUploadHandler",
 ]
