@@ -1050,3 +1050,9 @@ msgstr "मिल्दो कागजातहरू"
 
 msgid "Search term:"
 msgstr "खोजिएको शब्द:"
+
+msgid "Admin ID"
+msgstr "प्रशासक परिचय"
+
+msgid "Import %(count)s document"
+msgstr "%(count)s कागजात ल्याउनुहोस्"

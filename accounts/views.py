@@ -102,7 +102,7 @@ def sign_in(request, portal=None):
         return redirect(portal_home(request.user))
     form = LoginForm(request.POST or None)
     if portal == "admin":
-        form.fields["staff_id"].label = "Admin ID"
+        form.fields["staff_id"].label = tr("Admin ID")
     if request.method == "POST" and form.is_valid():
         identity = form.cleaned_data["staff_id"]
         ip = (

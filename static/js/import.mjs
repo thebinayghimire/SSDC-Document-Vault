@@ -44,7 +44,7 @@ function initializeImporter() {
     find('[data-count]').textContent = `(${queue.length})`;
     const pending = queue.filter(item => ['queued', 'failed'].includes(item.state)).length;
     start.disabled = busy || reading || !pending || !destination.value;
-    start.textContent = busy ? t(t("Importing documents…")) : t('Import %(count)s documents', {count: pending});
+    start.textContent = busy ? t("Importing documents…") : t(pending === 1 ? 'Import %(count)s document' : 'Import %(count)s documents', {count: pending});
     destination.disabled = busy;
     panel.querySelectorAll('[data-choose-files], [data-choose-folder], [data-paste], [data-clear]').forEach(button => { button.disabled = busy || reading; });
     queue.forEach(item => { item.title.disabled = busy || !['queued', 'failed'].includes(item.state); item.remove.disabled = busy || reading; });
@@ -82,7 +82,7 @@ function initializeImporter() {
       progress.value = 0;
       progress.hidden = true;
       progress.setAttribute('aria-label', t('Upload progress for %(name)s', {name: file.name}));
-      const status = element('div', 'import-file-status', t(t("Ready to upload")));
+      const status = element('div', 'import-file-status', t("Ready to upload"));
       const remove = element('button', 'icon-button import-remove', '×');
       remove.type = 'button';
       remove.setAttribute('aria-label', t('Remove %(name)s', {name: file.name}));
@@ -117,7 +117,7 @@ function initializeImporter() {
       if (['done', 'stored', 'rejected'].includes(item.state)) { item.row.remove(); return false; }
       return true;
     });
-    update(); say(t(t("Finished files cleared.")));
+    update(); say(t("Finished files cleared."));
   });
 
   // Capture directory entries during the drop event; browsers discard access afterward.
@@ -160,13 +160,13 @@ function initializeImporter() {
     const files = [...event.dataTransfer.files];
     const entries = [...event.dataTransfer.items].map(item => item.webkitGetAsEntry?.()).filter(Boolean);
     if (!entries.some(entry => entry.isDirectory)) { addFiles(files); return; }
-    reading = true; update(); say(t(t("Reading your folder…")));
+    reading = true; update(); say(t("Reading your folder…"));
     try {
       const result = await readEntries(entries);
       addFiles(result.files);
-      if (result.limited) say(t(t("This folder is too large to read completely. Review the queued files and import smaller folders next.")), true);
+      if (result.limited) say(t("This folder is too large to read completely. Review the queued files and import smaller folders next."), true);
     } catch {
-      say(t(t("Could not read this folder. Try the Import folder button instead.")), true);
+      say(t("Could not read this folder. Try the Import folder button instead."), true);
     } finally { reading = false; update(); }
   });
   // Prevent an accidental file drop outside the target from navigating away.
@@ -210,16 +210,16 @@ function initializeImporter() {
       data.append('file', item.file);
       item.progress.hidden = false;
       item.progress.value = 0;
-      state(item, 'uploading', t(t("Uploading…")));
+      state(item, 'uploading', t("Uploading…"));
       xhr.upload.addEventListener('progress', event => {
         if (event.lengthComputable) item.progress.value = Math.round(event.loaded / event.total * 100);
       });
       xhr.upload.addEventListener('load', () => {
         item.progress.removeAttribute('value');
-        state(item, 'uploading', t(t("Uploaded · Checking document…")));
+        state(item, 'uploading', t("Uploaded · Checking document…"));
       });
       const connectionError = () => {
-        state(item, 'failed', t(t("Connection interrupted. Check Manage documents before retrying; the file may have arrived.")));
+        state(item, 'failed', t("Connection interrupted. Check Manage documents before retrying; the file may have arrived."));
         item.progress.hidden = true; resolve({stop: true});
       };
       xhr.addEventListener('error', connectionError);
@@ -231,19 +231,19 @@ function initializeImporter() {
         if (xhr.status === 201 && response.manage_url) {
           const ready = response.status === 'ready';
           const rejected = response.status === 'rejected';
-          state(item, ready ? 'done' : rejected ? 'rejected' : 'stored', ready ? t(t("Added to library")) : rejected ? t(t("Rejected during checking")) : t(t("Saved · Awaiting checks")));
-          const link = element('a', '', t(t("View details")));
+          state(item, ready ? 'done' : rejected ? 'rejected' : 'stored', ready ? t("Added to library") : rejected ? t("Rejected during checking") : t("Saved · Awaiting checks"));
+          const link = element('a', '', t("View details"));
           link.href = response.manage_url;
           item.status.append(link);
           if (response.note) item.status.append(element('small', '', response.note));
           resolve({}); return;
         }
         const errors = Object.values(response.errors || {}).flat().map(error => error.message);
-        let message = response.error || errors.join(' ') || t(t("Upload failed. Try again shortly."));
-        if (xhr.status === 429) message = t(t("Upload limit reached. Wait one minute, then continue."));
-        if (xhr.status === 413) message = t(t("This file exceeds the server upload limit."));
-        if (xhr.status === 403 && !response.error) message = t(t("Your session or upload access changed. Refresh the page and sign in again."));
-        if (xhr.status === 200 && !response.manage_url) message = t(t("Your session expired. Sign in again in a new tab, then continue here."));
+        let message = response.error || errors.join(' ') || t("Upload failed. Try again shortly.");
+        if (xhr.status === 429) message = t("Upload limit reached. Wait one minute, then continue.");
+        if (xhr.status === 413) message = t("This file exceeds the server upload limit.");
+        if (xhr.status === 403 && !response.error) message = t("Your session or upload access changed. Refresh the page and sign in again.");
+        if (xhr.status === 200 && !response.manage_url) message = t("Your session expired. Sign in again in a new tab, then continue here.");
         if (response.reauth_url || xhr.status === 200) {
           const link = find('[data-reauth]');
           link.href = response.reauth_url || '/accounts/login/'; link.hidden = false;
@@ -271,7 +271,7 @@ function initializeImporter() {
       busy = false; form.removeAttribute('aria-busy'); update();
       const link = find('[data-reauth]');
       link.href = '/accounts/login/'; link.hidden = false;
-      say(t(t("Could not verify your session. Check your connection or sign in in a new tab, then continue here.")), true);
+      say(t("Could not verify your session. Check your connection or sign in in a new tab, then continue here."), true);
       return;
     }
     const folder = destination.value;

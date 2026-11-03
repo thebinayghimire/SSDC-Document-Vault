@@ -423,7 +423,7 @@ def test_document_actions_and_mobile_navigation(browser_page, users, folder, doc
     ).click()
     expect(page.get_by_role("heading", name="Change password")).to_be_visible()
     page.get_by_role("button", name="Sign out", exact=True).click()
-    expect(page.get_by_role("heading", name="Welcome back.")).to_be_visible()
+    expect(page.get_by_role("heading", name="Admin sign in.")).to_be_visible()
 
 
 def test_search_preview_resize_and_delivery_failure(browser_page, users, folder, document):

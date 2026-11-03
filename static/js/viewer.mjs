@@ -27,10 +27,10 @@ function error() {
   pageText.textContent = '';
   surface.hidden = true;
   updateControls();
-  message.textContent = t(t("Preview unavailable. Your session may have expired. "));
+  message.textContent = t("Preview unavailable. Your session may have expired. ");
   const link = document.createElement('a');
   link.href = '/';
-  link.textContent = t(t("Return to the library and try again."));
+  link.textContent = t("Return to the library and try again.");
   message.append(link);
   message.dataset.error = 'true';
   message.hidden = false;
@@ -90,7 +90,7 @@ async function render() {
     if (!ready) return;
     if (requestedPage !== current || requestedScale !== scale) { pending = true; return; }
     pageText.setAttribute('aria-label', t('Page %(page)s text', {page: requestedPage}));
-    pageText.textContent = text.items.map(item => item.str).join(' ') || t(t("This page has no extractable text. Contact your document administrator for an accessible copy."));
+    pageText.textContent = text.items.map(item => item.str).join(' ') || t("This page has no extractable text. Contact your document administrator for an accessible copy.");
     canvas.dataset.rendered = 'true';
     canvas.dataset.page = String(requestedPage);
   } catch (exception) {

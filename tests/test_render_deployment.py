@@ -23,7 +23,7 @@ def test_public_oauth_pages_are_available_without_a_session(client):
     assert b'href="/terms/"' in home.content
 
     login = client.get("/accounts/login/")
-    assert b"internal document library" in login.content
+    assert b"Sign in to SSDC Document Vault" in login.content
     assert b'href="/privacy/"' in login.content
 
     privacy = client.get("/privacy/")

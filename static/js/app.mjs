@@ -19,7 +19,7 @@ document.querySelectorAll('form[data-confirm]').forEach(form => {
   form.addEventListener('submit', event => {
     if (form.dataset.confirmed === 'true') return;
     if (!dialog?.showModal) {
-      if (!window.confirm(t(t("Move this document to deleted? You can restore it while it is retained.")))) event.preventDefault();
+      if (!window.confirm(t("Move this document to deleted? You can restore it while it is retained."))) event.preventDefault();
       return;
     }
     event.preventDefault();
@@ -65,7 +65,7 @@ document.querySelectorAll('form[data-progress]').forEach(form => {
     if (!button) return;
     button.setAttribute('aria-busy', 'true');
     button.dataset.originalText = button.textContent;
-    button.textContent = form.dataset.progress || t(t("Saving…"));
+    button.textContent = form.dataset.progress || t("Saving…");
     button.disabled = true;
     form.setAttribute('aria-busy', 'true');
   });

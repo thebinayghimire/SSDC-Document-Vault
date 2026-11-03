@@ -16,7 +16,8 @@ def language_client(client, settings):
         "default": {"BACKEND": "django.core.files.storage.FileSystemStorage"},
         "staticfiles": {"BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage"},
     }
-    return client
+    with translation.override("en"):
+        yield client
 
 
 def test_nepali_sign_in_and_accessible_language_choice(language_client):
