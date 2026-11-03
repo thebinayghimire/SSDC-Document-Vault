@@ -14,6 +14,8 @@ from pypdf import PdfWriter
 from smoke_safety import require_isolated_smoke
 
 parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument("--env-file", default=".env.production-smoke")
+parser.add_argument("--project-name", default="ssdc-vault-smoke")
 parser.add_argument(
     "--retain-fixture",
     type=Path,
@@ -25,9 +27,9 @@ compose = [
     "docker",
     "compose",
     "--project-name",
-    "ssdc-vault-smoke",
+    args.project_name,
     "--env-file",
-    ".env.production-smoke",
+    args.env_file,
     "-f",
     "compose.prod.yaml",
     "-f",
@@ -38,7 +40,7 @@ config = json.loads(
         compose + ["config", "--format", "json"], check=True, capture_output=True, text=True
     ).stdout
 )
-require_isolated_smoke(config)
+require_isolated_smoke(config, args.project_name)
 code = (
     "import os,django,secrets,json; os.environ.setdefault('DJANGO_SETTINGS_MODULE','config.settings'); django.setup(); "
     "from accounts.models import User; from vault.models import Folder,FolderGrant; "
@@ -82,7 +84,7 @@ try:
         page.get_by_label("Authenticator or recovery code").fill(pyotp.TOTP(data["seed"]).now())
         page.get_by_role("button", name="Continue", exact=True).click()
         page.wait_for_url("https://localhost:8443/")
-        expect(page.get_by_role("heading", name="Your documents", exact=True)).to_be_visible()
+        expect(page.get_by_role("heading", name="Document library", exact=True)).to_be_visible()
         cookies = {cookie["name"]: cookie for cookie in context.cookies()}
         assert cookies["sessionid"]["secure"] and cookies["sessionid"]["httpOnly"]
         assert cookies["sessionid"]["sameSite"] == "Lax"

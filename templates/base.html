@@ -1,41 +1,46 @@
+{% load i18n %}
 {% load static %}
 <!DOCTYPE html>
-<html lang="en">
+{% get_current_language as LANGUAGE_CODE %}
+<html lang="{{ LANGUAGE_CODE }}">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light">
-    <title>{% block title %}Document Vault{% endblock %} · SSDC</title>
+    <title>{% block title %}{% translate "Document Vault" %}{% endblock %} · SSDC</title>
     {% include "components/font_preload.html" %}
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <script src="{% url 'javascript-catalog' %}"></script>
     <script type="module" src="{% static 'js/app.mjs' %}"></script>
+    {% include "components/session_guard.html" %}
     {% block head %}{% endblock %}
   </head>
   <body>
-    <a class="skip" href="#main">Skip to content</a>
+    {% include "components/language_switcher.html" %}
+    <a class="skip" href="#main">{% translate "Skip to content" %}</a>
     {% if request.user.is_authenticated %}
       <aside class="sidebar">
-        <a class="brand" href="{% url 'library' %}"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC<span class="brand-sub">Document Vault</span></span></a>
-        <div class="nav-label">Workspace</div>
-        <nav aria-label="Main navigation">
+        <a class="brand" href="{% if request.user.is_portal_admin %}{% url 'admin:index' %}{% else %}{% url 'staff_portal' %}{% endif %}"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC<span class="brand-sub">{% if request.user.is_portal_admin %}{% translate "Admin portal" %}{% else %}{% translate "Staff portal" %}{% endif %}</span></span></a>
+        <div class="nav-label">{% if request.user.is_portal_admin %}{% translate "Administration" %}{% else %}{% translate "Staff workspace" %}{% endif %}</div>
+        <nav aria-label="{% translate "Main navigation" %}">
           {% include "components/navigation.html" %}
         </nav>
-        <div class="sidebar-bottom"><div class="security-note">{% include "components/icon.html" with name="shield" %}Private workspace</div><p>For approved SSDC staff.</p></div>
+        <div class="sidebar-bottom"><div class="security-note">{% include "components/icon.html" with name="shield" %}{% translate request.user.get_role_display %}</div><p>{% translate "Access follows your account permissions." %}</p></div>
       </aside>
       <div class="workspace">
         <header class="topbar">
           <details class="mobile-navigation">
-            <summary aria-label="Workspace navigation">{% include "components/icon.html" with name="menu" %}<span>SSDC Vault</span></summary>
-            <nav aria-label="Mobile navigation">
+            <summary aria-label="{% translate "Workspace navigation" %}">{% include "components/icon.html" with name="menu" %}<span>{% translate "SSDC Vault" %}</span></summary>
+            <nav aria-label="{% translate "Mobile navigation" %}">
               {% include "components/navigation.html" %}
             </nav>
           </details>
-          <span class="organization">Siddhartha Social Development Centre</span>
+          <span class="organization">{% translate "Siddhartha Social Development Centre" %}</span>
           <div class="user-menu">
             <span class="avatar" aria-hidden="true">{{ request.user.username|first|upper }}</span>
-            <span class="user-identity"><span class="user-name">{{ request.user.username }}</span><small>{{ request.user.get_role_display }}</small></span>
-            <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button" type="submit">Sign out</button></form>
+            <span class="user-identity"><span class="user-name">{{ request.user.username }}</span><small>{% translate request.user.get_role_display %}</small></span>
+            <form action="{% url 'logout' %}" method="post">{% csrf_token %}<button class="text-button" type="submit">{% translate "Sign out" %}</button></form>
           </div>
         </header>
     {% endif %}
@@ -49,18 +54,18 @@
       {% block content %}{% endblock %}
     </main>
     {% if request.user.is_authenticated %}
-      <footer class="footer">SSDC Document Vault<span><a href="{% url 'privacy' %}">Privacy Policy</a><a href="{% url 'terms' %}">Terms of Service</a>{% include "components/icon.html" with name="lock" %}For authorized staff use only</span></footer></div>
+      <footer class="footer">{% translate "SSDC Document Vault" %}<span><a href="{% url 'privacy' %}">{% translate "Privacy Policy" %}</a><a href="{% url 'terms' %}">{% translate "Terms of Service" %}</a>{% include "components/icon.html" with name="lock" %}{% translate "For authorized staff use only" %}</span></footer></div>
     {% else %}
-      <footer class="footer public-footer"><span>SSDC Document Vault</span><span><a href="{% url 'privacy' %}">Privacy Policy</a><a href="{% url 'terms' %}">Terms of Service</a></span></footer>
+      <footer class="footer public-footer"><span>{% translate "SSDC Document Vault" %}</span><span><a href="{% url 'privacy' %}">{% translate "Privacy Policy" %}</a><a href="{% url 'terms' %}">{% translate "Terms of Service" %}</a></span></footer>
     {% endif %}
   <dialog id="confirm-dialog"
           class="confirm-dialog"
           aria-labelledby="confirm-title"
           aria-describedby="confirm-description">
-    <h2 id="confirm-title">Move to deleted?</h2>
-    <p id="confirm-description">This document will leave the library. You can restore it from document management while it is retained.</p>
+    <h2 id="confirm-title">{% translate "Move to deleted?" %}</h2>
+    <p id="confirm-description">{% translate "This document will leave the library. You can restore it from document management while it is retained." %}</p>
     <div class="form-actions">
-      <button class="button secondary" id="confirm-cancel" type="button" autofocus>Cancel</button><button class="button danger" id="confirm-submit" type="button">Move to deleted</button>
+      <button class="button secondary" id="confirm-cancel" type="button" autofocus>{% translate "Cancel" %}</button><button class="button danger" id="confirm-submit" type="button">{% translate "Move to deleted" %}</button>
     </div>
   </dialog>
   {% block scripts %}{% endblock %}

@@ -1,0 +1,6 @@
+{% load static %}
+<meta name="vault-session"
+      content="{% if request.user.is_authenticated %}{{ request.user.pk }}:{{ request.user.auth_version }}:{{ request.session.portal_session }}{% endif %}"
+      data-status-url="{% url 'session_status' %}"
+      data-login-url="{% url 'login' %}">
+<script type="module" src="{% static 'js/session.mjs' %}"></script>

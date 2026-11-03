@@ -1,12 +1,19 @@
-FROM postgres:17-trixie@sha256:ae69c452f483507a6b99fb654cf93aad7fe156ffd2c56247707eef4e36d3c12b AS prepared
-# The service runs as postgres; the root-only privilege-drop helper is unnecessary.
-RUN rm /usr/local/bin/gosu
-# Copy the prepared filesystem so the obsolete helper is absent from image layers too.
+FROM postgres:17-alpine@sha256:266d3c257594e195b309ae9d1805e54c788f1d7b375f56bf6c367aac6c917e7b AS prepared
+# Keep the established numeric identity and remove the unused root helper.
+RUN test "$(id -u postgres)" = 70 \
+    && rm /usr/local/bin/gosu \
+    && sed -i '/^postgres:/s/:70:70:/:999:999:/' /etc/passwd \
+    && sed -i '/^postgres:/s/:70:/:999:/' /etc/group \
+    && chown -R 999:999 /var/lib/postgresql /var/run/postgresql
+COPY deploy/database-entrypoint.sh /usr/local/bin/ssdc-database-entrypoint
+COPY deploy/mark-database-runtime.sh /docker-entrypoint-initdb.d/00-runtime-family.sh
+RUN chmod 0755 /usr/local/bin/ssdc-database-entrypoint /docker-entrypoint-initdb.d/00-runtime-family.sh
+
 FROM scratch
 COPY --from=prepared / /
-ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/17/bin
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 ENV LANG=en_US.utf8 PG_MAJOR=17 PGDATA=/var/lib/postgresql/data
 USER postgres
 STOPSIGNAL SIGINT
-ENTRYPOINT ["docker-entrypoint.sh"]
+ENTRYPOINT ["ssdc-database-entrypoint"]
 CMD ["postgres"]

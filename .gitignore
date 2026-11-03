@@ -36,6 +36,7 @@ venv/
 *.pem
 *.key
 *.db
+!deploy/Dockerfile.db
 *.db-shm
 *.db-wal
 *.sqlite

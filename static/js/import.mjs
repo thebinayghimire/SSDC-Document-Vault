@@ -1,3 +1,4 @@
+import { t } from './i18n.mjs';
 const panel = document.querySelector('[data-import]');
 const form = panel?.querySelector('[data-import-form]');
 if (form) initializeImporter();
@@ -43,7 +44,7 @@ function initializeImporter() {
     find('[data-count]').textContent = `(${queue.length})`;
     const pending = queue.filter(item => ['queued', 'failed'].includes(item.state)).length;
     start.disabled = busy || reading || !pending || !destination.value;
-    start.textContent = busy ? 'Importing documents…' : `Import ${pending || ''} document${pending === 1 ? '' : 's'}`;
+    start.textContent = busy ? t(t("Importing documents…")) : t('Import %(count)s documents', {count: pending});
     destination.disabled = busy;
     panel.querySelectorAll('[data-choose-files], [data-choose-folder], [data-paste], [data-clear]').forEach(button => { button.disabled = busy || reading; });
     queue.forEach(item => { item.title.disabled = busy || !['queued', 'failed'].includes(item.state); item.remove.disabled = busy || reading; });
@@ -73,24 +74,24 @@ function initializeImporter() {
       title.maxLength = 200;
       title.required = true;
       title.value = file.name.replace(/\.[^.]+$/, '').slice(0, 200);
-      const label = element('label', 'sr-only', `Document title for ${file.name}`);
+      const label = element('label', 'sr-only', t('Document title for %(name)s', {name: file.name}));
       label.htmlFor = title.id;
       const info = element('small', '', `${path} · ${size(file.size)}`);
       const progress = element('progress');
       progress.max = 100;
       progress.value = 0;
       progress.hidden = true;
-      progress.setAttribute('aria-label', `Upload progress for ${file.name}`);
-      const status = element('div', 'import-file-status', 'Ready to upload');
+      progress.setAttribute('aria-label', t('Upload progress for %(name)s', {name: file.name}));
+      const status = element('div', 'import-file-status', t(t("Ready to upload")));
       const remove = element('button', 'icon-button import-remove', '×');
       remove.type = 'button';
-      remove.setAttribute('aria-label', `Remove ${file.name}`);
+      remove.setAttribute('aria-label', t('Remove %(name)s', {name: file.name}));
       const item = {file, key, row, title, progress, status, remove, state: 'queued'};
       row.dataset.state = 'queued';
       remove.addEventListener('click', () => {
         if (busy || reading) return;
         queue = queue.filter(candidate => candidate !== item);
-        row.remove(); update(); say(`${file.name} removed from the queue.`);
+        row.remove(); update(); say(t('%(name)s removed from the queue.', {name: file.name}));
         start.disabled ? find('[data-choose-files]').focus() : start.focus();
       });
       details.append(label, title, info, progress, status);
@@ -98,12 +99,12 @@ function initializeImporter() {
       list.append(row); queue.push(item); added++;
     }
     const notes = [];
-    if (duplicate) notes.push(`${duplicate} already queued`);
-    if (unsupported) notes.push(`${unsupported} unsupported file${unsupported === 1 ? '' : 's'}`);
-    if (oversized) notes.push(`${oversized} over the ${size(maxBytes)} limit`);
-    if (empty) notes.push(`${empty} empty file${empty === 1 ? '' : 's'}`);
-    if (excess) notes.push(`${excess} beyond the 50-file batch limit`);
-    say(`${added} file${added === 1 ? '' : 's'} added.${notes.length ? ` Skipped: ${notes.join('; ')}.` : ''}${!destination.value ? ' Choose a destination folder to continue.' : ''}`, !added && notes.length > 0);
+    if (duplicate) notes.push(t('%(count)s already queued', {count: duplicate}));
+    if (unsupported) notes.push(t('%(count)s unsupported files', {count: unsupported}));
+    if (oversized) notes.push(t('%(count)s over the %(size)s limit', {count: oversized, size: size(maxBytes)}));
+    if (empty) notes.push(t('%(count)s empty files', {count: empty}));
+    if (excess) notes.push(t('%(count)s beyond the batch limit', {count: excess}));
+    say([t('%(count)s files added.', {count: added}), notes.length ? t('Skipped: %(notes)s', {notes: notes.join('; ')}) : '', !destination.value ? t('Choose a destination folder to continue.') : ''].filter(Boolean).join(' '), !added && notes.length > 0);
     update();
   }
 
@@ -116,7 +117,7 @@ function initializeImporter() {
       if (['done', 'stored', 'rejected'].includes(item.state)) { item.row.remove(); return false; }
       return true;
     });
-    update(); say('Finished files cleared.');
+    update(); say(t(t("Finished files cleared.")));
   });
 
   // Capture directory entries during the drop event; browsers discard access afterward.
@@ -159,13 +160,13 @@ function initializeImporter() {
     const files = [...event.dataTransfer.files];
     const entries = [...event.dataTransfer.items].map(item => item.webkitGetAsEntry?.()).filter(Boolean);
     if (!entries.some(entry => entry.isDirectory)) { addFiles(files); return; }
-    reading = true; update(); say('Reading your folder…');
+    reading = true; update(); say(t(t("Reading your folder…")));
     try {
       const result = await readEntries(entries);
       addFiles(result.files);
-      if (result.limited) say('This folder is too large to read completely. Review the queued files and import smaller folders next.', true);
+      if (result.limited) say(t(t("This folder is too large to read completely. Review the queued files and import smaller folders next.")), true);
     } catch {
-      say('Could not read this folder. Try the Import folder button instead.', true);
+      say(t(t("Could not read this folder. Try the Import folder button instead.")), true);
     } finally { reading = false; update(); }
   });
   // Prevent an accidental file drop outside the target from navigating away.
@@ -174,11 +175,11 @@ function initializeImporter() {
     if (busy || reading || event.target.closest('input, textarea, [contenteditable="true"]')) return;
     const files = [...(event.clipboardData?.files || [])];
     if (files.length) { event.preventDefault(); addFiles(files); }
-    else if (dropzone.contains(event.target)) say(`Your browser did not provide a file. Try Choose files, or copy a file and press ${pasteKey} here.`, true);
+    else if (dropzone.contains(event.target)) say(t('Press %(key)s here to paste copied files, or use Choose files.', {key: pasteKey}), true);
   });
   find('[data-paste]').addEventListener('click', async () => {
     dropzone.focus();
-    if (!navigator.clipboard?.read) { say(`Press ${pasteKey} here to paste copied files. If your browser does not expose them, use Choose files.`); return; }
+    if (!navigator.clipboard?.read) { say(t('Press %(key)s here to paste copied files, or use Choose files.', {key: pasteKey})); return; }
     reading = true; update();
     try {
       const items = await navigator.clipboard.read();
@@ -191,8 +192,8 @@ function initializeImporter() {
         files.push(new File([blob], `Pasted document ${Date.now()}-${files.length + 1}.${extension}`, {type}));
       }
       if (files.length) addFiles(files);
-      else say(`Press ${pasteKey} to paste a copied file. If your browser does not expose the file, use Choose files.`);
-    } catch { say(`Press ${pasteKey} here to paste copied files, or use Choose files.`); }
+      else say(t('Press %(key)s here to paste copied files, or use Choose files.', {key: pasteKey}));
+    } catch { say(t('Press %(key)s here to paste copied files, or use Choose files.', {key: pasteKey})); }
     finally { reading = false; update(); }
   });
 
@@ -209,16 +210,16 @@ function initializeImporter() {
       data.append('file', item.file);
       item.progress.hidden = false;
       item.progress.value = 0;
-      state(item, 'uploading', 'Uploading…');
+      state(item, 'uploading', t(t("Uploading…")));
       xhr.upload.addEventListener('progress', event => {
         if (event.lengthComputable) item.progress.value = Math.round(event.loaded / event.total * 100);
       });
       xhr.upload.addEventListener('load', () => {
         item.progress.removeAttribute('value');
-        state(item, 'uploading', 'Uploaded · Checking document…');
+        state(item, 'uploading', t(t("Uploaded · Checking document…")));
       });
       const connectionError = () => {
-        state(item, 'failed', 'Connection interrupted. Check Manage documents before retrying; the file may have arrived.');
+        state(item, 'failed', t(t("Connection interrupted. Check Manage documents before retrying; the file may have arrived.")));
         item.progress.hidden = true; resolve({stop: true});
       };
       xhr.addEventListener('error', connectionError);
@@ -230,19 +231,19 @@ function initializeImporter() {
         if (xhr.status === 201 && response.manage_url) {
           const ready = response.status === 'ready';
           const rejected = response.status === 'rejected';
-          state(item, ready ? 'done' : rejected ? 'rejected' : 'stored', ready ? 'Added to library' : rejected ? 'Rejected during checking' : 'Saved · Awaiting checks');
-          const link = element('a', '', 'View details');
+          state(item, ready ? 'done' : rejected ? 'rejected' : 'stored', ready ? t(t("Added to library")) : rejected ? t(t("Rejected during checking")) : t(t("Saved · Awaiting checks")));
+          const link = element('a', '', t(t("View details")));
           link.href = response.manage_url;
           item.status.append(link);
           if (response.note) item.status.append(element('small', '', response.note));
           resolve({}); return;
         }
         const errors = Object.values(response.errors || {}).flat().map(error => error.message);
-        let message = response.error || errors.join(' ') || 'Upload failed. Try again shortly.';
-        if (xhr.status === 429) message = 'Upload limit reached. Wait one minute, then continue.';
-        if (xhr.status === 413) message = 'This file exceeds the server upload limit.';
-        if (xhr.status === 403 && !response.error) message = 'Your session or upload access changed. Refresh the page and sign in again.';
-        if (xhr.status === 200 && !response.manage_url) message = 'Your session expired. Sign in again in a new tab, then continue here.';
+        let message = response.error || errors.join(' ') || t(t("Upload failed. Try again shortly."));
+        if (xhr.status === 429) message = t(t("Upload limit reached. Wait one minute, then continue."));
+        if (xhr.status === 413) message = t(t("This file exceeds the server upload limit."));
+        if (xhr.status === 403 && !response.error) message = t(t("Your session or upload access changed. Refresh the page and sign in again."));
+        if (xhr.status === 200 && !response.manage_url) message = t(t("Your session expired. Sign in again in a new tab, then continue here."));
         if (response.reauth_url || xhr.status === 200) {
           const link = find('[data-reauth]');
           link.href = response.reauth_url || '/accounts/login/'; link.hidden = false;
@@ -270,12 +271,12 @@ function initializeImporter() {
       busy = false; form.removeAttribute('aria-busy'); update();
       const link = find('[data-reauth]');
       link.href = '/accounts/login/'; link.hidden = false;
-      say('Could not verify your session. Check your connection or sign in in a new tab, then continue here.', true);
+      say(t(t("Could not verify your session. Check your connection or sign in in a new tab, then continue here.")), true);
       return;
     }
     const folder = destination.value;
     for (let index = 0; index < pending.length; index++) {
-      say(`Importing ${index + 1} of ${pending.length}: ${pending[index].file.name}`);
+      say(t('Importing %(current)s of %(total)s: %(name)s', {current: index + 1, total: pending.length, name: pending[index].file.name}));
       const result = await upload(pending[index], folder);
       if (result.stop) break;
     }
@@ -284,7 +285,7 @@ function initializeImporter() {
     const checking = queue.filter(item => item.state === 'stored').length;
     const rejected = queue.filter(item => item.state === 'rejected').length;
     const remaining = queue.filter(item => ['queued', 'failed'].includes(item.state)).length;
-    say(`${added} added to library. ${checking ? `${checking} awaiting checks. ` : ''}${rejected ? `${rejected} rejected. ` : ''}${remaining ? `${remaining} still need attention. Review the file messages before continuing.` : 'You can add more files or return to your library.'}`, remaining > 0 || rejected > 0);
+    say(t('%(added)s added to library. %(checking)s awaiting checks. %(rejected)s rejected. %(remaining)s need attention.', {added, checking, rejected, remaining}), remaining > 0 || rejected > 0);
   });
   window.addEventListener('beforeunload', event => { if (busy || reading) { event.preventDefault(); event.returnValue = ''; } });
   update();

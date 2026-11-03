@@ -1,5 +1,9 @@
 # Build progress - 7 October 2026
 
+Current results and remaining release gates from 28 October 2026 are in
+[RELEASE_READINESS.md](RELEASE_READINESS.md). The entries below preserve earlier
+verification history.
+
 ## Google Drive primary storage integration
 
 Implemented owner-only offline OAuth with `drive.file`, administrator/CSRF/state/

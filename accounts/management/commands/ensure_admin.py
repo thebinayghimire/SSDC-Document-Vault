@@ -8,10 +8,11 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import User
+from audit.services import record
 
 
 class Command(BaseCommand):
-    help = "Idempotently create or promote the deployment administrator."
+    help = "Create the deployment administrator once, preserving existing account decisions."
 
     def handle(self, *args, **options):
         username = os.getenv("DJANGO_SUPERUSER_USERNAME", "").strip()
@@ -36,24 +37,16 @@ class Command(BaseCommand):
                     password=password,
                     role=User.Role.ADMIN,
                 )
+                record(None, "deployment_admin_created", user.pk)
                 created = True
             else:
                 created = False
-                changed = []
-                desired = {
-                    "is_active": True,
-                    "is_staff": True,
-                    "is_superuser": True,
-                    "role": User.Role.ADMIN,
-                }
-                if email and user.email != email:
-                    desired["email"] = email
-                for field, value in desired.items():
-                    if getattr(user, field) != value:
-                        setattr(user, field, value)
-                        changed.append(field)
-                if changed:
-                    user.save(update_fields=changed)
+                if not user.is_portal_admin or not user.is_superuser:
+                    raise CommandError(
+                        "The bootstrap username already exists without active administrator "
+                        "access. Use account administration or recover_admin; deployment "
+                        "will not reactivate or promote an existing account."
+                    )
 
-        action = "created" if created else "already exists and is configured"
+        action = "created" if created else "already exists; account settings preserved"
         self.stdout.write(self.style.SUCCESS(f"Administrator {username!r} {action}."))

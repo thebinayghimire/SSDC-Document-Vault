@@ -9,10 +9,20 @@ def test_scanning_is_on_by_default_everywhere():
     assert scan_mode({}, True) == "clamav"
 
 
-def test_render_free_defaults_to_disabled_and_enable_clamav_is_explicit():
-    assert scan_mode({"RENDER": "true"}, True) == "disabled"
+def test_render_keeps_fail_closed_default_and_requires_explicit_scan_consent():
+    assert scan_mode({"RENDER": "true"}, True) == "clamav"
     assert scan_mode({"RENDER": "true", "ENABLE_CLAMAV": "true"}, True) == "clamav"
-    assert scan_mode({"ENABLE_CLAMAV": "false"}, True) == "disabled"
+    with pytest.raises(ImproperlyConfigured, match="ACCEPT_NO_MALWARE_SCANNING"):
+        scan_mode({"ENABLE_CLAMAV": "false"}, True)
+    assert (
+        scan_mode({"ENABLE_CLAMAV": "false", "ACCEPT_NO_MALWARE_SCANNING": "1"}, True) == "disabled"
+    )
+
+
+def test_scan_alias_cannot_hide_an_invalid_or_development_mode():
+    for mode in ("typo", "skip-development"):
+        with pytest.raises(ImproperlyConfigured):
+            scan_mode({"SCAN_MODE": mode, "ENABLE_CLAMAV": "false"}, True)
 
 
 @pytest.mark.parametrize("value", ["", "enabled", "2", "secret-canary"])

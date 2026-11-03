@@ -1,16 +1,17 @@
 from django import forms
+from django.utils.translation import gettext_lazy as _
 
 from .models import Document, Folder
 from .services import save_document_fields
 
 
 class UploadForm(forms.Form):
-    title = forms.CharField(max_length=200)
-    file = forms.FileField(label="PDF or image")
+    title = forms.CharField(max_length=200, label=_("Title"))
+    file = forms.FileField(label=_("PDF or image"))
 
 
 class ImportForm(UploadForm):
-    folder = forms.ModelChoiceField(queryset=Folder.objects.none(), label="Save to folder")
+    folder = forms.ModelChoiceField(queryset=Folder.objects.none(), label=_("Save to folder"))
 
     def __init__(self, *args, allowed_folders, **kwargs):
         super().__init__(*args, **kwargs)
@@ -28,12 +29,14 @@ class FolderForm(forms.ModelForm):
     class Meta:
         model = Folder
         fields = ["name", "restricted"]
+        labels = {"name": _("Name"), "restricted": _("Restricted")}
 
 
 class MetadataForm(forms.ModelForm):
     class Meta:
         model = Document
         fields = ["title", "folder"]
+        labels = {"title": _("Title"), "folder": _("Folder")}
 
     def __init__(self, *args, allowed_folders=None, actor=None, **kwargs):
         super().__init__(*args, **kwargs)

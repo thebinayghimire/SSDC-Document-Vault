@@ -1,9 +1,11 @@
 import time
+from urllib.parse import urlencode
 
 from django.contrib.admin import AdminSite
 from django.shortcuts import redirect
+from django.urls import reverse
 
-from accounts.navigation import reauthentication_url, safe_admin_destination
+from accounts.navigation import portal_home, reauthentication_url, safe_admin_destination
 
 
 class VaultAdminSite(AdminSite):
@@ -23,12 +25,17 @@ class VaultAdminSite(AdminSite):
         )
 
     def login(self, request, extra_context=None):
-        if not request.user.is_authenticated:
-            return redirect("login")
-        if not request.user.is_portal_admin:
-            return redirect("library")
         destination = safe_admin_destination(request, request.GET.get("next"))
+        if not request.user.is_authenticated:
+            return redirect(reverse("admin_login") + "?" + urlencode({"next": destination}))
+        if not request.user.is_portal_admin:
+            return redirect(portal_home(request.user))
         return redirect(reauthentication_url(destination))
+
+    def logout(self, request, extra_context=None):
+        from accounts.views import sign_out
+
+        return sign_out(request)
 
 
 site = VaultAdminSite(name="admin")

@@ -28,6 +28,7 @@ def compose_config(smoke=False, pilot=False, oracle=False):
             "CSRF_TRUSTED_ORIGINS": "https://localhost",
             "GOOGLE_DRIVE_REDIRECT_URI": "https://localhost/storage/google/callback/",
             "POSTGRES_HOST": "synthetic.pooler.supabase.com",
+            "POSTGRES_PORT": "5432",
             "POSTGRES_MIGRATION_USER": "ssdc_migrator.synthetic",
             "POSTGRES_SSLROOTCERT_FILE": str(ROOT / "artifacts" / "synthetic" / "root.crt"),
         }

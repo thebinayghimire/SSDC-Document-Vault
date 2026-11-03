@@ -48,6 +48,46 @@ class SessionPolicyMiddleware:
         return self.get_response(request)
 
 
+class UploadLimitMiddleware:
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    @staticmethod
+    def rejected(request):
+        from django.http import HttpResponse, JsonResponse
+
+        message = "Upload one file per request within the configured upload limit."
+        response = (
+            JsonResponse({"error": message}, status=413)
+            if "application/json" in request.headers.get("Accept", "")
+            else HttpResponse(message, status=413, content_type="text/plain")
+        )
+        response["Cache-Control"] = "no-store, private, max-age=0"
+        return response
+
+    def __call__(self, request):
+        from django.http import HttpResponseBadRequest
+
+        try:
+            length = int(request.META.get("CONTENT_LENGTH") or 0)
+            if length < 0:
+                raise ValueError
+        except (ValueError, TypeError):
+            return HttpResponseBadRequest("Invalid request length.")
+        if length > settings.DATA_UPLOAD_MAX_MEMORY_SIZE:
+            return self.rejected(request)
+        if request.method == "POST" and request.content_type == "multipart/form-data":
+            # Parse through the bounded handlers before any view can accept a
+            # completed first file from a subsequently rejected multipart body.
+            _ = request.POST
+            if getattr(request, "upload_limit_exceeded", False):
+                return self.rejected(request)
+        response = self.get_response(request)
+        if getattr(request, "upload_limit_exceeded", False):
+            return self.rejected(request)
+        return response
+
+
 class MaintenanceMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

@@ -2,7 +2,40 @@
 
 import logging
 
-from django.core.files.uploadhandler import StopUpload, TemporaryFileUploadHandler
+from django.conf import settings
+from django.core.files.uploadhandler import (
+    FileUploadHandler,
+    StopUpload,
+    TemporaryFileUploadHandler,
+)
+
+
+class UploadBudgetHandler(FileUploadHandler):
+    """Bound all file bytes before either Django storage handler receives them."""
+
+    def __init__(self, request=None):
+        super().__init__(request)
+        self.received = 0
+        self.files = 0
+
+    def new_file(self, *args, **kwargs):
+        super().new_file(*args, **kwargs)
+        self.files += 1
+        if self.files > 1:
+            self.reject()
+
+    def reject(self):
+        self.request.upload_limit_exceeded = True
+        raise StopUpload(connection_reset=False)
+
+    def receive_data_chunk(self, raw_data, start):
+        self.received += len(raw_data)
+        if self.received > settings.MAX_UPLOAD_BYTES:
+            self.reject()
+        return raw_data
+
+    def file_complete(self, file_size):
+        return None
 
 
 class BudgetedTemporaryFileUploadHandler(TemporaryFileUploadHandler):

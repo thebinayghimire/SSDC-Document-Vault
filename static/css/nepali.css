@@ -1,0 +1,71 @@
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-style: normal;
+  font-weight: 400;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(../fonts/devanagari/NotoSansDevanagari-400.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-style: normal;
+  font-weight: 500;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(../fonts/devanagari/NotoSansDevanagari-500.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-style: normal;
+  font-weight: 600;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(../fonts/devanagari/NotoSansDevanagari-600.ttf) format('truetype');
+}
+@font-face {
+  font-family: 'Noto Sans Devanagari';
+  font-style: normal;
+  font-weight: 700;
+  font-stretch: normal;
+  font-display: swap;
+  src: url(../fonts/devanagari/NotoSansDevanagari-700.ttf) format('truetype');
+}
+
+html[lang="ne"] body { font-family: "Noto Sans Devanagari", sans-serif; line-height: 1.7; }
+
+/* A persistent language choice, available before and after sign in. */
+.language-switcher {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: .6rem;
+  padding: .65rem 1.25rem;
+  position: relative;
+  z-index: 5;
+  background: #fff;
+  border-bottom: 1px solid #e2e8e6;
+  color: #253d34;
+  font-size: .875rem;
+}
+.language-switcher select,
+.language-switcher button {
+  min-height: 44px;
+  padding: .4rem .75rem;
+  border: 1px solid #b8c9c0;
+  border-radius: .5rem;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+}
+.language-switcher button { cursor: pointer; font-weight: 600; }
+.language-switcher :focus-visible { outline: 3px solid #308269; outline-offset: 2px; }
+html[lang="ne"] body { font-family: "Noto Sans Devanagari", "Nirmala UI", "Kohinoor Devanagari", "Mangal", sans-serif; line-height: 1.7; }
+html[lang="ne"] .button, html[lang="ne"] button { white-space: normal; }
+html[lang="ne"] .eyebrow, html[lang="ne"] .nav-label { letter-spacing: normal; }
+@media (min-width: 834px) {
+  body:has(.sidebar) > .language-switcher { margin-left: var(--sidebar-width, 248px); }
+}
+@media (max-width: 600px) {
+  .language-switcher { padding: .5rem 1rem; }
+}

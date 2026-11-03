@@ -1,23 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Staff sign in{% endblock %}
+{% load i18n %}
+{% block title %}{% if portal == 'admin' %}{% translate "Admin sign in" %}{% elif portal == 'staff' %}{% translate "Staff sign in" %}{% else %}{% translate "Sign in" %}{% endif %}{% endblock %}
 {% block content %}
   <section class="auth-card" aria-labelledby="sign-in-heading">
-    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>Document Vault</small></span></div>
-    <span class="eyebrow">Your private workspace</span>
-    <h1 id="sign-in-heading">Welcome back.</h1>
-    <p class="muted">SSDC Document Vault is an internal document library operated by Siddhartha Social Development Centre for authorized staff.</p>
-    <form method="post" data-progress="Signing in…">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">Sign in {% include "components/icon.html" with name="arrow" %}</button></div></form>
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% if portal == 'admin' %}{% translate "Administration" %}{% elif portal == 'staff' %}{% translate "Staff workspace" %}{% else %}{% translate "Your private workspace" %}{% endif %}</span>
+    <h1 id="sign-in-heading">{% if portal == 'admin' %}{% translate "Admin sign in." %}{% elif portal == 'staff' %}{% translate "Staff sign in." %}{% else %}{% translate "Welcome back." %}{% endif %}</h1>
+    <p class="muted">{% if portal == 'admin' %}{% translate "Manage accounts, document access, and vault activity with your administrator account." %}{% elif portal == 'staff' %}{% translate "Sign in with your staff account to browse documents shared with you." %}{% else %}{% translate "Sign in to SSDC Document Vault. Your account determines which portal and documents you can access." %}{% endif %}</p>
+    <nav class="portal-switch" aria-label="{% translate "Choose a portal" %}">
+      <a href="{% url 'staff_login' %}" {% if portal == 'staff' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="library" %}{% translate "Staff portal" %}</a>
+      <a href="{% url 'admin_login' %}" {% if portal == 'admin' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="users" %}{% translate "Admin portal" %}</a>
+    </nav>
+    <form method="post" data-progress="{% translate "Signing in…" %}">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">{% translate "Sign in" %} {% include "components/icon.html" with name="arrow" %}</button></div></form>
     <div class="auth-foot">
-      Need access or help signing in?
+      {% translate "Need access or help signing in?" %}
       <br>
-      Contact your SSDC administrator.
+      {% translate "Contact your SSDC administrator." %}
       <br>
-      <a href="{% url 'privacy' %}">Privacy Policy</a> · <a href="{% url 'terms' %}">Terms of Service</a>
+      <a href="{% url 'privacy' %}">{% translate "Privacy Policy" %}</a> · <a href="{% url 'terms' %}">{% translate "Terms of Service" %}</a>
     </div>
   </section>
   <p class="auth-caption">
-    Siddhartha Social Development Centre
+    {% translate "Siddhartha Social Development Centre" %}
     <br>
-    For authorized staff use only
+    {% translate "For authorized staff use only" %}
   </p>
 {% endblock %}

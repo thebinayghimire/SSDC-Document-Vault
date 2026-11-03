@@ -6,6 +6,7 @@ import mimetypes
 import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
+from unittest.mock import patch
 from urllib.parse import parse_qs, urlsplit
 
 import pyotp
@@ -258,6 +259,36 @@ def test_import_picker_drop_paste_and_batch(browser_page, users, folder, tmp_pat
     page.screenshot(path=str(ARTIFACTS / "import-1440.png"), full_page=True)
 
 
+def test_manager_search_filters_and_retry_checks(browser_page, users, folder, document):
+    from vault.scanner import ScanUnavailable
+
+    page, context, base, _ = browser_page
+
+    def prepare():
+        with patch("vault.services.scan", side_effect=ScanUnavailable):
+            return upload_document(users["manager"], folder, pdf_upload(), "Awaiting review")
+
+    version = database_call(prepare)
+    browser_session(context, base, users["manager"])
+    page.goto(base + "/manage/")
+    page.get_by_label("Search managed documents", exact=True).fill("Awaiting")
+    page.get_by_label("Document state", exact=True).select_option("pending")
+    page.get_by_role("button", name="Search", exact=True).click()
+    expect(page.get_by_role("link", name="Awaiting review", exact=True)).to_be_visible()
+    expect(page.get_by_role("link", name="Project report", exact=False)).to_have_count(0)
+    page.set_viewport_size({"width": 375, "height": 844})
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "management-filters-375.png"), full_page=True)
+    page.get_by_role("link", name="Manage Awaiting review", exact=True).click()
+    page.get_by_role("button", name="Retry document checks", exact=True).click()
+    expect(page.get_by_text("Document checks completed.", exact=True)).to_be_visible(timeout=30000)
+    expect(page.get_by_role("button", name="Retry document checks", exact=True)).to_have_count(0)
+    assert (
+        database_call(lambda: Document.objects.get(pk=version.document_id).active_version_id)
+        == version.pk
+    )
+
+
 def test_routes_at_all_sizes(browser_page, users, folder, document):
     page, context, base, _ = browser_page
     photo = database_call(
@@ -494,3 +525,66 @@ def test_signin_errors_and_mfa_screens(browser_page, users):
     page.goto(base + "/accounts/login/")
     page.set_viewport_size({"width": 1440, "height": 1000})
     page.screenshot(path=str(ARTIFACTS / "login-1440.png"), full_page=True)
+
+
+def test_role_portal_sign_in_and_sign_out(browser_page, settings):
+    settings.MFA_ENABLED = False
+    page, _, base, _ = browser_page
+    for width in (390, 1440):
+        page.set_viewport_size({"width": width, "height": 1000})
+        for portal in ("staff", "admin"):
+            page.goto(base + f"/accounts/{portal}/login/")
+            no_overflow(page)
+            page.screenshot(path=str(ARTIFACTS / f"{portal}-signin-{width}.png"), full_page=True)
+    page.goto(base + "/accounts/staff/login/")
+    page.get_by_label("Staff ID").fill("alice")
+    page.get_by_label("Password:", exact=True).fill("Strong-Staff-Password-42")
+    page.get_by_role("button", name="Sign in", exact=False).click()
+    expect(page).to_have_url(base + "/staff/")
+    expect(page.locator(".brand-sub")).to_have_text("Staff portal")
+    expect(page.get_by_role("link", name="Admin portal", exact=True)).to_have_count(0)
+    expect(page.get_by_role("link", name="Add documents", exact=True)).to_have_count(0)
+    page.get_by_role("button", name="Sign out", exact=True).click()
+    expect(page).to_have_url(base + "/accounts/staff/login/")
+    expect(page.get_by_role("status")).to_contain_text("You’ve signed out")
+    page.get_by_role("link", name="Admin portal", exact=True).click()
+    page.get_by_label("Admin ID").fill("admin")
+    page.get_by_label("Password:", exact=True).fill("Strong-Admin-Password-42")
+    page.get_by_role("button", name="Sign in", exact=False).click()
+    expect(page).to_have_url(base + "/admin/")
+    expect(page.get_by_role("heading", name="Accounts, access, and oversight.")).to_be_visible()
+    page.get_by_role("button", name="Sign out", exact=True).click()
+    expect(page).to_have_url(base + "/accounts/admin/login/")
+
+
+@pytest.mark.parametrize(("account", "home"), [("alice", "/staff/"), ("admin", "/admin/")])
+def test_sign_out_clears_other_tabs_and_browser_history(browser_page, users, account, home):
+    page, context, base, _ = browser_page
+    browser_session(context, base, users[account])
+    page.goto(base + home)
+    other = context.new_page()
+    other.goto(base + home)
+    page.get_by_role("button", name="Sign out", exact=True).click()
+    expect(page).to_have_url(re.compile(r"/accounts/(staff|admin)/login/"))
+    expect(other).to_have_url(base + "/accounts/login/")
+    expect(other.locator('meta[name="vault-session"]')).to_have_attribute("content", "")
+    # The other tab replaces its protected history entry. The tab that submitted
+    # sign-out still has a previous entry, which must be authorized again on Back.
+    page.go_back()
+    expect(page).to_have_url(re.compile(r"/accounts/(staff|admin)/login/"))
+    expect(page.get_by_role("button", name="Sign out", exact=True)).to_have_count(0)
+    expect(page.locator("html")).not_to_have_attribute("hidden", "")
+    other.close()
+
+
+def test_account_switch_clears_old_admin_screen_in_other_tab(browser_page, users):
+    page, context, base, _ = browser_page
+    browser_session(context, base, users["admin"])
+    page.goto(base + "/admin/")
+    browser_session(context, base, users["alice"])
+    other = context.new_page()
+    other.goto(base + "/staff/")
+    expect(page).to_have_url(base + "/staff/")
+    expect(page.locator(".user-name")).to_have_text("alice")
+    expect(page.get_by_role("link", name="Admin portal", exact=True)).to_have_count(0)
+    other.close()

@@ -2,7 +2,7 @@ import posixpath
 import re
 from urllib.parse import urlencode, urlsplit
 
-from django.urls import reverse
+from django.urls import Resolver404, resolve, reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 
 
@@ -46,6 +46,47 @@ def safe_admin_destination(request, destination, fallback=None):
     ):
         return fallback
     return candidate
+
+
+def portal_home(user):
+    return reverse("admin:index" if user.is_portal_admin else "staff_portal")
+
+
+def safe_portal_destination(request, destination):
+    """Keep sign-in returns within the account's portal and permitted tools."""
+    fallback = portal_home(request.user)
+    candidate = safe_return_destination(request, destination, fallback)
+    path = urlsplit(candidate).path
+    if re.search(r"(?i)%(?:2e|2f|5c)", path):
+        return fallback
+    if posixpath.normpath(path).rstrip("/") != path.rstrip("/"):
+        return fallback
+    try:
+        route = resolve(path)
+    except Resolver404:
+        return fallback
+    if "admin" in route.namespaces:
+        return (
+            safe_admin_destination(request, candidate) if request.user.is_portal_admin else fallback
+        )
+    allowed = {"library", "folder", "preview", "content", "thumbnail", "password_change"}
+    if not request.user.is_portal_admin:
+        allowed.add("staff_portal")
+    if request.user.can_manage:
+        allowed.update(
+            {
+                "management",
+                "import_documents",
+                "manage_document",
+                "upload",
+                "replace",
+                "create_folder",
+                "create_root_folder",
+            }
+        )
+    if request.user.is_portal_admin:
+        allowed.add("drive_connection")
+    return candidate if route.url_name in allowed else fallback
 
 
 def reauthentication_url(destination):

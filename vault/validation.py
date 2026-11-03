@@ -149,7 +149,10 @@ if __name__ == "__main__":
     if sys.platform != "win32":
         import resource
 
-        resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
+        # macOS cannot enforce RLIMIT_AS for this interpreter. Production is
+        # Linux-only; retain its memory boundary and portable development limits.
+        if sys.platform == "linux":
+            resource.setrlimit(resource.RLIMIT_AS, (512 * 1024 * 1024, 512 * 1024 * 1024))
         resource.setrlimit(resource.RLIMIT_CPU, (10, 10))
         resource.setrlimit(resource.RLIMIT_NOFILE, (64, 64))
     try:

@@ -32,7 +32,7 @@ with sync_playwright() as playwright:
     page.goto(base + "/accounts/login/")
     page.screenshot(path="artifacts/login.png", full_page=True)
     login(page, "demo.staff")
-    expect(page.get_by_role("heading", name="Your documents")).to_be_visible()
+    expect(page.get_by_role("heading", name="Document library", exact=True)).to_be_visible()
     expect(page.get_by_text("Programme overview - sample report", exact=True)).to_be_visible()
     expect(page.get_by_text("Finance & operations", exact=True)).to_have_count(0)
     page.screenshot(path="artifacts/library.png", full_page=True)

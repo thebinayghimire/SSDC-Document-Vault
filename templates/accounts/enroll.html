@@ -1,17 +1,18 @@
 {% extends "base.html" %}
-{% block title %}Set up your authenticator{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Set up your authenticator" %}{% endblock %}
 {% block content %}
   <section class="auth-card account-panel" aria-labelledby="enroll-heading">
-    <span class="eyebrow">Account security · Step 1 of 2</span>
-    <h1 id="enroll-heading">Set up your authenticator.</h1>
+    <span class="eyebrow">{% translate "Account security · Step 1 of 2" %}</span>
+    <h1 id="enroll-heading">{% translate "Set up your authenticator." %}</h1>
     <ol class="setup-steps">
-      <li>Open your authenticator app and add a time-based account.</li>
-      <li>Name it <strong>SSDC Vault</strong> and enter the setup key below.</li>
-      <li>Enter the current code to finish setup.</li>
+      <li>{% translate "Open your authenticator app and add an account using a timed code." %}</li>
+      <li>{% translate "Name it" %} <strong>{% translate "SSDC Vault" %}</strong> {% translate "and enter the setup key below." %}</li>
+      <li>{% translate "Enter the current code to finish setup." %}</li>
     </ol>
-    <code class="secret" aria-label="Private authenticator setup key">{{ secret }}</code>
-    <p class="muted">Keep this key private. You’ll save your recovery codes next.</p>
-    <form method="post" data-progress="Verifying…">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">Verify and continue</button></div></form>
-    <div class="auth-foot"><a class="back-link" href="{% url 'login' %}">{% include "components/icon.html" with name="back" %}Back to sign in</a></div>
+    <code class="secret" aria-label="{% translate "Private authenticator setup key" %}">{{ secret }}</code>
+    <p class="muted">{% translate "Keep this key private. You’ll save your recovery codes next." %}</p>
+    <form method="post" data-progress="{% translate "Verifying…" %}">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">{% translate "Verify and continue" %}</button></div></form>
+    <div class="auth-foot"><a class="back-link" href="{% url 'login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a></div>
   </section>
 {% endblock %}

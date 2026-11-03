@@ -16,6 +16,7 @@ ROOT = Path(__file__).resolve().parents[1]
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--junit", default="artifacts/deployment-fixes.xml")
+    parser.add_argument("--database-image", default="postgres:17-alpine")
     parser.add_argument("tests", nargs="*")
     args = parser.parse_args()
     name = "ssdc-checks-" + secrets.token_hex(6)
@@ -28,6 +29,8 @@ def main():
                 "--detach",
                 "--name",
                 name,
+                "--user",
+                "postgres",
                 "--cap-drop",
                 "ALL",
                 "--security-opt",
@@ -40,7 +43,7 @@ def main():
                 "POSTGRES_PASSWORD=" + password,
                 "-p",
                 "127.0.0.1::5432",
-                "ssdc-postgres",
+                args.database_image,
             ],
             check=True,
             capture_output=True,
@@ -67,9 +70,26 @@ def main():
                 if attempt == 59:
                     raise RuntimeError("Disposable test database unavailable") from None
                 time.sleep(1)
-        environment = dict(
-            os.environ,
+        environment = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith(("POSTGRES_", "GOOGLE_", "DRIVE_", "RENDER", "DJANGO_SUPERUSER_"))
+            and key
+            not in {
+                "SECRET_KEY",
+                "SECRET_KEY_FILE",
+                "MFA_ENCRYPTION_KEY",
+                "MFA_ENCRYPTION_KEY_FILE",
+                "ENABLE_CLAMAV",
+                "ACCEPT_NO_MALWARE_SCANNING",
+                "ALLOWED_HOSTS",
+                "MFA_ENABLED",
+            }
+        }
+        environment.update(
             APP_ENV="test",
+            DATABASE_URL="",
+            DATABASE_URL_UNPOOLED="",
             POSTGRES_DB="ssdc_checks",
             POSTGRES_USER="ssdc_checks",
             POSTGRES_PASSWORD=password,
@@ -78,8 +98,6 @@ def main():
             DOCUMENT_STORAGE_PROVIDER="filesystem",
             SCAN_MODE="skip-development",
         )
-        for key in ("POSTGRES_PASSWORD_FILE", "SECRET_KEY_FILE", "MFA_ENCRYPTION_KEY_FILE"):
-            environment.pop(key, None)
         result = subprocess.run(
             [
                 sys.executable,

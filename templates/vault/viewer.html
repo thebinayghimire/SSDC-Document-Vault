@@ -1,17 +1,18 @@
 {% extends "base.html" %}
+{% load i18n %}
 {% load static %}
 {% block title %}{{ document.title }}{% endblock %}
 {% block content %}
-  <nav class="breadcrumb" aria-label="Breadcrumb"><a href="{% url 'library' %}">Document library</a>{% include "components/icon.html" with name="chevron" %}{% if can_view_folder %}<a href="{% url 'folder' document.folder_id %}">{{ document.folder.name }}</a>{% include "components/icon.html" with name="chevron" %}{% endif %}<span aria-current="page">Preview</span></nav>
+  <nav class="breadcrumb" aria-label="{% translate "Breadcrumb" %}"><a href="{% url 'library' %}">{% translate "Document library" %}</a>{% include "components/icon.html" with name="chevron" %}{% if can_view_folder %}<a href="{% url 'folder' document.folder_id %}">{{ document.folder.name }}</a>{% include "components/icon.html" with name="chevron" %}{% endif %}<span aria-current="page">{% translate "Preview" %}</span></nav>
   <div class="page-heading viewer-heading"><div><h1>{{ document.title }}</h1><p class="muted">{{ version.original_name }} · {{ version.size|filesizeformat }}</p></div>{% if can_manage %}<a class="button secondary"
-   href="{% url 'manage_document' document.pk %}">{% include "components/icon.html" with name="manage" %}Manage document</a>{% endif %}</div>
+   href="{% url 'manage_document' document.pk %}">{% include "components/icon.html" with name="manage" %}{% translate "Manage document" %}</a>{% endif %}</div>
   <section class="viewer"
            id="viewer"
            data-url="{% url 'content' document.pk %}?version={{ version.pk }}"
            data-kind="{{ version.mime_type }}"
-           aria-label="Document preview"
+           aria-label="{% translate "Document preview" %}"
            aria-busy="true">
-    <div class="viewer-toolbar" role="group" aria-label="Preview controls">
+    <div class="viewer-toolbar" role="group" aria-label="{% translate "Preview controls" %}">
       <div class="page-controls"
            {% if version.mime_type != 'application/pdf' %}hidden{% endif %}>
         <button class="icon-button"
@@ -20,12 +21,12 @@
                 aria-label="Previous page"
                 disabled>{% include "components/icon.html" with name="back" %}</button>
         <label for="page-number"
-               class="sr-only">Page number</label><input id="page-number"
+               class="sr-only">{% translate "Page number" %}</label><input id="page-number"
        type="number"
        min="1"
        value="1"
        disabled>
-        <span>of <span id="page-count">{{ version.page_count }}</span></span>
+        <span>{% translate "of" %} <span id="page-count">{{ version.page_count }}</span></span>
         <button class="icon-button"
                 type="button"
                 id="next"
@@ -36,16 +37,16 @@
         <button class="icon-button"
                 id="zoom-out"
                 type="button"
-                aria-label="Zoom out"
+                aria-label="{% translate "Zoom out" %}"
                 disabled>{% include "components/icon.html" with name="minus" %}</button><span id="zoom-label" class="zoom-label" aria-live="polite">89%</span><button class="icon-button"
         id="zoom-in"
         type="button"
-        aria-label="Zoom in"
-        disabled>{% include "components/icon.html" with name="plus" %}</button><button class="text-button" id="fit" type="button" disabled>Fit width</button>
+        aria-label="{% translate "Zoom in" %}"
+        disabled>{% include "components/icon.html" with name="plus" %}</button><button class="text-button" id="fit" type="button" disabled>{% translate "Fit width" %}</button>
       </div>
-      <span class="viewer-status">{% include "components/icon.html" with name="lock" %}Private preview</span>
+      <span class="viewer-status">{% include "components/icon.html" with name="lock" %}{% translate "Private preview" %}</span>
     </div>
-    <p id="viewer-message" role="status" class="viewer-message">Loading preview…</p>
+    <p id="viewer-message" role="status" class="viewer-message">{% translate "Loading preview…" %}</p>
     <div class="preview-stage"
          id="preview-stage"
          tabindex="0"
@@ -67,9 +68,9 @@
     </div>
   </section>
   <noscript>
-    <p class="viewer-message">Enable JavaScript to view this document.</p>
+    <p class="viewer-message">{% translate "Enable JavaScript to view this document." %}</p>
   </noscript>
-  <p class="viewer-footnote">For authorized viewing.</p>
+  <p class="viewer-footnote">{% translate "For authorized viewing." %}</p>
 {% endblock %}
 {% block scripts %}
   <script type="module" src="{% static 'js/viewer.mjs' %}"></script>

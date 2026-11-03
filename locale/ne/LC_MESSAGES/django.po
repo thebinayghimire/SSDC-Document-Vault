@@ -1,0 +1,1052 @@
+msgid ""
+msgstr ""
+"Project-Id-Version: SSDC Document Vault\n"
+"PO-Revision-Date: 2026-11-02 00:00+0545\n"
+"Last-Translator: SSDC\n"
+"Language-Team: Nepali\n"
+"MIME-Version: 1.0\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Language: ne\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "%(added)s added to library. %(checking)s awaiting checks. %(rejected)s rejected. %(remaining)s need attention."
+msgstr "%(added)s पुस्तकालयमा थपिए। %(checking)s जाँचको प्रतीक्षामा छन्। %(rejected)s अस्वीकृत भए। %(remaining)s फाइलमा ध्यान दिनुहोस्।"
+
+msgid "%(count)s already queued"
+msgstr "%(count)s सूचीमा पहिल्यै छन्"
+
+msgid "%(count)s beyond the batch limit"
+msgstr "%(count)s फाइल एक पटकको सीमाभन्दा बढी"
+
+msgid "%(count)s empty files"
+msgstr "%(count)s खाली फाइल"
+
+msgid "%(count)s files added."
+msgstr "%(count)s फाइल थपिए।"
+
+msgid "%(count)s over the %(size)s limit"
+msgstr "%(count)s फाइल %(size)s सीमाभन्दा ठूला"
+
+msgid "%(count)s unsupported files"
+msgstr "%(count)s फाइलको प्रकार मिलेन"
+
+msgid "%(name)s removed from the queue."
+msgstr "%(name)s सूचीबाट हटाइयो।"
+
+msgid ". To upload, sign in with an administrator account or ask your administrator to assign the Document manager role and manage access to a folder."
+msgstr "। अपलोड गर्न प्रशासक खाताबाट साइन इन गर्नुहोस् वा प्रशासकसँग कागजात व्यवस्थापकको भूमिका र फोल्डर व्यवस्थापन अनुमति माग्नुहोस्।"
+
+msgid "A place for every document"
+msgstr "हरेक कागजातको आफ्नै ठाउँ"
+
+msgid "A restricted folder uses its own grants. Manage staff access in Administration."
+msgstr "सीमित फोल्डरमा छुट्टै अनुमति लागू हुन्छ। प्रशासनबाट कर्मचारीको पहुँच व्यवस्थापन गर्नुहोस्।"
+
+msgid "Access follows your account permissions."
+msgstr "तपाईंको खाताको अनुमतिअनुसार पहुँच दिइन्छ।"
+
+msgid "Account security"
+msgstr "खाताको सुरक्षा"
+
+msgid "Account security · Step 1 of 2"
+msgstr "खाताको सुरक्षा · चरण १ मध्ये २"
+
+msgid "Account security · Step 2 of 2"
+msgstr "खाताको सुरक्षा · चरण २ मध्ये २"
+
+msgid "Accounts, access, and oversight."
+msgstr "खाता, पहुँच र अनुगमन।"
+
+msgid "Actions"
+msgstr "कार्यहरू"
+
+msgid "Active"
+msgstr "सक्रिय"
+
+msgid "Add"
+msgstr "थप्नुहोस्"
+
+msgid "Add a file and give it a clear, recognisable title."
+msgstr "फाइल थप्नुहोस् र सजिलै चिनिने शीर्षक दिनुहोस्।"
+
+msgid "Add documents"
+msgstr "कागजात थप्नुहोस्"
+
+msgid "Add documents here once your account has upload access."
+msgstr "अपलोड अनुमति पाएपछि यहाँ कागजात थप्नुहोस्।"
+
+msgid "Added to library"
+msgstr "पुस्तकालयमा थपियो"
+
+msgid "Admin portal"
+msgstr "प्रशासक पोर्टल"
+
+msgid "Admin sign in"
+msgstr "प्रशासक साइन इन"
+
+msgid "Admin sign in."
+msgstr "प्रशासक साइन इन"
+
+msgid "Administration"
+msgstr "प्रशासन"
+
+msgid "All file types"
+msgstr "सबै प्रकारका फाइल"
+
+msgid "All folders"
+msgstr "सबै फोल्डर"
+
+msgid "All states"
+msgstr "सबै अवस्था"
+
+msgid "An internal document library operated by Siddhartha Social Development Centre for authorized staff."
+msgstr "सिद्धार्थ सामाजिक विकास केन्द्रका अधिकारप्राप्त कर्मचारीका लागि सञ्चालित आन्तरिक कागजात पुस्तकालय।"
+
+msgid "Apply"
+msgstr "लागू गर्नुहोस्"
+
+msgid "Archive document"
+msgstr "अभिलेखमा राख्नुहोस्"
+
+msgid "Archived"
+msgstr "अभिलेखमा"
+
+msgid "Archived documents are hidden from the staff library. Unarchive to make this document available again."
+msgstr "अभिलेखका कागजात कर्मचारी पुस्तकालयमा देखिँदैनन्। फेरि उपलब्ध गराउन पुस्तकालयमा फर्काउनुहोस्।"
+
+msgid "Ask your administrator to give you manage access to a folder. You can then import documents here."
+msgstr "प्रशासकसँग फोल्डर व्यवस्थापनको अनुमति माग्नुहोस्। त्यसपछि यहाँ कागजात ल्याउन सक्नुहुन्छ।"
+
+msgid "Audit &amp; activity"
+msgstr "लेखापरीक्षण र गतिविधि"
+
+msgid "Authenticator or recovery code"
+msgstr "प्रमाणक वा पुनःप्राप्ति कोड"
+
+msgid "Awaiting checks"
+msgstr "जाँचको प्रतीक्षामा"
+
+msgid "Awaiting publication"
+msgstr "प्रकाशनको प्रतीक्षामा"
+
+msgid "Back to sign in"
+msgstr "साइन इनमा फर्कनुहोस्"
+
+msgid "Before you upload"
+msgstr "अपलोड गर्नुअघि"
+
+msgid "Breadcrumb"
+msgstr "पृष्ठ मार्ग"
+
+msgid "Bring files into your vault"
+msgstr "भण्डारमा फाइल थप्नुहोस्"
+
+msgid "Bring your files together, ready to share with your team."
+msgstr "आफ्नो टोलीसँग साझा गर्न फाइलहरू एकै ठाउँमा राख्नुहोस्।"
+
+msgid "Browse a shared folder, or contact your administrator for document access."
+msgstr "साझा फोल्डर हेर्नुहोस् वा कागजात पहुँचका लागि प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+msgid "Browse by folder to find related documents."
+msgstr "सम्बन्धित कागजात भेट्न फोल्डरअनुसार हेर्नुहोस्।"
+
+msgid "Browse folders"
+msgstr "फोल्डर हेर्नुहोस्"
+
+msgid "Browse library"
+msgstr "पुस्तकालय हेर्नुहोस्"
+
+msgid "Browse shared folders or find the document you need."
+msgstr "साझा फोल्डर हेर्नुहोस् वा चाहिएको कागजात खोज्नुहोस्।"
+
+msgid "Browse the documents shared in this folder."
+msgstr "यस फोल्डरमा साझा गरिएका कागजात हेर्नुहोस्।"
+
+msgid "Cancel"
+msgstr "रद्द गर्नुहोस्"
+
+msgid "Change"
+msgstr "बदल्नुहोस्"
+
+msgid "Change password"
+msgstr "पासवर्ड बदल्नुहोस्"
+
+msgid "Check the highlighted fields"
+msgstr "देखाइएका विवरण सच्याउनुहोस्"
+
+msgid "Check your upload"
+msgstr "अपलोड जाँच्नुहोस्"
+
+msgid "Choose a destination folder to continue."
+msgstr "जारी राख्न फोल्डर छान्नुहोस्।"
+
+msgid "Choose a portal"
+msgstr "पोर्टल छान्नुहोस्"
+
+msgid "Choose a strong password you haven’t used elsewhere."
+msgstr "अन्यत्र प्रयोग नगरेको बलियो पासवर्ड छान्नुहोस्।"
+
+msgid "Choose a vault folder"
+msgstr "भण्डारको फोल्डर छान्नुहोस्"
+
+msgid "Choose files"
+msgstr "फाइल छान्नुहोस्"
+
+msgid "Choose files, drop a folder, or paste a copied file."
+msgstr "फाइल छान्नुहोस्, फोल्डर छोड्नुहोस् वा प्रतिलिपि गरिएको फाइल टाँस्नुहोस्।"
+
+msgid "Clear filters"
+msgstr "छनोट हटाउनुहोस्"
+
+msgid "Clear finished"
+msgstr "सकिएका हटाउनुहोस्"
+
+msgid "Confirm your credentials to continue with administrative actions."
+msgstr "प्रशासनिक काम जारी राख्न आफ्नो पहिचान प्रमाणित गर्नुहोस्।"
+
+msgid "Confirm your identity"
+msgstr "आफ्नो पहिचान पुष्टि गर्नुहोस्"
+
+msgid "Connect / reconnect Google Drive"
+msgstr "Google Drive जोड्नुहोस् वा फेरि जोड्नुहोस्"
+
+msgid "Connect or reconnect the storage owner's Google account."
+msgstr "भण्डारण मालिकको Google खाता जोड्नुहोस् वा फेरि जोड्नुहोस्।"
+
+msgid "Connection interrupted. Check Manage documents before retrying; the file may have arrived."
+msgstr "जडान टुट्यो। फाइल पुगिसकेको हुन सक्छ, फेरि प्रयास गर्नुअघि कागजात व्यवस्थापन हेर्नुहोस्।"
+
+msgid "Contact your SSDC administrator."
+msgstr "आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+msgid "Continue"
+msgstr "जारी राख्नुहोस्"
+
+msgid "Could not read this folder. Try the Import folder button instead."
+msgstr "फोल्डर पढ्न सकिएन। फोल्डरबाट ल्याउनुहोस् बटन प्रयोग गर्नुहोस्।"
+
+msgid "Could not verify your session. Check your connection or sign in in a new tab, then continue here."
+msgstr "सत्र प्रमाणित भएन। जडान जाँच्नुहोस् वा नयाँ ट्याबमा साइन इन गरेर यहाँ जारी राख्नुहोस्।"
+
+msgid "Create a vault folder, then add your documents here."
+msgstr "भण्डारमा फोल्डर बनाएर यहाँ कागजात थप्नुहोस्।"
+
+msgid "Create folder"
+msgstr "फोल्डर बनाउनुहोस्"
+
+msgid "Create your first folder"
+msgstr "पहिलो फोल्डर बनाउनुहोस्"
+
+msgid "Creating folder…"
+msgstr "फोल्डर बन्दैछ…"
+
+msgid "Current"
+msgstr "हालको"
+
+msgid "Deleted"
+msgstr "मेटाइएका"
+
+msgid "Document"
+msgstr "कागजात"
+
+msgid "Document Vault"
+msgstr "कागजात भण्डार"
+
+msgid "Document checks are already running."
+msgstr "कागजातको जाँच चलिरहेको छ।"
+
+msgid "Document checks completed."
+msgstr "कागजातको जाँच पूरा भयो।"
+
+msgid "Document contents remain in the storage owner's Google Drive. The application stores document metadata, staff permission grants, and audit records. Uploaded files are validated by type, structure, and size before publication, and each document request is checked against the staff member's current permissions."
+msgstr "कागजातको सामग्री भण्डारण मालिकको Google Drive मा रहन्छ। एपले कागजातको विवरण, कर्मचारीको अनुमति र गतिविधिको अभिलेख राख्छ। प्रकाशनअघि फाइलको प्रकार, संरचना र आकार जाँचिन्छ। प्रत्येक कागजात अनुरोधमा कर्मचारीको हालको अनुमति जाँचिन्छ।"
+
+msgid "Document details"
+msgstr "कागजातको विवरण"
+
+msgid "Document details updated."
+msgstr "कागजातको विवरण अद्यावधिक भयो।"
+
+msgid "Document display"
+msgstr "कागजात प्रदर्शन"
+
+msgid "Document library"
+msgstr "कागजात पुस्तकालय"
+
+msgid "Document management"
+msgstr "कागजात व्यवस्थापन"
+
+msgid "Document name"
+msgstr "कागजातको नाम"
+
+msgid "Document page %(page)s of %(total)s"
+msgstr "कागजात पृष्ठ %(page)s, जम्मा %(total)s"
+
+msgid "Document preview"
+msgstr "कागजात पूर्वावलोकन"
+
+msgid "Document state"
+msgstr "कागजातको अवस्था"
+
+msgid "Document storage"
+msgstr "कागजात भण्डारण"
+
+msgid "Document title"
+msgstr "कागजातको शीर्षक"
+
+msgid "Document title for %(name)s"
+msgstr "%(name)s को कागजात शीर्षक"
+
+msgid "Documents"
+msgstr "कागजातहरू"
+
+msgid "Documents &amp; permissions"
+msgstr "कागजात र अनुमतिहरू"
+
+msgid "Documents available to your account"
+msgstr "तपाईंको खातामा उपलब्ध कागजातहरू"
+
+msgid "Documents shared in this folder will appear here."
+msgstr "यस फोल्डरमा साझा गरिएका कागजात यहाँ देखिन्छन्।"
+
+msgid "Documents you can manage, including archived and deleted items"
+msgstr "अभिलेखमा राखिएका र मेटाइएकासहित तपाईंले व्यवस्थापन गर्न सक्ने कागजात"
+
+msgid "Drop your documents here"
+msgstr "कागजात यहाँ छोड्नुहोस्"
+
+msgid "Each code can be used once if you lose access to your authenticator. Store them somewhere private, separate from your password."
+msgstr "प्रमाणक एप चलाउन नसके प्रत्येक कोड एक पटक प्रयोग गर्न सकिन्छ। पासवर्डबाट छुट्टै गोप्य ठाउँमा राख्नुहोस्।"
+
+msgid "Enable JavaScript to view this document."
+msgstr "यो कागजात हेर्न JavaScript सक्षम गर्नुहोस्।"
+
+msgid "Enter a code from your authenticator app, or use a recovery code."
+msgstr "प्रमाणक एपको कोड वा पुनःप्राप्ति कोड राख्नुहोस्।"
+
+msgid "Enter the current code to finish setup."
+msgstr "सेटअप पूरा गर्न हालको कोड राख्नुहोस्।"
+
+msgid "Explore folders within"
+msgstr "यस भित्रका फोल्डर हेर्नुहोस्"
+
+msgid "File"
+msgstr "फाइल"
+
+msgid "File type"
+msgstr "फाइलको प्रकार"
+
+msgid "Files are checked before they appear in the library."
+msgstr "पुस्तकालयमा देखिनुअघि फाइल जाँचिन्छन्।"
+
+msgid "Files are checked before they become available. You can review the result in document management."
+msgstr "उपलब्ध हुनुअघि फाइल जाँचिन्छन्। नतिजा कागजात व्यवस्थापनमा हेर्न सक्नुहुन्छ।"
+
+msgid "Files use this folder’s access permissions."
+msgstr "फाइलमा यस फोल्डरकै पहुँच अनुमति लागू हुन्छ।"
+
+msgid "Find documents"
+msgstr "कागजात खोज्नुहोस्"
+
+msgid "Finished files cleared."
+msgstr "सकिएका फाइल हटाइए।"
+
+msgid "Fit width"
+msgstr "चौडाइ मिलाउनुहोस्"
+
+msgid "Folder"
+msgstr "फोल्डर"
+
+msgid "Folder access"
+msgstr "फोल्डर पहुँच"
+
+msgid "Folder imports include supported files from subfolders. All files go into your selected vault folder; local folder structure is not recreated. Up to 50 files per batch."
+msgstr "उपफोल्डरका मिल्ने फाइल पनि ल्याइन्छन्। सबै फाइल छानिएको फोल्डरमा राखिन्छन्। स्थानीय फोल्डर संरचना बनाइँदैन। एक पटकमा ५० फाइलसम्म ल्याउन सकिन्छ।"
+
+msgid "Folders"
+msgstr "फोल्डरहरू"
+
+msgid "For authorized staff use only"
+msgstr "अधिकारप्राप्त कर्मचारीका लागि मात्र"
+
+msgid "For authorized viewing."
+msgstr "अनुमतिप्राप्त प्रयोगकर्ताका लागि।"
+
+msgid "Gallery view"
+msgstr "तस्बिर सूचीमा हेर्नुहोस्"
+
+msgid "Grow your library"
+msgstr "पुस्तकालय बढाउनुहोस्"
+
+msgid "I've saved my codes"
+msgstr "मैले कोड सुरक्षित राखेँ"
+
+msgid "Identity confirmed. You can continue your administrative action."
+msgstr "पहिचान पुष्टि भयो। प्रशासनिक काम जारी राख्न सक्नुहुन्छ।"
+
+msgid "Image"
+msgstr "तस्बिर"
+
+msgid "Images"
+msgstr "तस्बिरहरू"
+
+msgid "Import %(count)s documents"
+msgstr "%(count)s कागजात ल्याउनुहोस्"
+
+msgid "Import documents"
+msgstr "कागजात ल्याउनुहोस्"
+
+msgid "Import folder"
+msgstr "फोल्डरबाट ल्याउनुहोस्"
+
+msgid "Importing %(current)s of %(total)s: %(name)s"
+msgstr "%(total)s मध्ये %(current)s ल्याइँदैछ: %(name)s"
+
+msgid "Importing documents…"
+msgstr "कागजात ल्याइँदैछ…"
+
+msgid "Keep related documents together in a shared folder."
+msgstr "सम्बन्धित कागजात साझा फोल्डरमा सँगै राख्नुहोस्।"
+
+msgid "Keep this folder private in Google Drive. SSDC permissions are managed inside the portal."
+msgstr "Google Drive मा यो फोल्डर निजी राख्नुहोस्। SSDC को अनुमति पोर्टलभित्र व्यवस्थापन हुन्छ।"
+
+msgid "Keep this key private. You’ll save your recovery codes next."
+msgstr "यो कुञ्जी गोप्य राख्नुहोस्। अर्को चरणमा पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्।"
+
+msgid "Language"
+msgstr "भाषा"
+
+msgid "Last updated"
+msgstr "पछिल्लो अद्यावधिक"
+
+msgid "Library visibility"
+msgstr "पुस्तकालयमा उपलब्धता"
+
+msgid "List view"
+msgstr "सूचीमा हेर्नुहोस्"
+
+msgid "Loading preview…"
+msgstr "पूर्वावलोकन खुल्दैछ…"
+
+msgid "MFA code (if enabled)"
+msgstr "सुरक्षा कोड (सक्षम भएमा)"
+
+msgid "Main navigation"
+msgstr "मुख्य नेभिगेसन"
+
+msgid "Manage"
+msgstr "व्यवस्थापन"
+
+msgid "Manage accounts, document access, and vault activity with your administrator account."
+msgstr "प्रशासक खाताबाट कर्मचारी खाता, कागजात पहुँच र गतिविधि व्यवस्थापन गर्नुहोस्।"
+
+msgid "Manage document"
+msgstr "कागजात व्यवस्थापन"
+
+msgid "Manage documents"
+msgstr "कागजात व्यवस्थापन"
+
+msgid "Manage staff permissions and review the activity in your document vault."
+msgstr "कर्मचारीको अनुमति व्यवस्थापन गर्नुहोस् र भण्डारको गतिविधि हेर्नुहोस्।"
+
+msgid "Manage your documents"
+msgstr "आफ्ना कागजात व्यवस्थापन गर्नुहोस्"
+
+msgid "Mobile navigation"
+msgstr "मोबाइल नेभिगेसन"
+
+msgid "Move this document to deleted? You can restore it while it is retained."
+msgstr "यो कागजात मेटाइएका कागजातमा सार्ने हो? सुरक्षित अवधिभित्र फिर्ता ल्याउन सक्नुहुन्छ।"
+
+msgid "Move to deleted"
+msgstr "मेटाइएका कागजातमा सार्नुहोस्"
+
+msgid "Move to deleted?"
+msgstr "मेटाइएका कागजातमा सार्ने हो?"
+
+msgid "Name"
+msgstr "नाम"
+
+msgid "Name alphabetically"
+msgstr "नामअनुसार"
+
+msgid "Name it"
+msgstr "नाम दिनुहोस्"
+
+msgid "Need access or help signing in?"
+msgstr "पहुँच वा साइन इन गर्न सहयोग चाहिन्छ?"
+
+msgid "New folder"
+msgstr "नयाँ फोल्डर"
+
+msgid "New folders normally inherit access from their parent folder."
+msgstr "नयाँ फोल्डरमा सामान्यतया मूल फोल्डरकै पहुँच लागू हुन्छ।"
+
+msgid "Next"
+msgstr "अर्को"
+
+msgid "No documents to manage yet"
+msgstr "अहिले व्यवस्थापन गर्ने कागजात छैनन्"
+
+msgid "No documents yet"
+msgstr "अहिलेसम्म कागजात छैनन्"
+
+msgid "No matching documents"
+msgstr "मिल्दो कागजात भेटिएन"
+
+msgid "No versions uploaded yet."
+msgstr "अहिलेसम्म कुनै संस्करण अपलोड गरिएको छैन।"
+
+msgid "OAuth refresh and access tokens are encrypted at rest in the managed PostgreSQL database. The encryption key is held separately as an isolated application environment secret and is not included in the database or its backups. Tokens are used only to communicate with Google's OAuth and Drive services over HTTPS and are never displayed or logged."
+msgstr "OAuth का रिफ्रेस र पहुँच टोकन व्यवस्थित PostgreSQL डाटाबेसमा गुप्तीकरण गरेर राखिन्छन्। गुप्तीकरण कुञ्जी एपको वातावरणमा छुट्टै गोप्य रूपमा राखिन्छ र डाटाबेस वा ब्याकअपमा समावेश हुँदैन। टोकन Google को OAuth र Drive सेवासँग HTTPS मार्फत सञ्चार गर्न मात्र प्रयोग हुन्छन्। तिनलाई देखाइँदैन वा लगमा राखिँदैन।"
+
+msgid "Oldest first"
+msgstr "पुरानो पहिले"
+
+msgid "Single use recovery codes"
+msgstr "एक पटक प्रयोग हुने पुनःप्राप्ति कोड"
+
+msgid "Open"
+msgstr "खोल्नुहोस्"
+
+msgid "Open a folder in the library to upload your first document. Your uploads and their versions will appear here."
+msgstr "पहिलो कागजात अपलोड गर्न पुस्तकालयको फोल्डर खोल्नुहोस्। अपलोड र संस्करण यहाँ देखिनेछन्।"
+
+msgid "Open your authenticator app and add an account using a timed code."
+msgstr "प्रमाणक एप खोल्नुहोस् र समयअनुसार कोड दिने खाता थप्नुहोस्।"
+
+msgid "Or click here and press"
+msgstr "वा यहाँ क्लिक गरेर थिच्नुहोस्"
+
+msgid "PDF document"
+msgstr "PDF कागजात"
+
+msgid "PDF documents"
+msgstr "PDF कागजातहरू"
+
+msgid "PDF or image"
+msgstr "PDF वा तस्बिर"
+
+msgid "PDF, JPEG, PNG, or WebP. Up to"
+msgstr "PDF, JPEG, PNG वा WebP। अधिकतम"
+
+msgid "PDF, JPG, PNG &amp; WebP · Up to"
+msgstr "PDF, JPG, PNG र WebP · अधिकतम"
+
+msgid "Page"
+msgstr "पृष्ठ"
+
+msgid "Page %(page)s text"
+msgstr "पृष्ठ %(page)s को पाठ"
+
+msgid "Page number"
+msgstr "पृष्ठ सङ्ख्या"
+
+msgid "Page unavailable"
+msgstr "पृष्ठ उपलब्ध छैन"
+
+msgid "Password"
+msgstr "पासवर्ड"
+
+msgid "Password changed. Other sessions have been revoked."
+msgstr "पासवर्ड बदलियो। अन्य सत्र बन्द गरिए।"
+
+msgid "Paste files"
+msgstr "फाइल टाँस्नुहोस्"
+
+msgid "Please try again"
+msgstr "फेरि प्रयास गर्नुहोस्"
+
+msgid "Prepare / verify private folder"
+msgstr "निजी फोल्डर तयार वा प्रमाणित गर्नुहोस्"
+
+msgid "Prepare the private SSDC folder before uploading."
+msgstr "अपलोड गर्नुअघि निजी SSDC फोल्डर तयार गर्नुहोस्।"
+
+msgid "Press %(key)s here to paste copied files, or use Choose files."
+msgstr "प्रतिलिपि गरिएको फाइल टाँस्न यहाँ %(key)s थिच्नुहोस् वा फाइल छान्नुहोस् प्रयोग गर्नुहोस्।"
+
+msgid "Preview"
+msgstr "पूर्वावलोकन"
+
+msgid "Preview controls"
+msgstr "पूर्वावलोकन नियन्त्रण"
+
+msgid "Preview unavailable. Your session may have expired. "
+msgstr "पूर्वावलोकन उपलब्ध छैन। सत्र सकिएको हुन सक्छ। "
+
+msgid "Previous"
+msgstr "अघिल्लो"
+
+msgid "Previous version restored as the current document."
+msgstr "अघिल्लो संस्करण हालको कागजातका रूपमा फिर्ता ल्याइयो।"
+
+msgid "Privacy Policy"
+msgstr "गोपनीयता नीति"
+
+msgid "Private &amp; checked"
+msgstr "निजी र जाँच गरिएको"
+
+msgid "Private authenticator setup key"
+msgstr "गोप्य प्रमाणक सेटअप कुञ्जी"
+
+msgid "Private preview"
+msgstr "निजी पूर्वावलोकन"
+
+msgid "Processing"
+msgstr "जाँच हुँदैछ"
+
+msgid "Published"
+msgstr "प्रकाशित"
+
+msgid "Reading your folder…"
+msgstr "फोल्डर पढिँदैछ…"
+
+msgid "Ready to import"
+msgstr "ल्याउन तयार"
+
+msgid "Ready to upload"
+msgstr "अपलोड गर्न तयार"
+
+msgid "Recently updated"
+msgstr "हालै अद्यावधिक"
+
+msgid "Rejected"
+msgstr "अस्वीकृत"
+
+msgid "Rejected during checking"
+msgstr "जाँचमा अस्वीकृत"
+
+msgid "Remove %(name)s"
+msgstr "%(name)s हटाउनुहोस्"
+
+msgid "Replace document"
+msgstr "कागजात बदल्नुहोस्"
+
+msgid "Replacement awaiting checks"
+msgstr "नयाँ संस्करण जाँचको प्रतीक्षामा"
+
+msgid "Resource"
+msgstr "स्रोत"
+
+msgid "Restore document"
+msgstr "कागजात फिर्ता ल्याउनुहोस्"
+
+msgid "Restore this version"
+msgstr "यो संस्करण फिर्ता ल्याउनुहोस्"
+
+msgid "Restricted"
+msgstr "सीमित पहुँच"
+
+msgid "Retry document checks"
+msgstr "कागजात फेरि जाँच्नुहोस्"
+
+msgid "Return to SSDC Document Vault"
+msgstr "SSDC कागजात भण्डारमा फर्कनुहोस्"
+
+msgid "Return to document library"
+msgstr "कागजात पुस्तकालयमा फर्कनुहोस्"
+
+msgid "Return to library"
+msgstr "पुस्तकालयमा फर्कनुहोस्"
+
+msgid "Return to the library and try again."
+msgstr "पुस्तकालयमा फर्केर फेरि प्रयास गर्नुहोस्।"
+
+msgid "Review uploads, update details, and manage version history."
+msgstr "अपलोड हेर्नुहोस्, विवरण अद्यावधिक गर्नुहोस् र संस्करण इतिहास व्यवस्थापन गर्नुहोस्।"
+
+msgid "SSDC Document Vault"
+msgstr "SSDC कागजात भण्डार"
+
+msgid "SSDC Document Vault is an internal document library operated by Siddhartha Social Development Centre for authorized staff using organization issued accounts."
+msgstr "SSDC कागजात भण्डार सिद्धार्थ सामाजिक विकास केन्द्रले संस्थाबाट जारी खाता भएका अधिकारप्राप्त कर्मचारीका लागि सञ्चालन गरेको आन्तरिक पुस्तकालय हो।"
+
+msgid "SSDC Document Vault is provided by Siddhartha Social Development Centre solely for authorized staff and approved organizational work."
+msgstr "सिद्धार्थ सामाजिक विकास केन्द्रले SSDC कागजात भण्डार अधिकारप्राप्त कर्मचारी र स्वीकृत संस्थागत कामका लागि मात्र उपलब्ध गराएको हो।"
+
+msgid "SSDC Vault"
+msgstr "SSDC भण्डार"
+
+msgid "SSDC does not sell Google user data or document data, use it for advertising, or share it with data brokers or unrelated third parties. If the organization disconnects the integration, the stored OAuth credentials are deleted; files already stored in Google Drive remain under the storage owner's control."
+msgstr "SSDC ले Google प्रयोगकर्ता वा कागजातको डेटा बेच्दैन, विज्ञापनमा प्रयोग गर्दैन र डेटा व्यापारी वा असम्बन्धित तेस्रो पक्षसँग साझा गर्दैन। संस्थाले जडान हटाएमा सुरक्षित OAuth प्रमाणहरू मेटिन्छन्। Google Drive मा रहेका फाइल भण्डारण मालिककै नियन्त्रणमा रहन्छन्।"
+
+msgid "Save changes"
+msgstr "परिवर्तन सुरक्षित गर्नुहोस्"
+
+msgid "Save recovery codes"
+msgstr "पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्"
+
+msgid "Save to folder"
+msgstr "राख्ने फोल्डर"
+
+msgid "Save your recovery codes."
+msgstr "पुनःप्राप्ति कोड सुरक्षित राख्नुहोस्।"
+
+msgid "Saved · Awaiting checks"
+msgstr "सुरक्षित भयो · जाँचको प्रतीक्षामा"
+
+msgid "Saving…"
+msgstr "सुरक्षित हुँदैछ…"
+
+msgid "Search"
+msgstr "खोज्नुहोस्"
+
+msgid "Search documents"
+msgstr "कागजात खोज्नुहोस्"
+
+msgid "Search managed documents"
+msgstr "व्यवस्थापन गर्ने कागजात खोज्नुहोस्"
+
+msgid "Select a document"
+msgstr "कागजात छान्नुहोस्"
+
+msgid "Select a document to open its preview."
+msgstr "पूर्वावलोकन खोल्न कागजात छान्नुहोस्।"
+
+msgid "Set up your authenticator"
+msgstr "प्रमाणक एप तयार गर्नुहोस्"
+
+msgid "Set up your authenticator."
+msgstr "प्रमाणक एप तयार गर्नुहोस्।"
+
+msgid "Siddhartha Social Development Centre"
+msgstr "सिद्धार्थ सामाजिक विकास केन्द्र"
+
+msgid "Sign in"
+msgstr "साइन इन गर्नुहोस्"
+
+msgid "Sign in to SSDC Document Vault. Your account determines which portal and documents you can access."
+msgstr "SSDC कागजात भण्डारमा साइन इन गर्नुहोस्। तपाईंको खाताले उपलब्ध पोर्टल र कागजात निर्धारण गर्छ।"
+
+msgid "Sign in with your staff account to browse documents shared with you."
+msgstr "तपाईंसँग साझा गरिएका कागजात हेर्न कर्मचारी खाताबाट साइन इन गर्नुहोस्।"
+
+msgid "Sign out"
+msgstr "साइन आउट"
+
+msgid "Signing in…"
+msgstr "साइन इन हुँदैछ…"
+
+msgid "Size"
+msgstr "आकार"
+
+msgid "Skip to content"
+msgstr "मुख्य सामग्रीमा जानुहोस्"
+
+msgid "Skipped: %(notes)s"
+msgstr "छोडिएका: %(notes)s"
+
+msgid "Something went wrong"
+msgstr "समस्या आयो"
+
+msgid "Sort by"
+msgstr "क्रम मिलाउनुहोस्"
+
+msgid "Staff ID"
+msgstr "कर्मचारी परिचय"
+
+msgid "Staff accounts"
+msgstr "कर्मचारी खाता"
+
+msgid "Staff continue using SSDC accounts. Only the storage owner authorizes Google access."
+msgstr "कर्मचारीले SSDC खाताकै प्रयोग गर्छन्। भण्डारण मालिकले मात्र Google पहुँच दिन्छन्।"
+
+msgid "Staff portal"
+msgstr "कर्मचारी पोर्टल"
+
+msgid "Staff sign in"
+msgstr "कर्मचारी साइन इन"
+
+msgid "Staff sign in."
+msgstr "कर्मचारी साइन इन"
+
+msgid "Staff workspace"
+msgstr "कर्मचारी कार्यक्षेत्र"
+
+msgid "State"
+msgstr "अवस्था"
+
+msgid "Status"
+msgstr "स्थिति"
+
+msgid "Storage owner connected."
+msgstr "भण्डारण मालिकको खाता जोडिएको छ।"
+
+msgid "Terms of Service"
+msgstr "सेवाका सर्तहरू"
+
+msgid "The SSDC folder is configured. Verify it before uploading."
+msgstr "SSDC फोल्डर तयार छ। अपलोड गर्नुअघि प्रमाणित गर्नुहोस्।"
+
+msgid "The application requests the Google Drive"
+msgstr "एपले Google Drive को"
+
+msgid "The file must pass its checks before it appears in the library. Review the processing status below."
+msgstr "पुस्तकालयमा देखिनुअघि फाइलको जाँच पूरा हुनुपर्छ। तल जाँचको अवस्था हेर्नुहोस्।"
+
+msgid "The item may have moved, or your account may not have access."
+msgstr "सामग्री सरेको हुन सक्छ वा तपाईंको खातामा पहुँच नहुन सक्छ।"
+
+msgid "The previous version remains in the version history. Change the document title in document management."
+msgstr "अघिल्लो संस्करण इतिहासमा रहन्छ। शीर्षक कागजात व्यवस्थापनबाट बदल्नुहोस्।"
+
+msgid "The service may be changed, interrupted, or withdrawn for maintenance, security, or operational reasons. Use of the service is subject to applicable SSDC policies and law."
+msgstr "मर्मत, सुरक्षा वा सञ्चालनका कारण सेवा बदलिन, रोकिन वा बन्द हुन सक्छ। सेवा प्रयोगमा SSDC का लागू नीति र कानुन पालना गर्नुपर्छ।"
+
+msgid "These codes are shown only once. Save them before continuing."
+msgstr "यी कोड एक पटक मात्र देखाइन्छन्। अगाडि बढ्नुअघि सुरक्षित राख्नुहोस्।"
+
+msgid "This document is available to staff with access. Archive it to hide it while keeping its history."
+msgstr "पहुँच भएका कर्मचारीले यो कागजात हेर्न सक्छन्। इतिहास राखेर लुकाउन अभिलेखमा राख्नुहोस्।"
+
+msgid "This document is retained for restoration until it is purged."
+msgstr "स्थायी रूपमा नमेटिएसम्म यो कागजात फिर्ता ल्याउन सकिन्छ।"
+
+msgid "This document will leave the library. You can restore it from document management while it is retained."
+msgstr "यो कागजात पुस्तकालयबाट हट्नेछ। सुरक्षित राखिएको अवधिभित्र कागजात व्यवस्थापनबाट फिर्ता ल्याउन सक्नुहुन्छ।"
+
+msgid "This file exceeds the server upload limit."
+msgstr "यो फाइल अपलोड सीमाभन्दा ठूलो छ।"
+
+msgid "This folder is too large to read completely. Review the queued files and import smaller folders next."
+msgstr "यो फोल्डर पूरै पढ्न धेरै ठूलो छ। सूचीका फाइल हेर्नुहोस् र साना फोल्डर ल्याउनुहोस्।"
+
+msgid "This page has no extractable text. Contact your document administrator for an accessible copy."
+msgstr "यो पृष्ठबाट पाठ निकाल्न सकिँदैन। सहज रूपमा पढ्न मिल्ने प्रतिका लागि कागजात प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+msgid "This page isn't available."
+msgstr "यो पृष्ठ उपलब्ध छैन।"
+
+msgid "Title"
+msgstr "शीर्षक"
+
+msgid "Try a different search or clear your filters to see all documents."
+msgstr "अर्को शब्द खोज्नुहोस् वा सबै कागजात हेर्न छनोट हटाउनुहोस्।"
+
+msgid "Try a different search or clear your filters."
+msgstr "अर्को शब्द खोज्नुहोस् वा छनोट हटाउनुहोस्।"
+
+msgid "Try again later"
+msgstr "केही बेरपछि प्रयास गर्नुहोस्"
+
+msgid "Try again shortly. Contact your administrator if the problem continues."
+msgstr "केही बेरपछि प्रयास गर्नुहोस्। समस्या रहिरहे प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+msgid "Type"
+msgstr "प्रकार"
+
+msgid "Unable to complete request"
+msgstr "अनुरोध पूरा भएन"
+
+msgid "Unable to confirm your identity."
+msgstr "पहिचान प्रमाणित भएन।"
+
+msgid "Unable to sign in. Check your credentials."
+msgstr "साइन इन भएन। कर्मचारी परिचय र पासवर्ड जाँच्नुहोस्।"
+
+msgid "Unable to sign in. Please try again later."
+msgstr "साइन इन भएन। केही बेरपछि प्रयास गर्नुहोस्।"
+
+msgid "Unable to verify this code."
+msgstr "कोड प्रमाणित भएन।"
+
+msgid "Unable to verify this code. Try again later if needed."
+msgstr "कोड प्रमाणित भएन। आवश्यक भए केही बेरपछि प्रयास गर्नुहोस्।"
+
+msgid "Unarchive document"
+msgstr "पुस्तकालयमा फर्काउनुहोस्"
+
+msgid "Update password"
+msgstr "पासवर्ड बदल्नुहोस्"
+
+msgid "Update the details, visibility, and versions of this document."
+msgstr "यस कागजातको विवरण, उपलब्धता र संस्करण अद्यावधिक गर्नुहोस्।"
+
+msgid "Updating password…"
+msgstr "पासवर्ड बदलिँदैछ…"
+
+msgid "Upload a document to share it with staff who have access to this folder."
+msgstr "यस फोल्डरमा पहुँच भएका कर्मचारीसँग साझा गर्न कागजात अपलोड गर्नुहोस्।"
+
+msgid "Upload a replacement"
+msgstr "नयाँ संस्करण अपलोड गर्नुहोस्"
+
+msgid "Upload document"
+msgstr "कागजात अपलोड गर्नुहोस्"
+
+msgid "Upload failed. Try again shortly."
+msgstr "अपलोड भएन। केही बेरपछि प्रयास गर्नुहोस्।"
+
+msgid "Upload limit reached. Wait one minute, then continue."
+msgstr "अपलोड सीमा पुग्यो। एक मिनेट पर्खेर जारी राख्नुहोस्।"
+
+msgid "Upload progress for %(name)s"
+msgstr "%(name)s को अपलोड प्रगति"
+
+msgid "Uploaded"
+msgstr "अपलोड गरिएको"
+
+msgid "Uploaded versions and processing results"
+msgstr "अपलोड गरिएका संस्करण र जाँचको नतिजा"
+
+msgid "Uploaded · Checking document…"
+msgstr "अपलोड भयो · कागजात जाँच हुँदैछ…"
+
+msgid "Uploading and checking…"
+msgstr "अपलोड र जाँच हुँदैछ…"
+
+msgid "Uploading…"
+msgstr "अपलोड हुँदैछ…"
+
+msgid "Users must protect their credentials, follow SSDC information handling policies, access only documents needed for their duties, and must not upload unlawful, malicious, or unauthorized material. Access may be suspended or revoked by SSDC administrators."
+msgstr "प्रयोगकर्ताले आफ्नो खाताको गोपनीयता जोगाउनुपर्छ, SSDC को सूचना व्यवस्थापन नीति पालना गर्नुपर्छ र कामका लागि आवश्यक कागजातमा मात्र पहुँच लिनुपर्छ। गैरकानुनी, हानिकारक वा अनुमतिबिनाको सामग्री अपलोड गर्न पाइँदैन। SSDC प्रशासकले पहुँच रोक्न वा हटाउन सक्छन्।"
+
+msgid "Verify and continue"
+msgstr "प्रमाणित गरी जारी राख्नुहोस्"
+
+msgid "Verify identity in a new tab, then continue here"
+msgstr "नयाँ ट्याबमा पहिचान प्रमाणित गरेर यहाँ जारी राख्नुहोस्"
+
+msgid "Verify your identity"
+msgstr "आफ्नो पहिचान प्रमाणित गर्नुहोस्"
+
+msgid "Verify your identity, then continue your upload."
+msgstr "पहिचान प्रमाणित गरी अपलोड जारी राख्नुहोस्।"
+
+msgid "Verifying…"
+msgstr "प्रमाणित हुँदैछ…"
+
+msgid "Version history"
+msgstr "संस्करण इतिहास"
+
+msgid "View"
+msgstr "हेर्नुहोस्"
+
+msgid "View details"
+msgstr "विवरण हेर्नुहोस्"
+
+msgid "We couldn't complete that request."
+msgstr "अनुरोध पूरा गर्न सकिएन।"
+
+msgid "Welcome back."
+msgstr "फेरि स्वागत छ।"
+
+msgid "Workspace administration"
+msgstr "कार्यक्षेत्र प्रशासन"
+
+msgid "Workspace navigation"
+msgstr "कार्यक्षेत्र नेभिगेसन"
+
+msgid "You are signed in as"
+msgstr "तपाईंको खाता"
+
+msgid "You don’t have permission to manage any resources."
+msgstr "तपाईंलाई स्रोत व्यवस्थापन गर्ने अनुमति छैन।"
+
+msgid "You don’t have permission to view or edit any resources."
+msgstr "तपाईंलाई स्रोत हेर्ने वा सम्पादन गर्ने अनुमति छैन।"
+
+msgid "You need a folder with upload access"
+msgstr "अपलोड अनुमति भएको फोल्डर चाहिन्छ"
+
+msgid "You no longer have permission to upload to this folder."
+msgstr "यस फोल्डरमा अपलोड गर्ने अनुमति अब छैन।"
+
+msgid "Your account has viewing access"
+msgstr "तपाईंको खातामा हेर्ने अनुमति छ"
+
+msgid "Your administrative changes will appear here."
+msgstr "तपाईंका प्रशासनिक परिवर्तन यहाँ देखिन्छन्।"
+
+msgid "Your private workspace"
+msgstr "तपाईंको निजी कार्यक्षेत्र"
+
+msgid "Your recent changes"
+msgstr "तपाईंका हालैका परिवर्तन"
+
+msgid "Your session expired. Sign in again in a new tab, then continue here."
+msgstr "सत्र सकियो। नयाँ ट्याबमा साइन इन गरी यहाँ जारी राख्नुहोस्।"
+
+msgid "Your session or upload access changed. Refresh the page and sign in again."
+msgstr "सत्र वा अपलोड पहुँच बदलिएको छ। पृष्ठ फेरि खोलेर साइन इन गर्नुहोस्।"
+
+msgid "Your workspace"
+msgstr "तपाईंको कार्यक्षेत्र"
+
+msgid "You’ve signed out. Sign in to access your portal."
+msgstr "तपाईं साइन आउट हुनुभयो। पोर्टल खोल्न साइन इन गर्नुहोस्।"
+
+msgid "Zoom in"
+msgstr "ठूलो बनाउनुहोस्"
+
+msgid "Zoom out"
+msgstr "सानो बनाउनुहोस्"
+
+msgid "and enter the setup key below."
+msgstr "र तलको सेटअप कुञ्जी राख्नुहोस्।"
+
+msgid "each"
+msgstr "प्रत्येक"
+
+msgid "matching document"
+msgstr "मिल्दो कागजात"
+
+msgid "of"
+msgstr "मध्ये"
+
+msgid "per file."
+msgstr "प्रति फाइल।"
+
+msgid "permission only for the single storage owner Google account. Staff do not connect their personal Google accounts. The permission is used to create, store, retrieve, and manage only the document files that SSDC Document Vault creates in that storage owner account."
+msgstr "अनुमति एउटा भण्डारण मालिकको Google खाताका लागि मात्र माग्छ। कर्मचारीले व्यक्तिगत Google खाता जोड्दैनन्। यो अनुमति सो खातामा SSDC कागजात भण्डारले बनाएका कागजात बनाउन, राख्न, प्राप्त गर्न र व्यवस्थापन गर्न मात्र प्रयोग हुन्छ।"
+
+msgid "result"
+msgstr "नतिजा"
+
+msgid "· Images"
+msgstr "· तस्बिरहरू"
+
+msgid "· PDF documents"
+msgstr "· PDF कागजातहरू"
+
+msgid "· SSDC Administration"
+msgstr "· SSDC प्रशासन"
+
+msgid "Administrator"
+msgstr "प्रशासक"
+
+msgid "Document manager"
+msgstr "कागजात व्यवस्थापक"
+
+msgid "Staff"
+msgstr "कर्मचारी"
+
+msgid "Quarantined"
+msgstr "जाँचको प्रतीक्षामा"
+
+msgid "Ready"
+msgstr "तयार"
+
+msgid "Validated and scanned"
+msgstr "पुष्टि र सुरक्षा जाँच पूरा भयो"
+
+msgid "Validated; malware scanning disabled"
+msgstr "पुष्टि भयो; मालवेयर जाँच बन्द छ"
+
+msgid "Development-only scan bypass"
+msgstr "विकासका लागि मात्र जाँच छोडिएको"
+
+msgid "Checking document…"
+msgstr "कागजात जाँच हुँदैछ…"
+
+msgid "Search results"
+msgstr "खोजको नतिजा"
+
+msgid "Matching documents"
+msgstr "मिल्दो कागजातहरू"
+
+msgid "Search term:"
+msgstr "खोजिएको शब्द:"

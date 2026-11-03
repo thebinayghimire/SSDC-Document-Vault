@@ -16,8 +16,22 @@ def readiness_failures():
     try:
         with connection.cursor() as cursor:
             cursor.execute("SELECT 1")
+            # A reachable but unmigrated database cannot serve sign-ins or documents.
+            for table in ("accounts_user", "vault_document", "vault_version"):
+                cursor.execute(f"SELECT 1 FROM {table} LIMIT 1")
     except Exception:
         failures.append("database_unavailable")
+    if "database_unavailable" not in failures and settings.DOCUMENT_STORAGE_PROVIDER == "gdrive":
+        from vault.models import DriveConnection
+
+        try:
+            state = DriveConnection.objects.filter(pk=1).first()
+            if not state or not state.encrypted_credentials or not state.folder_id:
+                failures.append("drive_setup_incomplete")
+            elif state.reconnect_required:
+                failures.append("drive_reconnect_required")
+        except Exception:
+            failures.append("drive_setup_unavailable")
     probe = None
     try:
         root = settings.PRIVATE_STORAGE_ROOT

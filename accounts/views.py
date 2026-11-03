@@ -1,3 +1,4 @@
+import secrets
 import time
 
 import pyotp
@@ -8,7 +9,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth.hashers import check_password
 from django.db import transaction
+from django.http import JsonResponse
 from django.shortcuts import redirect, render
+from django.utils.translation import gettext as tr
 from django.views.decorators.http import require_http_methods, require_POST
 
 from audit.services import allow_rate, identity_reference, record
@@ -16,7 +19,7 @@ from audit.services import allow_rate, identity_reference, record
 from .forms import CodeForm, LoginForm, ReauthenticateForm
 from .mfa import create_recovery_codes, decrypt, encrypt, verify
 from .models import User
-from .navigation import safe_return_destination
+from .navigation import portal_home, safe_portal_destination, safe_return_destination
 
 
 def finish_login(request, user, mfa_verified=False):
@@ -48,6 +51,7 @@ def finish_login(request, user, mfa_verified=False):
                 "last_seen": now,
                 "reauth_at": now,
                 "mfa_verified": mfa_verified,
+                "portal_session": secrets.token_hex(16),
             }
         )
         for field in ("pending_user", "pending_at", "pending_auth_version", "enrollment_secret"):
@@ -93,10 +97,12 @@ def locked_session_user(request):
 
 
 @require_http_methods(["GET", "POST"])
-def sign_in(request):
+def sign_in(request, portal=None):
     if request.user.is_authenticated:
-        return redirect("library")
+        return redirect(portal_home(request.user))
     form = LoginForm(request.POST or None)
+    if portal == "admin":
+        form.fields["staff_id"].label = "Admin ID"
     if request.method == "POST" and form.is_valid():
         identity = form.cleaned_data["staff_id"]
         ip = (
@@ -115,7 +121,7 @@ def sign_in(request):
                 outcome="throttled",
                 details={"identity_hash": identity_reference(identity)},
             )
-            form.add_error(None, "Unable to sign in. Please try again later.")
+            form.add_error(None, tr("Unable to sign in. Please try again later."))
         else:
             with transaction.atomic():
                 # Django can upgrade an older password hash during authenticate().
@@ -137,23 +143,31 @@ def sign_in(request):
                         .filter(pk=user.pk, is_active=True, auth_version=user.auth_version)
                         .first()
                     )
-                    if user:
+                    correct_portal = user and (
+                        portal is None
+                        or (portal == "admin" and user.is_portal_admin)
+                        or (portal == "staff" and not user.is_portal_admin)
+                    )
+                    if correct_portal:
                         if user.requires_authenticator:
                             request.session.flush()
                             request.session["pending_user"] = user.pk
                             request.session["pending_at"] = time.time()
                             request.session["pending_auth_version"] = user.auth_version
+                            request.session["login_destination"] = request.GET.get("next", "")
                             return redirect("mfa_challenge" if user.mfa_confirmed else "mfa_enroll")
                         if finish_login(request, user):
-                            return redirect("library")
+                            return redirect(
+                                safe_portal_destination(request, request.GET.get("next"))
+                            )
             record(
                 None,
                 "login",
                 outcome="denied",
                 details={"identity_hash": identity_reference(identity)},
             )
-            form.add_error(None, "Unable to sign in. Check your credentials.")
-    return render(request, "accounts/login.html", {"form": form})
+            form.add_error(None, tr("Unable to sign in. Check your credentials."))
+    return render(request, "accounts/login.html", {"form": form, "portal": portal})
 
 
 def pending_user(request):
@@ -168,9 +182,9 @@ def pending_user(request):
 @require_http_methods(["GET", "POST"])
 def mfa_challenge(request):
     if not settings.MFA_ENABLED:
-        return redirect("library" if request.user.is_authenticated else "login")
+        return redirect(portal_home(request.user) if request.user.is_authenticated else "login")
     if request.user.is_authenticated:
-        return redirect("library")
+        return redirect(portal_home(request.user))
     user = pending_user(request)
     if not user or not user.mfa_confirmed:
         return restart_login(request)
@@ -188,21 +202,27 @@ def mfa_challenge(request):
                 )
                 if verified:
                     if finish_login(request, user, True):
-                        return redirect("library")
+                        return redirect(
+                            safe_portal_destination(
+                                request, request.session.pop("login_destination", None)
+                            )
+                        )
                     transaction.set_rollback(True)
             if verified:
                 return restart_login(request)
         record(user, "mfa", outcome="denied")
-        form.add_error(None, "Unable to verify this code. Try again later if needed.")
-    return render(request, "accounts/form.html", {"form": form, "title": "Verify your identity"})
+        form.add_error(None, tr("Unable to verify this code. Try again later if needed."))
+    return render(
+        request, "accounts/form.html", {"form": form, "title": tr("Verify your identity")}
+    )
 
 
 @require_http_methods(["GET", "POST"])
 def mfa_enroll(request):
     if not settings.MFA_ENABLED:
-        return redirect("library" if request.user.is_authenticated else "login")
+        return redirect(portal_home(request.user) if request.user.is_authenticated else "login")
     if request.user.is_authenticated:
-        return redirect("library")
+        return redirect(portal_home(request.user))
     user = pending_user(request)
     if not user or user.mfa_confirmed:
         return restart_login(request)
@@ -233,10 +253,19 @@ def mfa_enroll(request):
                 )
                 if finish_login(request, user, True):
                     record(user, "mfa_enrolled")
-                    return render(request, "accounts/recovery.html", {"codes": codes})
+                    return render(
+                        request,
+                        "accounts/recovery.html",
+                        {
+                            "codes": codes,
+                            "continue_url": safe_portal_destination(
+                                request, request.session.pop("login_destination", None)
+                            ),
+                        },
+                    )
                 transaction.set_rollback(True)
             return restart_login(request)
-        form.add_error(None, "Unable to verify this code.")
+        form.add_error(None, tr("Unable to verify this code."))
     return render(
         request,
         "accounts/enroll.html",
@@ -251,9 +280,24 @@ def mfa_enroll(request):
 @login_required
 @require_POST
 def sign_out(request):
+    login_route = "admin_login" if request.user.is_portal_admin else "staff_login"
     record(request.user, "logout")
     logout(request)
-    return redirect("login")
+    messages.success(request, tr("You’ve signed out. Sign in to access your portal."))
+    return redirect(login_route)
+
+
+@require_http_methods(["GET", "HEAD"])
+def session_status(request):
+    """Let restored pages and other tabs check their account against the live session."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"authenticated": False, "marker": "", "home_url": "/accounts/login/"})
+    marker = (
+        f"{request.user.pk}:{request.user.auth_version}:{request.session.get('portal_session', '')}"
+    )
+    return JsonResponse(
+        {"authenticated": True, "marker": marker, "home_url": portal_home(request.user)}
+    )
 
 
 @login_required
@@ -285,13 +329,16 @@ def reauthenticate(request):
                     request.session["reauth_at"] = time.time()
                     record(user, "reauthentication")
                     messages.success(
-                        request, "Identity confirmed. You can continue your administrative action."
+                        request,
+                        tr("Identity confirmed. You can continue your administrative action."),
                     )
                     destination = safe_return_destination(request, request.GET.get("next"), "/")
                     return redirect(destination)
         record(request.user, "reauthentication", outcome="denied")
-        form.add_error(None, "Unable to confirm your identity.")
-    return render(request, "accounts/form.html", {"form": form, "title": "Confirm your identity"})
+        form.add_error(None, tr("Unable to confirm your identity."))
+    return render(
+        request, "accounts/form.html", {"form": form, "title": tr("Confirm your identity")}
+    )
 
 
 @login_required
@@ -303,7 +350,7 @@ def password_change(request):
             return render(
                 request,
                 "accounts/form.html",
-                {"form": form, "title": "Try again later"},
+                {"form": form, "title": tr("Try again later")},
                 status=429,
             )
         with transaction.atomic():
@@ -318,6 +365,6 @@ def password_change(request):
                 update_session_auth_hash(request, user)
                 request.session["auth_version"] = user.auth_version
                 record(user, "password_changed")
-                messages.success(request, "Password changed. Other sessions have been revoked.")
-                return redirect("library")
-    return render(request, "accounts/form.html", {"form": form, "title": "Change password"})
+                messages.success(request, tr("Password changed. Other sessions have been revoked."))
+                return redirect(portal_home(request.user))
+    return render(request, "accounts/form.html", {"form": form, "title": tr("Change password")})
