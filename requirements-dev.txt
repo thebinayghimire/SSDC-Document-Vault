@@ -124,9 +124,10 @@ psycopg-binary==3.3.6 ; implementation_name != 'pypy'
     #   psycopg
 py-serializable==2.1.0
     # via cyclonedx-python-lib
-pyasn1==0.6.4
+pyasn1==0.6.5
     # via
     #   -c requirements.txt
+    #   -r requirements.in
     #   pyasn1-modules
 pyasn1-modules==0.4.2
     # via
@@ -148,7 +149,7 @@ pyotp==2.10.0
     #   -r requirements.in
 pyparsing==3.3.3
     # via pip-requirements-parser
-pypdf==6.21.3
+pypdf==6.21.4
     # via
     #   -c requirements.txt
     #   -r requirements.in
