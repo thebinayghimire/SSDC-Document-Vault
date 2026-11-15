@@ -37,6 +37,15 @@ def positive_int(name, default, maximum):
     return value
 
 
+def env_flag(name, default=False):
+    value = os.getenv(name)
+    if value is None:
+        return default
+    if value not in {"0", "1"}:
+        raise ImproperlyConfigured(f"{name} must be 0 or 1")
+    return value == "1"
+
+
 def env(name, default=None):
     file = os.getenv(f"{name}_FILE")
     if PRODUCTION and not (file or os.getenv(name)):
@@ -210,6 +219,13 @@ if RENDER_EXTERNAL_HOSTNAME:
 MFA_ALL_STAFF = os.getenv("MFA_ALL_STAFF", "0") == "1"
 # Local development can temporarily use password-only login. Production always uses MFA.
 MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
+# Phase 2 feature flags. All default off and are independent of one another.
+STAFF_SELF_REGISTRATION_ENABLED = env_flag("STAFF_SELF_REGISTRATION_ENABLED", False)
+EMAIL_LOGIN_ENABLED = env_flag("EMAIL_LOGIN_ENABLED", False)
+SELF_REGISTERED_EMAIL_CHANGE_ENABLED = env_flag("SELF_REGISTERED_EMAIL_CHANGE_ENABLED", False)
+# Phase 1 has no delivery path. Locmem keeps offline tests deterministic and
+# prevents accidental real delivery; a later phase must replace this explicitly.
+EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
 MAX_UPLOAD_BYTES = positive_int("MAX_UPLOAD_BYTES", 25 * 1024 * 1024, 100 * 1024 * 1024)
 MAX_STORAGE_BYTES = positive_int("MAX_STORAGE_BYTES", 10 * 1024**3, 100 * 1024**4)
 MAX_IMAGE_PIXELS = positive_int("MAX_IMAGE_PIXELS", 20000000, 50000000)

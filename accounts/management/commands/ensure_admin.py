@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
 from accounts.models import User
+from accounts.services.email_claims import EmailConflict
 from audit.services import record
 
 
@@ -31,12 +32,21 @@ class Command(BaseCommand):
                     validate_password(password, candidate)
                 except ValidationError as exc:
                     raise CommandError("DJANGO_SUPERUSER_PASSWORD: " + "; ".join(exc.messages))
-                user = User.objects.create_superuser(
-                    username=username,
-                    email=email,
-                    password=password,
-                    role=User.Role.ADMIN,
-                )
+                try:
+                    user = User.objects.create_superuser(
+                        username=username,
+                        email=email,
+                        password=password,
+                        role=User.Role.ADMIN,
+                    )
+                except EmailConflict as exc:
+                    raise CommandError(
+                        "DJANGO_SUPERUSER_EMAIL is already claimed by another account"
+                    ) from exc
+                except ValidationError as exc:
+                    raise CommandError(
+                        "DJANGO_SUPERUSER_EMAIL: " + "; ".join(exc.messages)
+                    ) from exc
                 record(None, "deployment_admin_created", user.pk)
                 created = True
             else:

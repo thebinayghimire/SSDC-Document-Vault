@@ -14,6 +14,7 @@ from django.test import Client
 from accounts.admin import PortalUserAdmin
 from accounts.mfa import encrypt, verify
 from accounts.models import User
+from accounts.services.email_claims import EmailWriteBypass, set_email
 from config.admin import site
 
 from .conftest import authenticate_client
@@ -55,7 +56,11 @@ def test_profile_save_cannot_restore_used_mfa_codes(users):
     assert verify(user, "one-use-recovery")
 
     stale.email = "updated@example.test"
+    with pytest.raises(EmailWriteBypass):
+        stale.save()
+    stale.email = user.email
     stale.save()
+    set_email(user, "updated@example.test", actor=users["admin"])
 
     user.refresh_from_db()
     assert user.email == "updated@example.test"

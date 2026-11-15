@@ -3,6 +3,7 @@ from copy import deepcopy
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models, router, transaction
+from django.db.models.functions import Lower
 
 
 class User(AbstractUser):
@@ -77,6 +78,31 @@ class User(AbstractUser):
             if not update_fields:
                 return
         if self._state.adding or force_insert:
+            email = (self.email or "").strip()
+            if email:
+                # A new account with an email must become claimable atomically with
+                # its creation. The advisory lock is taken before the user row is
+                # inserted, matching the canonical email-authority lock order.
+                from .services.email_claims import (
+                    acquire_email_lock,
+                    claim_for_new_user,
+                    normalize_email,
+                )
+
+                self.email = normalize_email(email)
+                with transaction.atomic(using=using):
+                    acquire_email_lock(using=using)
+                    super().save(
+                        force_insert=force_insert,
+                        force_update=force_update,
+                        using=using,
+                        update_fields=update_fields,
+                    )
+                    self._remember_saved_values()
+                    claim_for_new_user(self, using=using)
+                return
+            if self.email:
+                self.email = ""
             super().save(
                 force_insert=force_insert,
                 force_update=force_update,
@@ -101,6 +127,14 @@ class User(AbstractUser):
                 )
             }
         update_fields.discard("auth_version")
+        if "email" in update_fields:
+            saved_email = getattr(self, "_saved_values", {}).get("email", "")
+            if (self.email or "") != (saved_email or ""):
+                from .services.email_claims import EmailWriteBypass
+
+                raise EmailWriteBypass(
+                    "Email changes must be made through accounts.services.email_claims.set_email()."
+                )
         security_fields = {
             "role",
             "is_active",
@@ -124,3 +158,116 @@ class User(AbstractUser):
             if update_fields:
                 super().save(using=using, force_update=force_update, update_fields=update_fields)
             self._remember_saved_values(update_fields | {"auth_version"})
+
+
+class EmailClaim(models.Model):
+    """The authoritative, case-insensitive owner of an email address."""
+
+    normalized_email = models.CharField(max_length=254, unique=True)
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="email_claim",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        constraints = [
+            models.CheckConstraint(
+                condition=~models.Q(normalized_email=""),
+                name="email_claim_normalized_nonempty",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(normalized_email=Lower("normalized_email")),
+                name="email_claim_normalized_lowercase",
+            ),
+        ]
+
+    def __str__(self):
+        return self.normalized_email
+
+
+class StaffRegistrationRequest(models.Model):
+    class Status(models.TextChoices):
+        EMAIL_PENDING = "email_pending", "Email pending"
+        PENDING_REVIEW = "pending_review", "Pending review"
+        APPROVED = "approved", "Approved"
+        DECLINED = "declined", "Declined"
+        EXPIRED = "expired", "Expired"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="staff_registration_requests",
+    )
+    status = models.CharField(
+        max_length=32,
+        choices=Status.choices,
+        default=Status.EMAIL_PENDING,
+    )
+    email_verified_at = models.DateTimeField(null=True, blank=True)
+    otp_digest = models.CharField(max_length=64, blank=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
+    otp_attempts = models.PositiveSmallIntegerField(default=0)
+    otp_sent_at = models.DateTimeField(null=True, blank=True)
+    reviewed_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="reviewed_staff_registration_requests",
+    )
+    reviewed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=[
+                        "email_pending",
+                        "pending_review",
+                        "approved",
+                        "declined",
+                        "expired",
+                    ]
+                ),
+                name="staff_registration_valid_status",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(otp_attempts__gte=0),
+                name="staff_registration_nonnegative_otp_attempts",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status__in=["email_pending", "pending_review"]),
+                name="staff_registration_one_active_per_user",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(status="email_pending")
+                    | (
+                        ~models.Q(otp_digest="")
+                        & models.Q(otp_expires_at__isnull=False)
+                        & models.Q(otp_sent_at__isnull=False)
+                    )
+                ),
+                name="staff_registration_email_pending_has_otp",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["status", "created_at"],
+                name="staff_reg_status_created_idx",
+            ),
+            models.Index(
+                fields=["reviewed_by"],
+                name="staff_reg_reviewer_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.status}"

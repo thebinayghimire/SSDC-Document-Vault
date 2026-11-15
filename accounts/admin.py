@@ -1,14 +1,22 @@
-from django.contrib import admin
+from django.contrib import admin, messages
 from django.contrib.auth.admin import UserAdmin
 from django.contrib.auth.forms import AdminUserCreationForm, UserChangeForm
 from django.core.exceptions import ValidationError
-from django.db import connection, transaction
+from django.db import transaction
 from django.db.models import F, Q
+from django.shortcuts import redirect
 
 from audit.services import record
 from config.admin import site
 
 from .models import User
+from .services.email_claims import (
+    EmailConflict,
+    acquire_email_lock,
+    check_availability,
+    normalize_email,
+    set_email,
+)
 
 
 class CreationForm(AdminUserCreationForm):
@@ -22,6 +30,17 @@ class ChangeForm(UserChangeForm):
     class Meta(UserChangeForm.Meta):
         model = User
         labels = {"username": "Staff ID"}
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email", "")
+        if not email:
+            return ""
+        normalized = normalize_email(email)
+        try:
+            check_availability(normalized, exclude_user_pk=self.instance.pk)
+        except EmailConflict as exc:
+            raise ValidationError(str(exc)) from exc
+        return normalized
 
     def clean(self):
         data = super().clean()
@@ -62,10 +81,16 @@ class PortalUserAdmin(UserAdmin):
     def has_delete_permission(self, request, obj=None):
         return False
 
+    def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+        try:
+            return super().changeform_view(request, object_id, form_url, extra_context)
+        except EmailConflict as exc:
+            messages.error(request, str(exc))
+            return redirect(request.path)
+
     def save_model(self, request, obj, form, change):
         with transaction.atomic():
-            with connection.cursor() as cursor:
-                cursor.execute("SELECT pg_advisory_xact_lock(731011)")
+            acquire_email_lock()
             old = User.objects.select_for_update().get(pk=obj.pk) if change else None
             was_admin = old and old.is_portal_admin
             fields = set(form.changed_data) & {
@@ -76,6 +101,8 @@ class PortalUserAdmin(UserAdmin):
                 "role",
                 "is_active",
             }
+            email_changed = "email" in fields
+            fields.discard("email")
             if old:
                 for field in fields:
                     setattr(old, field, getattr(obj, field))
@@ -91,9 +118,16 @@ class PortalUserAdmin(UserAdmin):
                     )
             if old:
                 old.save(update_fields=fields)
-                obj.refresh_from_db()
             else:
                 super().save_model(request, obj, form, change)
+            if email_changed:
+                set_email(
+                    old or obj,
+                    form.cleaned_data.get("email", ""),
+                    actor=request.user,
+                    source="admin",
+                )
+                obj.refresh_from_db()
             record(request.user, "account_changed" if change else "account_created", obj.pk)
 
     def user_change_password(self, request, id, form_url=""):
