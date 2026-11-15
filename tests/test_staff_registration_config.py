@@ -14,6 +14,7 @@ from django.urls import Resolver404, resolve
 from django.utils import timezone
 
 from accounts.models import StaffRegistrationRequest, User
+from config.email_settings import LOCMEM_BACKEND, SMTP_BACKEND, resolve_email_backend
 from config.settings import env_flag
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -140,3 +141,107 @@ def test_disabling_flags_does_not_remove_in_progress_registration_state(settings
     request.refresh_from_db()
     assert request.status == StaffRegistrationRequest.Status.PENDING_REVIEW
     assert StaffRegistrationRequest.objects.filter(pk=request.pk).exists()
+
+
+EMAIL_DEFAULTS = {
+    "production": False,
+    "delivery_enabled": False,
+    "backend": "",
+    "host": "",
+    "user": "",
+    "password": "",
+    "use_tls": True,
+    "use_ssl": False,
+    "features_enabled": False,
+    "from_email": "SSDC Document Vault <no-reply@localhost>",
+    "public_base_url": "",
+}
+
+
+def resolve_email(**overrides):
+    return resolve_email_backend(**{**EMAIL_DEFAULTS, **overrides})
+
+
+def test_email_backend_defaults_to_locmem_without_delivery():
+    assert resolve_email() == LOCMEM_BACKEND
+
+
+def test_enabling_delivery_selects_smtp():
+    assert (
+        resolve_email(delivery_enabled=True, host="smtp.example.test")
+        == SMTP_BACKEND
+    )
+
+
+def test_delivery_requires_an_smtp_backend():
+    with pytest.raises(ImproperlyConfigured, match="SMTP email backend"):
+        resolve_email(delivery_enabled=True, backend=LOCMEM_BACKEND, host="smtp.example.test")
+
+
+def test_delivery_requires_a_host():
+    with pytest.raises(ImproperlyConfigured, match="EMAIL_HOST"):
+        resolve_email(delivery_enabled=True)
+
+
+def test_tls_and_ssl_are_mutually_exclusive():
+    with pytest.raises(ImproperlyConfigured, match="mutually exclusive"):
+        resolve_email(delivery_enabled=True, host="smtp.example.test", use_ssl=True)
+
+
+def test_username_and_password_must_be_configured_together():
+    with pytest.raises(ImproperlyConfigured, match="configured together"):
+        resolve_email(delivery_enabled=True, host="smtp.example.test", user="smtp-user")
+
+
+def test_production_requires_tls_or_ssl():
+    with pytest.raises(ImproperlyConfigured, match="TLS or SSL"):
+        resolve_email(
+            production=True,
+            delivery_enabled=True,
+            host="smtp.example.test",
+            use_tls=False,
+            from_email="Vault <no-reply@ssdc.example.test>",
+            public_base_url="https://vault.example.test",
+        )
+
+
+def test_production_rejects_a_localhost_sender():
+    with pytest.raises(ImproperlyConfigured, match="EMAIL_FROM_ADDRESS"):
+        resolve_email(
+            production=True,
+            delivery_enabled=True,
+            host="smtp.example.test",
+            public_base_url="https://vault.example.test",
+        )
+
+
+def test_production_email_features_require_delivery():
+    with pytest.raises(ImproperlyConfigured, match="EMAIL_DELIVERY_ENABLED=1"):
+        resolve_email(production=True, features_enabled=True)
+
+
+def test_production_email_features_require_a_public_base_url():
+    with pytest.raises(ImproperlyConfigured, match="PUBLIC_BASE_URL"):
+        resolve_email(
+            production=True,
+            features_enabled=True,
+            delivery_enabled=True,
+            host="smtp.example.test",
+            from_email="Vault <no-reply@ssdc.example.test>",
+        )
+
+
+def test_complete_production_configuration_is_accepted():
+    assert (
+        resolve_email(
+            production=True,
+            features_enabled=True,
+            delivery_enabled=True,
+            host="smtp.example.test",
+            user="smtp-user",
+            password="smtp-password",
+            from_email="Vault <no-reply@ssdc.example.test>",
+            public_base_url="https://vault.example.test",
+        )
+        == SMTP_BACKEND
+    )

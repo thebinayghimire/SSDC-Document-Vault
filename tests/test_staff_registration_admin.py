@@ -1,12 +1,17 @@
 """Integration tests for the administrator staff-registration review interface."""
 
+import threading
+from concurrent.futures import ThreadPoolExecutor
+
 import pytest
+from django.db import connections
 from django.test import Client
 from django.urls import reverse
 
 from accounts.models import EmailNotification, StaffRegistrationRequest, User
 from accounts.services.otp import decrypt_otp
 from accounts.services.registration import (
+    DecisionConflict,
     approve_registration,
     decline_registration,
     expire_registration,
@@ -527,3 +532,56 @@ def test_delivery_failure_does_not_roll_back_a_successful_approval(
         kind="registration_approved",
     )
     assert notification.status == EmailNotification.Status.FAILED
+
+
+@pytest.mark.django_db(transaction=True)
+def test_simultaneous_approval_and_decline_leave_exactly_one_decision(users, registration_enabled):
+    registration = _pending_request("race.decision@example.test")
+    barrier = threading.Barrier(2)
+
+    def decide(action):
+        try:
+            barrier.wait(timeout=20)
+            if action == "approve":
+                approve_registration(registration.pk, users["admin"])
+            else:
+                decline_registration(registration.pk, users["admin"])
+            return "decided"
+        except DecisionConflict:
+            return "conflict"
+        finally:
+            connections.close_all()
+
+    with ThreadPoolExecutor(max_workers=2) as executor:
+        results = sorted(
+            future.result(timeout=30)
+            for future in (
+                executor.submit(decide, "approve"),
+                executor.submit(decide, "decline"),
+            )
+        )
+
+    assert results == ["conflict", "decided"]
+    registration.refresh_from_db()
+    registration.user.refresh_from_db()
+    assert registration.status in {
+        StaffRegistrationRequest.Status.APPROVED,
+        StaffRegistrationRequest.Status.DECLINED,
+    }
+    assert (registration.status == StaffRegistrationRequest.Status.APPROVED) == (
+        registration.user.is_active
+    )
+    assert (
+        EmailNotification.objects.filter(
+            registration_request=registration,
+            kind__in=["registration_approved", "registration_declined"],
+        ).count()
+        == 1
+    )
+    assert (
+        Event.objects.filter(
+            kind__in=["staff_registration_approved", "staff_registration_declined"],
+            details__object_id=registration.pk,
+        ).count()
+        == 1
+    )

@@ -148,10 +148,7 @@ def test_wrong_otp_increments_attempts_and_locks_after_the_limit(registration_en
         assert result.status in {"invalid", "locked"}
         assert request.otp_attempts == attempt
     assert verify_registration_otp(request, "000000").status == "locked"
-    assert (
-        verify_registration_otp(request, latest_otp(request)).status
-        == "locked"
-    )
+    assert verify_registration_otp(request, latest_otp(request)).status == "locked"
     request.refresh_from_db()
     assert request.status == StaffRegistrationRequest.Status.EMAIL_PENDING
 
@@ -254,9 +251,9 @@ def test_expiry_command_closes_due_email_and_review_windows(registration_enabled
     )
     assert expire_due_registrations() == 2
     assert set(
-        StaffRegistrationRequest.objects.filter(
-            pk__in=[pending.pk, reviewing.pk]
-        ).values_list("status", flat=True)
+        StaffRegistrationRequest.objects.filter(pk__in=[pending.pk, reviewing.pk]).values_list(
+            "status", flat=True
+        )
     ) == {StaffRegistrationRequest.Status.EXPIRED}
 
 
@@ -290,9 +287,7 @@ def test_approval_activates_only_the_staff_role_and_stages_the_password(
 
 
 @pytest.mark.django_db
-def test_approval_is_idempotent_and_does_not_duplicate_notifications(
-    registration_enabled, users
-):
+def test_approval_is_idempotent_and_does_not_duplicate_notifications(registration_enabled, users):
     request = register()
     verify_registration_otp(request, latest_otp(request))
     first = approve_registration(request.pk, users["admin"])
@@ -391,9 +386,7 @@ def test_authorized_reapplication_reuses_the_account_and_binds_the_new_code(
 
 
 @pytest.mark.django_db
-def test_reapplication_is_denied_without_explicit_admin_authorization(
-    registration_enabled, users
-):
+def test_reapplication_is_denied_without_explicit_admin_authorization(registration_enabled, users):
     request = register()
     verify_registration_otp(request, latest_otp(request))
     decline_registration(request.pk, users["admin"], allow_reapplication=False)
@@ -516,3 +509,34 @@ def test_concurrent_otp_verification_accepts_the_code_exactly_once(registration_
     assert results.count("already_verified") == 1
     request.refresh_from_db()
     assert request.status == StaffRegistrationRequest.Status.PENDING_REVIEW
+
+
+@pytest.mark.django_db
+def test_otp_delivery_failure_leaves_a_retryable_pending_registration(
+    registration_enabled, settings, monkeypatch
+):
+    settings.EMAIL_DELIVERY_ENABLED = True
+    monkeypatch.setattr(
+        "accounts.services.notifications.EmailMultiAlternatives",
+        lambda *args, **kwargs: (_ for _ in ()).throw(RuntimeError("synthetic SMTP outage")),
+    )
+    request = register_applicant(email="otp.failure@example.test", password=PASSWORD).request
+    notification = EmailNotification.objects.get(
+        registration_request=request, kind="registration_otp"
+    )
+
+    assert deliver_notification(notification.pk) == "failed"
+    notification.refresh_from_db()
+    request.refresh_from_db()
+    assert notification.status == EmailNotification.Status.FAILED
+    assert notification.attempts == 1
+    assert notification.next_attempt_at is not None
+    assert request.status == StaffRegistrationRequest.Status.EMAIL_PENDING
+
+    monkeypatch.undo()
+    EmailNotification.objects.filter(pk=notification.pk).update(
+        next_attempt_at=timezone.now() - timezone.timedelta(seconds=1)
+    )
+    assert deliver_notification(notification.pk) == "sent"
+    notification.refresh_from_db()
+    assert notification.status == EmailNotification.Status.SENT

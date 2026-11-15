@@ -8,6 +8,7 @@ from django.core.exceptions import ImproperlyConfigured
 from dotenv import load_dotenv
 
 from config.database import database_from_url, database_transport
+from config.email_settings import resolve_email_backend
 from config.scanning import scan_mode
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -54,6 +55,15 @@ def env(name, default=None):
     if PRODUCTION and not value:
         raise ImproperlyConfigured(f"{name} is required")
     return value
+
+
+def optional_secret(name):
+    """Return an optional runtime value, falling back to a mounted *_FILE."""
+    value = os.getenv(name, "").strip()
+    if value:
+        return value
+    file = os.getenv(f"{name}_FILE")
+    return Path(file).read_text().strip() if file else ""
 
 
 SECRET_KEY = env(
@@ -220,42 +230,54 @@ if RENDER_EXTERNAL_HOSTNAME:
 MFA_ALL_STAFF = os.getenv("MFA_ALL_STAFF", "0") == "1"
 # Local development can temporarily use password-only login. Production always uses MFA.
 MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
-# Phase 2 feature flags. All default off and are independent of one another.
+# Feature flags. All default off and are independent of one another.
 STAFF_SELF_REGISTRATION_ENABLED = env_flag("STAFF_SELF_REGISTRATION_ENABLED", False)
 EMAIL_LOGIN_ENABLED = env_flag("EMAIL_LOGIN_ENABLED", False)
 SELF_REGISTERED_EMAIL_CHANGE_ENABLED = env_flag("SELF_REGISTERED_EMAIL_CHANGE_ENABLED", False)
+EMAIL_FEATURES_ENABLED = STAFF_SELF_REGISTRATION_ENABLED or SELF_REGISTERED_EMAIL_CHANGE_ENABLED
 # Locmem keeps offline tests deterministic and prevents accidental real delivery.
-# Real SMTP configuration is deliberately absent from Phase 2.
-EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+# Enabling delivery selects SMTP unless an explicit backend is supplied.
 EMAIL_DELIVERY_ENABLED = env_flag("EMAIL_DELIVERY_ENABLED", False)
-DEFAULT_FROM_EMAIL = os.getenv(
-    "EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>"
+EMAIL_HOST = os.getenv("EMAIL_HOST", "")
+EMAIL_PORT = positive_int("EMAIL_PORT", 587, 65535)
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = optional_secret("EMAIL_HOST_PASSWORD")
+EMAIL_USE_TLS = env_flag("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_flag("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = positive_int("EMAIL_TIMEOUT", 10, 120)
+DEFAULT_FROM_EMAIL = os.getenv("EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>")
+PUBLIC_BASE_URL = os.getenv(
+    "PUBLIC_BASE_URL",
+    f"https://{RENDER_EXTERNAL_HOSTNAME}" if RENDER_EXTERNAL_HOSTNAME else "",
+).rstrip("/")
+EMAIL_BACKEND = resolve_email_backend(
+    production=PRODUCTION,
+    delivery_enabled=EMAIL_DELIVERY_ENABLED,
+    backend=os.getenv("EMAIL_BACKEND", ""),
+    host=EMAIL_HOST,
+    user=EMAIL_HOST_USER,
+    password=EMAIL_HOST_PASSWORD,
+    use_tls=EMAIL_USE_TLS,
+    use_ssl=EMAIL_USE_SSL,
+    features_enabled=EMAIL_FEATURES_ENABLED,
+    from_email=DEFAULT_FROM_EMAIL,
+    public_base_url=PUBLIC_BASE_URL,
 )
 STAFF_REGISTRATION_OTP_MINUTES = positive_int("STAFF_REGISTRATION_OTP_MINUTES", 10, 60)
-STAFF_REGISTRATION_OTP_MAX_ATTEMPTS = positive_int(
-    "STAFF_REGISTRATION_OTP_MAX_ATTEMPTS", 5, 20
-)
+STAFF_REGISTRATION_OTP_MAX_ATTEMPTS = positive_int("STAFF_REGISTRATION_OTP_MAX_ATTEMPTS", 5, 20)
 STAFF_REGISTRATION_OTP_RESEND_SECONDS = positive_int(
     "STAFF_REGISTRATION_OTP_RESEND_SECONDS", 60, 3600
 )
-STAFF_REGISTRATION_OTP_HOURLY_LIMIT = positive_int(
-    "STAFF_REGISTRATION_OTP_HOURLY_LIMIT", 5, 50
-)
+STAFF_REGISTRATION_OTP_HOURLY_LIMIT = positive_int("STAFF_REGISTRATION_OTP_HOURLY_LIMIT", 5, 50)
 STAFF_REGISTRATION_IP_LIMIT = positive_int("STAFF_REGISTRATION_IP_LIMIT", 20, 1000)
-STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS = positive_int(
-    "STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS", 3, 30
-)
+STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS = positive_int("STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS", 3, 30)
 STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS = positive_int(
     "STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS", 30, 365
 )
-STAFF_REGISTRATION_LINK_MAX_AGE_DAYS = positive_int(
-    "STAFF_REGISTRATION_LINK_MAX_AGE_DAYS", 30, 365
-)
+STAFF_REGISTRATION_LINK_MAX_AGE_DAYS = positive_int("STAFF_REGISTRATION_LINK_MAX_AGE_DAYS", 30, 365)
 EMAIL_CHANGE_OTP_MINUTES = positive_int("EMAIL_CHANGE_OTP_MINUTES", 10, 60)
 EMAIL_CHANGE_OTP_MAX_ATTEMPTS = positive_int("EMAIL_CHANGE_OTP_MAX_ATTEMPTS", 5, 20)
-EMAIL_CHANGE_OTP_RESEND_SECONDS = positive_int(
-    "EMAIL_CHANGE_OTP_RESEND_SECONDS", 60, 3600
-)
+EMAIL_CHANGE_OTP_RESEND_SECONDS = positive_int("EMAIL_CHANGE_OTP_RESEND_SECONDS", 60, 3600)
 EMAIL_CHANGE_OTP_HOURLY_LIMIT = positive_int("EMAIL_CHANGE_OTP_HOURLY_LIMIT", 5, 50)
 EMAIL_CHANGE_EXPIRY_DAYS = positive_int("EMAIL_CHANGE_EXPIRY_DAYS", 3, 30)
 EMAIL_NOTIFICATION_MAX_ATTEMPTS = positive_int("EMAIL_NOTIFICATION_MAX_ATTEMPTS", 5, 20)
@@ -265,9 +287,7 @@ EMAIL_NOTIFICATION_BACKOFF_BASE_SECONDS = positive_int(
 EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS = positive_int(
     "EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS", 3600, 86400
 )
-EMAIL_NOTIFICATION_LEASE_SECONDS = positive_int(
-    "EMAIL_NOTIFICATION_LEASE_SECONDS", 900, 86400
-)
+EMAIL_NOTIFICATION_LEASE_SECONDS = positive_int("EMAIL_NOTIFICATION_LEASE_SECONDS", 900, 86400)
 MAX_UPLOAD_BYTES = positive_int("MAX_UPLOAD_BYTES", 25 * 1024 * 1024, 100 * 1024 * 1024)
 MAX_STORAGE_BYTES = positive_int("MAX_STORAGE_BYTES", 10 * 1024**3, 100 * 1024**4)
 MAX_IMAGE_PIXELS = positive_int("MAX_IMAGE_PIXELS", 20000000, 50000000)

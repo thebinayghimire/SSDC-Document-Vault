@@ -310,9 +310,7 @@ def deliver_notification(notification_id, *, now=None):
         error = _safe_error(exc)
         with transaction.atomic():
             notification = (
-                EmailNotification.objects.select_for_update()
-                .filter(pk=notification_pk)
-                .first()
+                EmailNotification.objects.select_for_update().filter(pk=notification_pk).first()
             )
             if notification is None or notification.status != EmailNotification.Status.SENDING:
                 return "superseded"
@@ -322,9 +320,7 @@ def deliver_notification(notification_id, *, now=None):
             if notification.attempts >= notification.max_attempts:
                 _mark_dead_letter(notification, now=now, error=error)
                 transaction.on_commit(
-                    lambda pk=notification_pk, kind=notification_kind: _audit_failure(
-                        pk, kind
-                    )
+                    lambda pk=notification_pk, kind=notification_kind: _audit_failure(pk, kind)
                 )
             else:
                 delay = min(

@@ -270,8 +270,7 @@ def _eligible_for_reapplication(request):
     if request.status == StaffRegistrationRequest.Status.EXPIRED:
         return True
     return (
-        request.status == StaffRegistrationRequest.Status.DECLINED
-        and request.reapplication_allowed
+        request.status == StaffRegistrationRequest.Status.DECLINED and request.reapplication_allowed
     )
 
 
@@ -378,11 +377,7 @@ def register_applicant(*, email, password, language="en", base_url=""):
 
 
 def _lock_registration(request):
-    row = (
-        StaffRegistrationRequest.objects.filter(pk=request.pk)
-        .values("user_id")
-        .first()
-    )
+    row = StaffRegistrationRequest.objects.filter(pk=request.pk).values("user_id").first()
     if row is None:
         return None, None
     user = User.objects.select_for_update().filter(pk=row["user_id"]).first()
@@ -524,20 +519,12 @@ def verify_registration_otp(request, code, *, now=None):
 
 
 def _require_admin(actor):
-    if (
-        actor is None
-        or not getattr(actor, "is_authenticated", False)
-        or not actor.is_portal_admin
-    ):
+    if actor is None or not getattr(actor, "is_authenticated", False) or not actor.is_portal_admin:
         raise PermissionDenied("Administrator permission is required.")
 
 
 def _locked_review_request(request_id):
-    row = (
-        StaffRegistrationRequest.objects.filter(pk=request_id)
-        .values("user_id")
-        .first()
-    )
+    row = StaffRegistrationRequest.objects.filter(pk=request_id).values("user_id").first()
     if row is None:
         return None, None
     user = User.objects.select_for_update().filter(pk=row["user_id"]).first()
@@ -778,7 +765,7 @@ def expire_registration(request_id, *, now=None, base_url=""):
         return _expire_locked(request, now=now, base_url=base_url)
 
 
-def expire_due_registrations(*, now=None, limit=100, base_url=""):
+def expire_due_registrations(*, now=None, limit=100, base_url="", dry_run=False):
     """Expire applications whose email or review window has elapsed."""
     now = now or timezone.now()
     email_cutoff = now - timedelta(days=settings.STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS)
@@ -797,6 +784,8 @@ def expire_due_registrations(*, now=None, limit=100, base_url=""):
         .order_by("created_at", "pk")
         .values_list("pk", flat=True)[:limit]
     )
+    if dry_run:
+        return len(candidates)
     expired = 0
     for request_id in candidates:
         if expire_registration(request_id, now=now, base_url=base_url):

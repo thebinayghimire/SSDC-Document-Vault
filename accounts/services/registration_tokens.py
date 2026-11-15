@@ -25,11 +25,7 @@ def load_registration(token):
     request_id = payload.get("request")
     if not isinstance(request_id, int):
         return None
-    return (
-        StaffRegistrationRequest.objects.select_related("user")
-        .filter(pk=request_id)
-        .first()
-    )
+    return StaffRegistrationRequest.objects.select_related("user").filter(pk=request_id).first()
 
 
 def verification_url(registration, base_url=""):

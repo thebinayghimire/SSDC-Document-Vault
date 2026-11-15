@@ -79,10 +79,7 @@ class ResendResult:
 
 
 def _require_enabled():
-    if not (
-        settings.EMAIL_LOGIN_ENABLED
-        and settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED
-    ):
+    if not (settings.EMAIL_LOGIN_ENABLED and settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED):
         raise EmailChangeDisabled("Self-service email changes are not enabled.")
 
 
@@ -214,9 +211,7 @@ def start_email_change(user, new_email, *, language="en", base_url=""):
         )
         if existing is not None:
             return StartResult(existing, False)
-        claim = (
-            EmailClaim.objects.select_for_update().filter(user_id=locked_user.pk).first()
-        )
+        claim = EmailClaim.objects.select_for_update().filter(user_id=locked_user.pk).first()
         current = claim.normalized_email if claim else ""
         if normalized == current:
             raise EmailChangeConflict("Choose a different email address.")
@@ -387,9 +382,7 @@ def verify_email_change(user, code, request_id=None, *, base_url="", now=None):
                 else "invalid"
             )
             return VerifyResult(status, request)
-        claim = (
-            EmailClaim.objects.select_for_update().filter(user_id=locked_user.pk).first()
-        )
+        claim = EmailClaim.objects.select_for_update().filter(user_id=locked_user.pk).first()
         current = claim.normalized_email if claim else ""
         if current != request.old_email or locked_user.email != request.old_email:
             request.status = EmailChangeRequest.Status.SUPERSEDED
@@ -531,11 +524,7 @@ def cancel_email_change(user, request_id=None):
 def expire_email_change(request_id, *, now=None, base_url=""):
     now = now or timezone.now()
     with transaction.atomic():
-        row = (
-            EmailChangeRequest.objects.filter(pk=request_id)
-            .values("user_id")
-            .first()
-        )
+        row = EmailChangeRequest.objects.filter(pk=request_id).values("user_id").first()
         if row is None:
             return False
         user = User.objects.select_for_update().filter(pk=row["user_id"]).first()

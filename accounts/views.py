@@ -182,9 +182,7 @@ def sign_in(request, portal=None):
                     lookup = resolved.username if resolved else identity
                 # Django can upgrade an older password hash during authenticate().
                 # Lock before that check so its write cannot undo a concurrent reset.
-                password_account = (
-                    User.objects.select_for_update().filter(username=lookup).first()
-                )
+                password_account = User.objects.select_for_update().filter(username=lookup).first()
                 previous_hash = password_account.password if password_account else None
                 user = authenticate(
                     request, username=lookup, password=form.cleaned_data["password"]
@@ -545,7 +543,9 @@ def staff_register_verify(request, token):
             if result.status in {"verified", "already_verified"}:
                 messages.success(
                     request,
-                    tr("Your email is verified. Your application is waiting for administrator approval."),
+                    tr(
+                        "Your email is verified. Your application is waiting for administrator approval."
+                    ),
                 )
                 return redirect("staff_registration_status", token=token)
             if result.status in {"expired", "not_pending"}:
@@ -568,9 +568,7 @@ def staff_register_verify(request, token):
             "form": form,
             "registration": registration,
             "token": token,
-            "masked_email": mask_email(
-                registration.applicant_email or registration.user.email
-            ),
+            "masked_email": mask_email(registration.applicant_email or registration.user.email),
             "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
         },
     )
@@ -634,9 +632,7 @@ def staff_registration_status(request, token):
             "registration": registration,
             "token": token,
             "status": status,
-            "masked_email": mask_email(
-                registration.applicant_email or registration.user.email
-            ),
+            "masked_email": mask_email(registration.applicant_email or registration.user.email),
             "can_reapply": can_reapply,
             "registration_enabled": settings.STAFF_SELF_REGISTRATION_ENABLED,
             "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
@@ -648,10 +644,7 @@ def staff_registration_status(request, token):
 @never_cache
 @require_http_methods(["GET", "POST"])
 def email_change(request):
-    if not (
-        settings.EMAIL_LOGIN_ENABLED
-        and settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED
-    ):
+    if not (settings.EMAIL_LOGIN_ENABLED and settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED):
         registration_unavailable()
     pending = pending_for_user(request.user)
     start_form = EmailChangeForm()
@@ -731,9 +724,7 @@ def email_change(request):
                     logout(request)
                     messages.success(
                         request,
-                        tr(
-                            "Your email address changed. Sign in again with the new address."
-                        ),
+                        tr("Your email address changed. Sign in again with the new address."),
                     )
                     return redirect("staff_login")
                 if result.status in {"expired", "not_pending"}:
@@ -745,9 +736,7 @@ def email_change(request):
                         tr("Too many incorrect codes. Request a new code to continue."),
                     )
                 elif result.status == "code_expired":
-                    otp_form.add_error(
-                        None, tr("That code has expired. Request a new code.")
-                    )
+                    otp_form.add_error(None, tr("That code has expired. Request a new code."))
                 elif result.status in {"stale", "conflict"}:
                     messages.error(
                         request,
@@ -755,9 +744,7 @@ def email_change(request):
                     )
                     return redirect("email_change")
                 else:
-                    otp_form.add_error(
-                        None, tr("That code is not valid. Check it and try again.")
-                    )
+                    otp_form.add_error(None, tr("That code is not valid. Check it and try again."))
             return render(
                 request,
                 "accounts/email_change.html",

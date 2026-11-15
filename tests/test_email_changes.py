@@ -63,9 +63,7 @@ def test_start_email_change_reserves_new_email_and_enqueues_notifications(
     assert request.new_email == "alice.new@example.test"
 
     # Verifies OTP notification was created for new email
-    otp_notif = EmailNotification.objects.get(
-        email_change_request=request, kind="email_change_otp"
-    )
+    otp_notif = EmailNotification.objects.get(email_change_request=request, kind="email_change_otp")
     assert otp_notif.recipient_email == "alice.new@example.test"
 
     # Verifies security notice notification was created for old email
@@ -76,9 +74,7 @@ def test_start_email_change_reserves_new_email_and_enqueues_notifications(
 
 
 @pytest.mark.django_db
-def test_start_email_change_rejects_conflict_with_existing_account(
-    email_change_enabled, users
-):
+def test_start_email_change_rejects_conflict_with_existing_account(email_change_enabled, users):
     alice = users["alice"]
     bob = users["bob"]
     set_email(bob, "bob@example.test", actor=bob, source="admin")
@@ -88,9 +84,7 @@ def test_start_email_change_rejects_conflict_with_existing_account(
 
 
 @pytest.mark.django_db
-def test_verify_email_change_applies_new_address_and_revokes_sessions(
-    email_change_enabled, users
-):
+def test_verify_email_change_applies_new_address_and_revokes_sessions(email_change_enabled, users):
     alice = users["alice"]
     set_email(alice, "alice.initial@example.test", actor=alice, source="admin")
     initial_auth_version = alice.auth_version

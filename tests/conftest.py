@@ -12,6 +12,11 @@ from accounts.models import User
 from vault.models import Folder, FolderGrant
 from vault.services import upload_document
 
+# Django's live-server media handler treats an empty MEDIA_URL as matching every
+# path, which raises on signed tokens that contain a colon. The application does
+# not serve user media, so give the handler a namespace it cannot claim.
+django_settings.MEDIA_URL = "/media/"
+
 LOCAL_TEST_DATABASE_HOSTS = frozenset({"", "localhost", "127.0.0.1", "::1", "db"})
 
 

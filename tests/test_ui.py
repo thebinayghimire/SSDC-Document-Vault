@@ -7,7 +7,7 @@ import re
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 from unittest.mock import patch
-from urllib.parse import parse_qs, urlsplit
+from urllib.parse import parse_qs, quote, urlsplit
 
 import pyotp
 import pytest
@@ -16,6 +16,9 @@ from django.db import connections
 from django.test import Client
 from playwright.sync_api import expect, sync_playwright
 
+from accounts.models import EmailNotification, StaffRegistrationRequest
+from accounts.services.otp import decrypt_otp
+from accounts.services.registration_tokens import registration_token
 from vault.models import Document, Folder
 from vault.services import upload_document
 
@@ -27,7 +30,10 @@ WIDTHS = (375, 390, 430, 768, 1024, 1280, 1440, 1920)
 
 
 @pytest.fixture
-def browser_page(live_server, users, folder, document, monkeypatch):
+def browser_page(settings, live_server, users, folder, document, monkeypatch):
+    # A blank MEDIA_URL makes the live server's media handler claim every path.
+    # That breaks signed registration tokens, which contain a colon separator.
+    settings.MEDIA_URL = "/media/"
     # Windows registry associations can override .mjs with text/plain. Match the
     # production WhiteNoise MIME type so the test server can load ES modules.
     mimetypes.init()
@@ -588,3 +594,86 @@ def test_account_switch_clears_old_admin_screen_in_other_tab(browser_page, users
     expect(page.locator(".user-name")).to_have_text("alice")
     expect(page.get_by_role("link", name="Admin portal", exact=True)).to_have_count(0)
     other.close()
+
+
+def _registration_browser_details(email):
+    def load():
+        registration = StaffRegistrationRequest.objects.get(applicant_email=email)
+        notification = (
+            EmailNotification.objects.filter(
+                registration_request=registration,
+                kind="registration_otp",
+                status=EmailNotification.Status.PENDING,
+            )
+            .order_by("-created_at", "-pk")
+            .first()
+        )
+        return (
+            registration_token(registration),
+            decrypt_otp(notification.context["otp_ciphertext"]),
+        )
+
+    return database_call(load)
+
+
+def test_staff_registration_verification_status_and_admin_approval(browser_page, users, settings):
+    settings.STAFF_SELF_REGISTRATION_ENABLED = True
+    settings.EMAIL_LOGIN_ENABLED = True
+    settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED = False
+    settings.EMAIL_DELIVERY_ENABLED = False
+    page, context, base, _ = browser_page
+    email = "browser.applicant@example.test"
+    password = "Strong-Browser-Password-42"
+
+    page.set_viewport_size({"width": 390, "height": 1000})
+    page.goto(base + "/accounts/register/")
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "registration-390.png"), full_page=True)
+
+    page.locator("#id_email").fill(email)
+    page.locator("#id_password1").fill(password)
+    page.locator("#id_password2").fill(password)
+    page.get_by_role("button", name="Register", exact=False).click()
+    expect(page.get_by_role("heading", name="Check your email.")).to_be_visible()
+
+    token, code = _registration_browser_details(email)
+    status_url = base + "/accounts/register/status/" + quote(token, safe="") + "/"
+    verify_url = base + "/accounts/register/verify/" + quote(token, safe="") + "/"
+
+    page.goto(verify_url)
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "registration-verify-390.png"), full_page=True)
+    page.locator("#id_code").fill(code)
+    page.get_by_role("button", name="Verify email", exact=False).click()
+    expect(page.get_by_role("heading", name="Your email has been verified.")).to_be_visible()
+    expect(page.get_by_text("waiting for administrator approval").first).to_be_visible()
+
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "registration-status-1440.png"), full_page=True)
+
+    browser_session(context, base, users["admin"])
+    page.goto(base + "/admin/accounts/staffregistrationrequest/")
+    expect(page.get_by_role("heading", name="Review queue")).to_be_visible()
+    expect(page.get_by_text(email)).to_be_visible()
+    no_overflow(page)
+    page.set_viewport_size({"width": 390, "height": 1000})
+    no_overflow(page)
+    page.screenshot(path=str(ARTIFACTS / "registration-admin-queue-390.png"), full_page=True)
+
+    page.set_viewport_size({"width": 1440, "height": 1000})
+    page.get_by_role("link", name=email, exact=True).click()
+    expect(page.get_by_role("heading", name="Review decision")).to_be_visible()
+    page.get_by_role("button", name="Approve staff registration", exact=True).click()
+    expect(page.get_by_text("was approved.")).to_be_visible()
+
+    page.goto(status_url)
+    expect(page.get_by_role("heading", name="Application approved.")).to_be_visible()
+
+    context.clear_cookies()
+    page.get_by_role("link", name="Sign in to Staff Portal", exact=True).click()
+    page.locator("#id_staff_id").fill(email)
+    page.locator("#id_password").fill(password)
+    page.get_by_role("button", name="Sign in", exact=False).click()
+    expect(page).to_have_url(base + "/staff/")
+    expect(page.locator(".brand-sub")).to_have_text("Staff portal")
