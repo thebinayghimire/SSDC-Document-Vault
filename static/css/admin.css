@@ -196,4 +196,29 @@ ul.messagelist li { border-radius: var(--radius-sm); margin: var(--space-3) var(
   div.breadcrumbs { padding-inline: var(--space-6); }
   ul.messagelist li { margin-inline: var(--space-6); }
 }
+.vault-status-badge { display: inline-flex; align-items: center; min-height: 24px; padding: 2px var(--space-2); border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; }
+.vault-status-badge--pending_review { background: var(--color-warning-soft); color: var(--color-warning); }
+.vault-status-badge--approved, .vault-status-badge--verified { background: var(--color-success-soft); color: var(--color-success); }
+.vault-status-badge--declined, .vault-status-badge--expired, .vault-status-badge--unverified { background: var(--color-danger-soft); color: var(--color-danger); }
+.vault-status-badge--email_pending { background: var(--color-primary-soft); color: var(--color-primary); }
+.vault-muted { color: var(--color-secondary); font-size: var(--text-xs); }
+.vault-review-summary, .vault-review-panel { padding: var(--space-6); margin-bottom: var(--space-8); border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface-soft); }
+.vault-review-summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-6); }
+.vault-review-summary h2, .vault-review-panel h2 { margin: 0; font-size: var(--text-lg); }
+.vault-review-summary p, .vault-review-copy, .vault-review-card p { color: var(--color-secondary); font-size: var(--text-sm); line-height: 1.5; }
+.vault-review-summary p { margin: var(--space-2) 0 0; }
+.vault-review-summary .button { flex-shrink: 0; display: inline-flex; align-items: center; min-height: 44px; box-sizing: border-box; }
+.vault-review-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.vault-review-copy { margin: 0 0 var(--space-6); }
+.vault-review-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.vault-review-card { padding: var(--space-4); border: 1px solid var(--color-border); border-radius: var(--radius-md); background: var(--color-canvas); min-width: 0; }
+.vault-review-card h3 { margin: 0 0 var(--space-2); font-size: var(--text-base); font-weight: 600; }
+.vault-review-card p { margin: 0 0 var(--space-4); }
+.vault-review-card form { margin: 0; }
+.vault-review-panel .vault-field { margin-bottom: var(--space-4); }
+.vault-review-panel .vault-field label { display: block; margin-bottom: var(--space-2); font-size: var(--text-sm); color: var(--color-text); }
+.vault-review-panel .vault-field textarea { width: 100%; box-sizing: border-box; resize: vertical; }
+.vault-review-panel .vault-checkbox { display: flex; align-items: flex-start; gap: var(--space-2); margin-bottom: var(--space-4); font-size: var(--text-sm); line-height: 1.4; }
+.vault-review-panel .vault-checkbox input { margin-top: 3px; }
+@media (max-width: 833px) { .vault-review-grid { grid-template-columns: 1fr; } .vault-review-summary { align-items: flex-start; flex-direction: column; } }
 @media (prefers-reduced-motion: reduce) { * { transition: none !important; } .button:active, input[type="submit"]:active { transform: none; } }

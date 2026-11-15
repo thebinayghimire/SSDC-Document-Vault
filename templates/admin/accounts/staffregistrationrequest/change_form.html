@@ -1,0 +1,60 @@
+{% extends "admin/change_form.html" %}
+{% load i18n %}
+
+{% block content %}
+  {% if original %}
+    <section class="vault-review-panel" aria-labelledby="vault-review-title">
+      <div class="vault-review-heading">
+        <div>
+          <span class="admin-eyebrow">{% translate "Staff registration" %}</span>
+          <h2 id="vault-review-title">{% translate "Review decision" %}</h2>
+        </div>
+        <span class="vault-status-badge vault-status-badge--{{ original.status }}">{{ original.get_status_display }}</span>
+      </div>
+
+      {% if original.status == "pending_review" %}
+        <p class="vault-review-copy">{% translate "Approval grants the normal staff role only. It never grants administrator access." %}</p>
+        <div class="vault-review-grid">
+          <div class="vault-review-card">
+            <h3>{% translate "Approve" %}</h3>
+            <p>{% translate "Activate this applicant's account and allow staff portal access." %}</p>
+            <form method="post" action="{% url 'admin:accounts_staffregistrationrequest_approve' original.pk %}">
+              {% csrf_token %}
+              <button type="submit" class="button default">{% translate "Approve staff registration" %}</button>
+            </form>
+          </div>
+          <div class="vault-review-card">
+            <h3>{% translate "Decline" %}</h3>
+            <form method="post" action="{% url 'admin:accounts_staffregistrationrequest_decline' original.pk %}">
+              {% csrf_token %}
+              <div class="vault-field">
+                <label for="id_note">{{ decline_form.note.label }}</label>
+                {{ decline_form.note }}
+              </div>
+              <label class="vault-checkbox" for="id_allow_reapplication">
+                {{ decline_form.allow_reapplication }}
+                <span>{{ decline_form.allow_reapplication.label }}</span>
+              </label>
+              <button type="submit" class="button">{% translate "Decline staff registration" %}</button>
+            </form>
+          </div>
+        </div>
+      {% elif original.status == "declined" and not original.reapplication_allowed %}
+        <p class="vault-review-copy">{% translate "This application was declined. The applicant cannot submit a new application unless reapplication is explicitly allowed." %}</p>
+        <form method="post" action="{% url 'admin:accounts_staffregistrationrequest_allow_reapplication' original.pk %}">
+          {% csrf_token %}
+          <button type="submit" class="button">{% translate "Allow reapplication" %}</button>
+        </form>
+      {% elif original.status == "declined" %}
+        <p class="vault-review-copy">{% translate "This application was declined and the applicant is allowed to reapply." %}</p>
+      {% elif original.status == "approved" %}
+        <p class="vault-review-copy">{% translate "This application is approved. The applicant can sign in to the staff portal." %}</p>
+      {% elif original.status == "email_pending" %}
+        <p class="vault-review-copy">{% translate "This application is waiting for email verification and cannot be reviewed yet." %}</p>
+      {% elif original.status == "expired" %}
+        <p class="vault-review-copy">{% translate "This application has expired and cannot be reviewed." %}</p>
+      {% endif %}
+    </section>
+  {% endif %}
+  {{ block.super }}
+{% endblock %}
