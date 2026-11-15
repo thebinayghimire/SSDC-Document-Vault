@@ -1,0 +1,12 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Email Verification
+
+A request was made to register a staff account for SSDC Document Vault using this email address.
+
+Your verification code is: {{ otp }}
+
+This code expires in {{ expiry_minutes }} minutes.
+
+Verify your email using this link:
+{{ verification_url }}
+
+If you did not initiate this request, no action is needed. Do not share this code with anyone.{% endblocktranslate %}

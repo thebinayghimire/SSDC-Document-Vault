@@ -1,0 +1,12 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head><meta charset="utf-8"><title>{% translate "Reapplication Permitted" %}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
+    <p style="color: #2563eb; font-weight: 600; font-size: 18px;">{% translate "You may reapply for staff access." %}</p>
+    <p>{% translate "An administrator has granted permission for you to submit a new application for SSDC Document Vault staff access." %}</p>
+    <p><a href="{{ reapply_url }}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Submit New Application" %}</a></p>
+  </div>
+</body>
+</html>

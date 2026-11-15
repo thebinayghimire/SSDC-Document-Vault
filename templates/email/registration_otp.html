@@ -1,0 +1,16 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head><meta charset="utf-8"><title>{% translate "Verify your email" %}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
+    <p>{% translate "A request was made to register a staff account for SSDC Document Vault using this email address." %}</p>
+    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; text-align: center; margin: 24px 0;">
+      <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; font-family: monospace; color: #0f172a;">{{ otp }}</span>
+    </div>
+    <p>{% blocktranslate %}This code expires in {{ expiry_minutes }} minutes.{% endblocktranslate %}</p>
+    <p><a href="{{ verification_url }}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Verify Email Address" %}</a></p>
+    <p style="font-size: 13px; color: #64748b; margin-top: 24px;">{% translate "If you did not initiate this request, no action is needed. Do not share this code with anyone." %}</p>
+  </div>
+</body>
+</html>

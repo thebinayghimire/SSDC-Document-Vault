@@ -1,0 +1,8 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Registration Expired
+
+Your staff registration request for SSDC Document Vault has expired because it was not verified or reviewed within the allowed timeframe.
+{% endblocktranslate %}
+{% if registration_enabled and reapply_url %}
+{% blocktranslate %}You may submit a fresh registration request here:
+{{ reapply_url }}{% endblocktranslate %}
+{% endif %}

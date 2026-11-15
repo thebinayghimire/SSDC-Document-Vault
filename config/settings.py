@@ -130,6 +130,7 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
+                "config.context_processors.feature_flags",
             ]
         },
     }
@@ -223,9 +224,50 @@ MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
 STAFF_SELF_REGISTRATION_ENABLED = env_flag("STAFF_SELF_REGISTRATION_ENABLED", False)
 EMAIL_LOGIN_ENABLED = env_flag("EMAIL_LOGIN_ENABLED", False)
 SELF_REGISTERED_EMAIL_CHANGE_ENABLED = env_flag("SELF_REGISTERED_EMAIL_CHANGE_ENABLED", False)
-# Phase 1 has no delivery path. Locmem keeps offline tests deterministic and
-# prevents accidental real delivery; a later phase must replace this explicitly.
+# Locmem keeps offline tests deterministic and prevents accidental real delivery.
+# Real SMTP configuration is deliberately absent from Phase 2.
 EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+EMAIL_DELIVERY_ENABLED = env_flag("EMAIL_DELIVERY_ENABLED", False)
+DEFAULT_FROM_EMAIL = os.getenv(
+    "EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>"
+)
+STAFF_REGISTRATION_OTP_MINUTES = positive_int("STAFF_REGISTRATION_OTP_MINUTES", 10, 60)
+STAFF_REGISTRATION_OTP_MAX_ATTEMPTS = positive_int(
+    "STAFF_REGISTRATION_OTP_MAX_ATTEMPTS", 5, 20
+)
+STAFF_REGISTRATION_OTP_RESEND_SECONDS = positive_int(
+    "STAFF_REGISTRATION_OTP_RESEND_SECONDS", 60, 3600
+)
+STAFF_REGISTRATION_OTP_HOURLY_LIMIT = positive_int(
+    "STAFF_REGISTRATION_OTP_HOURLY_LIMIT", 5, 50
+)
+STAFF_REGISTRATION_IP_LIMIT = positive_int("STAFF_REGISTRATION_IP_LIMIT", 20, 1000)
+STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS = positive_int(
+    "STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS", 3, 30
+)
+STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS = positive_int(
+    "STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS", 30, 365
+)
+STAFF_REGISTRATION_LINK_MAX_AGE_DAYS = positive_int(
+    "STAFF_REGISTRATION_LINK_MAX_AGE_DAYS", 30, 365
+)
+EMAIL_CHANGE_OTP_MINUTES = positive_int("EMAIL_CHANGE_OTP_MINUTES", 10, 60)
+EMAIL_CHANGE_OTP_MAX_ATTEMPTS = positive_int("EMAIL_CHANGE_OTP_MAX_ATTEMPTS", 5, 20)
+EMAIL_CHANGE_OTP_RESEND_SECONDS = positive_int(
+    "EMAIL_CHANGE_OTP_RESEND_SECONDS", 60, 3600
+)
+EMAIL_CHANGE_OTP_HOURLY_LIMIT = positive_int("EMAIL_CHANGE_OTP_HOURLY_LIMIT", 5, 50)
+EMAIL_CHANGE_EXPIRY_DAYS = positive_int("EMAIL_CHANGE_EXPIRY_DAYS", 3, 30)
+EMAIL_NOTIFICATION_MAX_ATTEMPTS = positive_int("EMAIL_NOTIFICATION_MAX_ATTEMPTS", 5, 20)
+EMAIL_NOTIFICATION_BACKOFF_BASE_SECONDS = positive_int(
+    "EMAIL_NOTIFICATION_BACKOFF_BASE_SECONDS", 60, 86400
+)
+EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS = positive_int(
+    "EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS", 3600, 86400
+)
+EMAIL_NOTIFICATION_LEASE_SECONDS = positive_int(
+    "EMAIL_NOTIFICATION_LEASE_SECONDS", 900, 86400
+)
 MAX_UPLOAD_BYTES = positive_int("MAX_UPLOAD_BYTES", 25 * 1024 * 1024, 100 * 1024 * 1024)
 MAX_STORAGE_BYTES = positive_int("MAX_STORAGE_BYTES", 10 * 1024**3, 100 * 1024**4)
 MAX_IMAGE_PIXELS = positive_int("MAX_IMAGE_PIXELS", 20000000, 50000000)

@@ -158,4 +158,4 @@ def test_legacy_account_matrix_survives_migration_without_backfill_or_claim_crea
         assert StaffRegistrationRequest.objects.count() == 0
         assert list(User.objects.order_by("username").values(*selected_fields)) == before
     finally:
-        migrate(TARGET)
+        migrate([("accounts", "0003_staff_registration_workflows")])

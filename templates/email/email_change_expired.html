@@ -1,0 +1,12 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head><meta charset="utf-8"><title>{% translate "Email Change Expired" %}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
+    <p style="color: #64748b; font-weight: 600; font-size: 18px;">{% translate "Pending email change expired." %}</p>
+    <p>{% blocktranslate %}The pending email change to <strong>{{ new_email }}</strong> has expired. Your account email address remains <strong>{{ old_email }}</strong>.{% endblocktranslate %}</p>
+    <p><a href="{{ change_url }}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Request New Email Change" %}</a></p>
+  </div>
+</body>
+</html>

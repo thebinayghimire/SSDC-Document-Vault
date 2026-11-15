@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Application status" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="status-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Application status" %}</span>
+
+    {% if status == "email_pending" %}
+      <h1 id="status-heading">{% translate "Email verification pending." %}</h1>
+      <p class="muted">
+        {% blocktranslate with email=masked_email %}Your email address <strong>{{ email }}</strong> has not been verified yet.{% endblocktranslate %}
+      </p>
+      <div class="form-actions">
+        <a class="button full" href="{% url 'staff_register_verify' token=token %}">{% translate "Verify email address" %} {% include "components/icon.html" with name="arrow" %}</a>
+      </div>
+
+    {% elif status == "pending_review" %}
+      <h1 id="status-heading">{% translate "Your email has been verified." %}</h1>
+      <p class="muted">
+        {% translate "Your request has been submitted successfully and is waiting for administrator approval." %}
+      </p>
+      <div class="message info" role="status">
+        {% translate "You will receive an email notification when your request has been reviewed. Access to the staff portal is granted only after administrator approval." %}
+      </div>
+
+    {% elif status == "approved" %}
+      <h1 id="status-heading">{% translate "Application approved." %}</h1>
+      <p class="muted">
+        {% translate "Your staff access has been approved by an administrator. You can now sign in using your registered email and password." %}
+      </p>
+      <div class="form-actions">
+        <a class="button full" href="{% url 'staff_login' %}">{% translate "Sign in to Staff Portal" %} {% include "components/icon.html" with name="arrow" %}</a>
+      </div>
+
+    {% elif status == "declined" %}
+      <h1 id="status-heading">{% translate "Application declined." %}</h1>
+      <p class="muted">
+        {% translate "Your staff registration request was declined by an administrator." %}
+      </p>
+      {% if registration.review_note %}
+        <div class="message info">
+          <strong>{% translate "Administrator note:" %}</strong> {{ registration.review_note }}
+        </div>
+      {% endif %}
+      {% if can_reapply %}
+        <p>{% translate "You are permitted to submit a new application." %}</p>
+        <div class="form-actions">
+          <a class="button full" href="{% url 'staff_register' %}">{% translate "Submit new application" %}</a>
+        </div>
+      {% endif %}
+
+    {% elif status == "expired" %}
+      <h1 id="status-heading">{% translate "Application expired." %}</h1>
+      <p class="muted">
+        {% translate "This registration request has expired because it was not verified or reviewed within the required timeframe." %}
+      </p>
+      {% if can_reapply %}
+        <div class="form-actions">
+          <a class="button full" href="{% url 'staff_register' %}">{% translate "Submit new application" %}</a>
+        </div>
+      {% endif %}
+
+    {% else %}
+      <h1 id="status-heading">{% translate "Application status" %}</h1>
+      <p class="muted">{{ status }}</p>
+    {% endif %}
+
+    <div class="auth-foot">
+      <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
+      <br>
+      <a href="{% url 'privacy' %}">{% translate "Privacy Policy" %}</a> · <a href="{% url 'terms' %}">{% translate "Terms of Service" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}

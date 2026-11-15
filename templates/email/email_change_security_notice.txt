@@ -1,0 +1,11 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Security Notice: Email Change Requested
+
+A request was made to change the email address on your SSDC Document Vault account from {{ current_email }} to {{ new_email }}.
+
+A verification code has been sent to the new address.
+
+If you initiated this change, no action is needed here.
+
+If you did NOT request this change, sign in immediately to cancel it or contact your SSDC administrator:
+{{ change_url }}
+{% endblocktranslate %}

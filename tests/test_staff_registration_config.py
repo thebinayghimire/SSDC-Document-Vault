@@ -98,20 +98,32 @@ def test_email_delivery_is_locmem_only_in_phase_1():
 @pytest.mark.parametrize(
     "path",
     [
-        "/accounts/register/",
         "/accounts/signup/",
         "/accounts/register/verify/",
         "/accounts/email-login/",
-        "/accounts/email/change/",
     ],
 )
-def test_no_public_registration_or_email_routes_exist(path, settings, client):
+def test_unsupported_registration_or_email_routes_raise_404(path, settings, client):
     settings.STAFF_SELF_REGISTRATION_ENABLED = True
     settings.EMAIL_LOGIN_ENABLED = True
     settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED = True
     with pytest.raises(Resolver404):
         resolve(path)
     assert client.get(path).status_code == 404
+
+
+def test_disabled_registration_route_returns_404_when_flag_off(settings, client):
+    settings.STAFF_SELF_REGISTRATION_ENABLED = False
+    assert client.get("/accounts/register/").status_code == 404
+
+
+@pytest.mark.django_db
+def test_disabled_email_change_route_returns_404_when_flag_off(settings, client, users):
+    settings.MFA_ENABLED = False
+    settings.EMAIL_LOGIN_ENABLED = False
+    settings.SELF_REGISTERED_EMAIL_CHANGE_ENABLED = False
+    client.post("/accounts/login/", {"staff_id": "alice", "password": "Strong-Staff-Password-42"})
+    assert client.get("/accounts/email/change/").status_code == 404
 
 
 @pytest.mark.django_db

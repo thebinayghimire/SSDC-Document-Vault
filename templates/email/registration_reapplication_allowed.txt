@@ -1,0 +1,7 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Reapplication Permitted
+
+An administrator has reviewed your declined application and granted permission for you to reapply.
+
+You may submit a new application here:
+{{ reapply_url }}
+{% endblocktranslate %}

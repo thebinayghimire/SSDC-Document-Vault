@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Staff registration" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="register-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Staff registration" %}</span>
+    <h1 id="register-heading">{% translate "Register for staff access." %}</h1>
+    <p class="muted">{% translate "Submit your work email and create a password. An administrator will review your request before access is granted." %}</p>
+    <form method="post" data-progress="{% translate "Submitting…" %}">
+      {% csrf_token %}
+      {% include "components/form_fields.html" %}
+      <div class="form-actions">
+        <button class="button full" type="submit">{% translate "Register" %} {% include "components/icon.html" with name="arrow" %}</button>
+      </div>
+    </form>
+    <div class="auth-foot">
+      {% translate "Already have an account?" %} <a href="{% url 'staff_login' %}">{% translate "Sign in" %}</a>
+      <br>
+      <a href="{% url 'privacy' %}">{% translate "Privacy Policy" %}</a> · <a href="{% url 'terms' %}">{% translate "Terms of Service" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}

@@ -13,6 +13,10 @@
     </nav>
     <form method="post" data-progress="{% translate "Signing in…" %}">{% csrf_token %}{% include "components/form_fields.html" %}<div class="form-actions"><button class="button full" type="submit">{% translate "Sign in" %} {% include "components/icon.html" with name="arrow" %}</button></div></form>
     <div class="auth-foot">
+      {% if portal != 'admin' and staff_registration_enabled %}
+        {% translate "Don't have an account?" %} <a href="{% url 'staff_register' %}">{% translate "Register for staff access" %}</a>
+        <br>
+      {% endif %}
       {% translate "Need access or help signing in?" %}
       <br>
       {% translate "Contact your SSDC administrator." %}

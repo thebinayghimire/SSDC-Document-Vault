@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Change email address" %}{% endblock %}
+{% block content %}
+  <nav class="breadcrumb" aria-label="{% translate "Breadcrumb" %}"><a href="{% url 'library' %}">{% translate "Document library" %}</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">{% translate "Change email" %}</span></nav>
+  <section class="form-panel account-panel" aria-labelledby="email-change-heading">
+    <span class="eyebrow">{% translate "Account settings" %}</span>
+    <h1 id="email-change-heading">{% translate "Change email address" %}</h1>
+
+    {% if pending %}
+      <div class="message info" role="status">
+        {% blocktranslate with new_email=masked_new minutes=expiry_minutes %}A verification code was sent to <strong>{{ new_email }}</strong>. Enter the six-digit code within {{ minutes }} minutes to complete the change.{% endblocktranslate %}
+      </div>
+      <form method="post" data-progress="{% translate "Verifying…" %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="verify">
+        {% with form=otp_form %}
+          {% include "components/form_fields.html" %}
+        {% endwith %}
+        <div class="form-actions">
+          <button class="button" type="submit">{% translate "Confirm email change" %}</button>
+          <a class="button secondary" href="{% url 'library' %}">{% translate "Back to library" %}</a>
+        </div>
+      </form>
+      <div style="margin-top: 1.5rem; display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="resend">
+          <button class="button secondary small" type="submit">{% translate "Resend verification code" %}</button>
+        </form>
+        <form method="post">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="cancel">
+          <button class="button secondary small" type="submit">{% translate "Cancel change request" %}</button>
+        </form>
+      </div>
+    {% else %}
+      <p class="muted">
+        {% blocktranslate with current=masked_current %}Your current email address is <strong>{{ current }}</strong>. Enter your new email address below. We will send a confirmation code to the new address.{% endblocktranslate %}
+      </p>
+      <form method="post" data-progress="{% translate "Sending…" %}">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start">
+        {% with form=start_form %}
+          {% include "components/form_fields.html" %}
+        {% endwith %}
+        <div class="form-actions">
+          <button class="button" type="submit">{% translate "Send verification code" %}</button>
+          <a class="button secondary" href="{% url 'library' %}">{% translate "Cancel" %}</a>
+        </div>
+      </form>
+    {% endif %}
+  </section>
+{% endblock %}

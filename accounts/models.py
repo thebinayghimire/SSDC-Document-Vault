@@ -3,7 +3,9 @@ from copy import deepcopy
 from django.conf import settings
 from django.contrib.auth.models import AbstractUser
 from django.db import models, router, transaction
+from django.db.models import F
 from django.db.models.functions import Lower
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -206,6 +208,9 @@ class StaffRegistrationRequest(models.Model):
         choices=Status.choices,
         default=Status.EMAIL_PENDING,
     )
+    applicant_email = models.CharField(max_length=254, blank=True)
+    language = models.CharField(max_length=8, default="en")
+    pending_password_hash = models.CharField(max_length=256, blank=True)
     email_verified_at = models.DateTimeField(null=True, blank=True)
     otp_digest = models.CharField(max_length=64, blank=True)
     otp_expires_at = models.DateTimeField(null=True, blank=True)
@@ -219,6 +224,8 @@ class StaffRegistrationRequest(models.Model):
         related_name="reviewed_staff_registration_requests",
     )
     reviewed_at = models.DateTimeField(null=True, blank=True)
+    review_note = models.TextField(blank=True)
+    reapplication_allowed = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -271,3 +278,180 @@ class StaffRegistrationRequest(models.Model):
 
     def __str__(self):
         return f"{self.user_id}:{self.status}"
+
+
+class EmailChangeRequest(models.Model):
+    """A verified, reserved replacement of the address owned by an account."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending verification"
+        APPLIED = "applied", "Applied"
+        CANCELLED = "cancelled", "Cancelled"
+        EXPIRED = "expired", "Expired"
+        SUPERSEDED = "superseded", "Superseded"
+
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="email_change_requests",
+    )
+    old_email = models.CharField(max_length=254, blank=True)
+    new_email = models.CharField(max_length=254)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    language = models.CharField(max_length=8, default="en")
+    otp_digest = models.CharField(max_length=64, blank=True)
+    otp_expires_at = models.DateTimeField(null=True, blank=True)
+    otp_attempts = models.PositiveSmallIntegerField(default=0)
+    otp_sent_at = models.DateTimeField(null=True, blank=True)
+    completed_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=["pending", "applied", "cancelled", "expired", "superseded"]
+                ),
+                name="email_change_valid_status",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(otp_attempts__gte=0),
+                name="email_change_nonnegative_otp_attempts",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    ~models.Q(status="pending")
+                    | (
+                        ~models.Q(otp_digest="")
+                        & models.Q(otp_expires_at__isnull=False)
+                        & models.Q(otp_sent_at__isnull=False)
+                    )
+                ),
+                name="email_change_pending_has_otp",
+            ),
+            models.UniqueConstraint(
+                fields=["new_email"],
+                condition=models.Q(status="pending"),
+                name="email_change_pending_address_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["user"],
+                condition=models.Q(status="pending"),
+                name="email_change_one_pending_per_user",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["status", "created_at"],
+                name="email_change_status_idx",
+            ),
+            models.Index(
+                fields=["user", "status"],
+                name="email_change_user_status_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.user_id}:{self.new_email}:{self.status}"
+
+
+class EmailNotification(models.Model):
+    """Durable outbox for transactional email delivery and safe retries."""
+
+    class Status(models.TextChoices):
+        PENDING = "pending", "Pending"
+        SENDING = "sending", "Sending"
+        SENT = "sent", "Sent"
+        FAILED = "failed", "Failed"
+        DEAD_LETTER = "dead_letter", "Dead letter"
+        SUPERSEDED = "superseded", "Superseded"
+
+    kind = models.CharField(max_length=64, db_index=True)
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="email_notifications",
+    )
+    registration_request = models.ForeignKey(
+        StaffRegistrationRequest,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="email_notifications",
+    )
+    email_change_request = models.ForeignKey(
+        EmailChangeRequest,
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="email_notifications",
+    )
+    recipient_email = models.CharField(max_length=254)
+    subject = models.CharField(max_length=255)
+    template_name = models.CharField(max_length=128)
+    context = models.JSONField(default=dict, blank=True)
+    dedupe_key = models.CharField(max_length=128, unique=True, null=True, blank=True)
+    status = models.CharField(max_length=16, choices=Status.choices, default=Status.PENDING)
+    attempts = models.PositiveSmallIntegerField(default=0)
+    max_attempts = models.PositiveSmallIntegerField(default=5)
+    next_attempt_at = models.DateTimeField(default=timezone.now, db_index=True)
+    locked_at = models.DateTimeField(null=True, blank=True)
+    locked_by = models.CharField(max_length=64, blank=True)
+    last_error = models.TextField(blank=True)
+    sent_at = models.DateTimeField(null=True, blank=True)
+    superseded_by = models.ForeignKey(
+        "self",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="superseded_notifications",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        constraints = [
+            models.CheckConstraint(
+                condition=models.Q(
+                    status__in=[
+                        "pending",
+                        "sending",
+                        "sent",
+                        "failed",
+                        "dead_letter",
+                        "superseded",
+                    ]
+                ),
+                name="email_notification_valid_status",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(attempts__gte=0),
+                name="email_notification_nonnegative_attempts",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(max_attempts__gte=1),
+                name="email_notification_positive_max_attempts",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(attempts__lte=F("max_attempts")),
+                name="email_notification_attempts_within_limit",
+            ),
+        ]
+        indexes = [
+            models.Index(
+                fields=["status", "next_attempt_at"],
+                name="notif_status_next_idx",
+            ),
+            models.Index(
+                fields=["kind", "created_at"],
+                name="notif_kind_created_idx",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.kind}:{self.recipient_email}:{self.status}"

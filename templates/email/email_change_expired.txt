@@ -1,0 +1,9 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Email Change Expired
+
+The pending email change from {{ old_email }} to {{ new_email }} for your SSDC Document Vault account has expired.
+
+Your account email address remains unchanged ({{ old_email }}).
+
+If you still want to change your email address, you can submit a new request:
+{{ change_url }}
+{% endblocktranslate %}

@@ -1,0 +1,7 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Access Approved
+
+Your SSDC Document Vault access request has been approved by an administrator.
+
+Your account is now authorized for staff access. You can sign in using your registered email and password:
+{{ login_url }}
+{% endblocktranslate %}

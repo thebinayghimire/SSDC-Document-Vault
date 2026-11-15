@@ -1,0 +1,14 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head><meta charset="utf-8"><title>{% translate "Registration Expired" %}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
+    <p style="color: #64748b; font-weight: 600; font-size: 18px;">{% translate "Registration request expired." %}</p>
+    <p>{% translate "Your staff registration request for SSDC Document Vault has expired because it was not verified or reviewed within the allowed timeframe." %}</p>
+    {% if registration_enabled and reapply_url %}
+      <p><a href="{{ reapply_url }}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Submit New Application" %}</a></p>
+    {% endif %}
+  </div>
+</body>
+</html>

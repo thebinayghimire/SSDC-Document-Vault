@@ -8,7 +8,12 @@ from django.db import connections, router, transaction
 from django.db.models import CharField, Func
 from django.db.models.functions import Lower, Trim
 
-from accounts.models import EmailClaim, StaffRegistrationRequest, User
+from accounts.models import (
+    EmailChangeRequest,
+    EmailClaim,
+    StaffRegistrationRequest,
+    User,
+)
 from audit.services import record
 
 ADVISORY_LOCK_ID = 731011
@@ -68,6 +73,14 @@ def _lock_request(request, using):
         StaffRegistrationRequest.objects.using(using).select_for_update().get(pk=request_pk)
 
 
+def _lock_email_change_request(change_request, using):
+    if change_request is None:
+        return
+    request_pk = getattr(change_request, "pk", change_request)
+    if request_pk:
+        EmailChangeRequest.objects.using(using).select_for_update().get(pk=request_pk)
+
+
 def _legacy_collision(normalized, *, exclude_user_pk=None, using=None):
     rows = (
         User.objects.using(using)
@@ -79,7 +92,9 @@ def _legacy_collision(normalized, *, exclude_user_pk=None, using=None):
     return rows.exists()
 
 
-def _assert_address_available(locked_user, normalized, *, using):
+def _assert_address_available(
+    locked_user, normalized, *, using, exclude_change_request_pk=None
+):
     other = (
         EmailClaim.objects.using(using)
         .select_for_update()
@@ -89,6 +104,15 @@ def _assert_address_available(locked_user, normalized, *, using):
     )
     if other is not None:
         raise EmailConflict("That email address is already assigned to another account.")
+    reservations = (
+        EmailChangeRequest.objects.using(using)
+        .select_for_update()
+        .filter(status=EmailChangeRequest.Status.PENDING, new_email=normalized)
+    )
+    if exclude_change_request_pk is not None:
+        reservations = reservations.exclude(pk=exclude_change_request_pk)
+    if reservations.exists():
+        raise EmailConflict("That email address is already reserved for verification.")
     if _legacy_collision(normalized, exclude_user_pk=locked_user.pk, using=using):
         raise EmailConflict("That email address is already used by another legacy account.")
 
@@ -112,8 +136,21 @@ def _sync_email(original, locked_user):
     original._remember_saved_values({"email"})
 
 
-def _create_claim(locked_user, normalized, *, actor=None, source="", using=None):
-    _assert_address_available(locked_user, normalized, using=using)
+def _create_claim(
+    locked_user,
+    normalized,
+    *,
+    actor=None,
+    source="",
+    using=None,
+    exclude_change_request_pk=None,
+):
+    _assert_address_available(
+        locked_user,
+        normalized,
+        using=using,
+        exclude_change_request_pk=exclude_change_request_pk,
+    )
     claim = EmailClaim.objects.using(using).create(
         user_id=locked_user.pk,
         normalized_email=normalized,
@@ -151,14 +188,25 @@ def claim_for_new_user(user, *, using=None):
         )
 
 
-def set_email(user, email, *, actor=None, source="", request=None, using=None):
+def set_email(
+    user,
+    email,
+    *,
+    actor=None,
+    source="",
+    request=None,
+    change_request=None,
+    using=None,
+):
     """Set, transfer, or clear a user's email through the authoritative claim."""
     normalized = normalize_email(email)
     using = using or router.db_for_write(User, instance=user)
+    exclude_change_request_pk = getattr(change_request, "pk", change_request)
     with transaction.atomic(using=using):
         _lock_advisory(using)
         locked_user = User.objects.using(using).select_for_update().get(pk=user.pk)
         _lock_request(request, using)
+        _lock_email_change_request(change_request, using)
         if not normalized:
             return _clear_locked(locked_user, actor=actor, source=source, using=using)
 
@@ -178,9 +226,15 @@ def set_email(user, email, *, actor=None, source="", request=None, using=None):
                     actor=actor,
                     source=source,
                     using=using,
+                    exclude_change_request_pk=exclude_change_request_pk,
                 )
             elif claim.normalized_email != normalized:
-                _assert_address_available(locked_user, normalized, using=using)
+                _assert_address_available(
+                    locked_user,
+                    normalized,
+                    using=using,
+                    exclude_change_request_pk=exclude_change_request_pk,
+                )
                 claim.normalized_email = normalized
                 claim.save(update_fields=["normalized_email", "updated_at"], using=using)
                 claim_changed = True
@@ -192,7 +246,12 @@ def set_email(user, email, *, actor=None, source="", request=None, using=None):
             _sync_email(user, locked_user)
             return claim
 
-        _assert_address_available(locked_user, normalized, using=using)
+        _assert_address_available(
+            locked_user,
+            normalized,
+            using=using,
+            exclude_change_request_pk=exclude_change_request_pk,
+        )
         claim_created = claim is None
         if claim_created:
             claim = EmailClaim.objects.using(using).create(
@@ -284,6 +343,14 @@ def check_availability(normalized_email, *, exclude_user_pk=None, using=None):
     )
     if other:
         raise EmailConflict("That email address is already assigned to another account.")
+    reserved = EmailChangeRequest.objects.using(using).filter(
+        status=EmailChangeRequest.Status.PENDING,
+        new_email=normalized,
+    )
+    if exclude_user_pk is not None:
+        reserved = reserved.exclude(user_id=exclude_user_pk)
+    if reserved.exists():
+        raise EmailConflict("That email address is already reserved for verification.")
     if _legacy_collision(normalized, exclude_user_pk=exclude_user_pk, using=using):
         raise EmailConflict("That email address is already used by another legacy account.")
 

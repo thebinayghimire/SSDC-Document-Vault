@@ -1,0 +1,14 @@
+{% load i18n %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
+<head><meta charset="utf-8"><title>{% translate "Security Notice: Email Change Requested" %}</title></head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
+  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
+    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
+    <p style="color: #d97706; font-weight: 600; font-size: 18px;">{% translate "Security Notice: Email Change Requested" %}</p>
+    <p>{% blocktranslate %}A request was made to change the email address on your SSDC Document Vault account from <strong>{{ current_email }}</strong> to <strong>{{ new_email }}</strong>.{% endblocktranslate %}</p>
+    <p>{% translate "A verification code has been sent to the new address. The change will not take effect until the code is verified." %}</p>
+    <p style="color: #dc2626;">{% translate "If you did NOT request this change, sign in immediately to cancel it or contact your SSDC administrator." %}</p>
+    <p><a href="{{ change_url }}" style="display: inline-block; background: #dc2626; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Review or Cancel Change" %}</a></p>
+  </div>
+</body>
+</html>

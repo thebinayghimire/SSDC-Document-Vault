@@ -1,0 +1,9 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Registration Declined
+
+Your staff registration request for SSDC Document Vault was declined by an administrator.
+{% endblocktranslate %}
+{% if note %}{% translate "Administrator note:" %} {{ note }}{% endif %}
+{% if reapplication_allowed and reapply_url %}
+{% blocktranslate %}You are permitted to submit a new application:
+{{ reapply_url }}{% endblocktranslate %}
+{% endif %}

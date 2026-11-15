@@ -1,0 +1,8 @@
+{% load i18n %}{% blocktranslate %}SSDC Document Vault - Email Address Changed
+
+The email address for your SSDC Document Vault account was successfully changed from {{ old_email }} to {{ new_email }}.
+
+You can now sign in using your new email address:
+{{ login_url }}
+
+If you did not authorize this change, contact your SSDC administrator immediately.{% endblocktranslate %}

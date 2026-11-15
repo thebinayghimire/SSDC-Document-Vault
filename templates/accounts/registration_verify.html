@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Verify your email" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="verify-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Email verification" %}</span>
+    <h1 id="verify-heading">{% translate "Verify your email." %}</h1>
+    <p class="muted">
+      {% blocktranslate with email=masked_email minutes=expiry_minutes %}We sent a six-digit verification code to <strong>{{ email }}</strong>. Enter the code below within {{ minutes }} minutes.{% endblocktranslate %}
+    </p>
+    <form method="post" action="{% url 'staff_register_verify' token=token %}" data-progress="{% translate "Verifying…" %}">
+      {% csrf_token %}
+      {% include "components/form_fields.html" %}
+      <div class="form-actions">
+        <button class="button full" type="submit">{% translate "Verify email" %} {% include "components/icon.html" with name="arrow" %}</button>
+      </div>
+    </form>
+    <div style="margin-top: 1.5rem; text-align: center;">
+      <form method="post" action="{% url 'staff_register_resend' token=token %}">
+        {% csrf_token %}
+        <button class="button secondary small" type="submit">{% translate "Resend verification code" %}</button>
+      </form>
+    </div>
+    <div class="auth-foot">
+      <a href="{% url 'staff_registration_status' token=token %}">{% translate "Check application status" %}</a>
+      <br>
+      <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}
