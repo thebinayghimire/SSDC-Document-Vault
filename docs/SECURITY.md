@@ -16,10 +16,10 @@ See [Google setup, limits and backup recovery](GOOGLE_DRIVE_SETUP.md).
 
 Every document endpoint checks current server-side permissions. UUIDs only
 identify records. Files are never served as media/static files. The customized
-viewer omits print/download controls and overlays staff ID/time. It cannot stop
+viewer omits print/download controls. It cannot stop
 screenshots, OCR, developer tools, or an authorized recipient extracting bytes.
-PDF canvas rendering omits selectable text and link/annotation layers; this
-reduces accessibility for screen-reader users and needs an approved alternative.
+PDF canvas rendering omits link/annotation layers. Extracted page text is exposed
+to screen readers; image-only documents still need an accessible alternative.
 
 Privileged roles require TOTP and eight one-use recovery codes. Secrets are
 encrypted separately from the database; losing the MFA key prevents decryption.
@@ -59,7 +59,8 @@ deleted if a later document fails. Maintenance/reference safeguards and richer
 audit details still require the separate open deployment findings to be resolved.
 
 Malware scanning fails closed in production. Pending uploads can be retried using
-`retry_scans`. Monitor scanner health/signature freshness and never disable it
+`retry_scans` or the scoped, recently authenticated **Retry document checks** action.
+Monitor scanner health/signature freshness and never disable it
 to clear production backlogs. Parser and ClamAV zero-days remain residual risks.
 Processing is exclusive per version across uploads and retries. Fresh status
 checks prevent an older attempt from altering a published/rejected result.
@@ -67,11 +68,24 @@ Rejection and its audit entry save together before original/preview cleanup;
 failed or rolled-back saves preserve the files for retry. Generated previews are
 replaced only after their complete contents have been written.
 PDF/image validation and thumbnail generation run in a separate bounded process
-without inherited credential environment. It shares the app UID and filesystem;
-this is resource isolation, not a separate hardware/container trust boundary.
+without inherited credential environment. On Linux, Landlock restricts reads to
+the selected input and interpreter libraries, and seccomp denies sockets and
+process access. It shares the app UID and kernel; this remains a software sandbox
+whose protection must be verified on the deployment host.
 No office converters execute in v1. Protect operator access, patch container
 images/dependencies, and monitor memory/disk pressure. A single host is a single
 point of failure; capacity/availability needs organizational agreement.
+
+Scanner-free deployment is an explicit reduced-protection option. Both
+`SCAN_MODE=disabled` and its `ENABLE_CLAMAV=false` alias require
+`ACCEPT_NO_MALWARE_SCANNING=1` in production. Hosting on Render does not bypass
+this requirement. Structure/MIME/page/pixel validation remains enabled, but it
+does not replace antivirus scanning. The operator must choose and record the
+appropriate profile before deployment.
+
+Multipart intake accepts one file per request. A streaming handler bounds file
+bytes before Django's memory/disk handlers, and oversized bodies return HTTP 413.
+Batch import sends individual requests. Proxy limits remain an additional boundary.
 
 On suspected compromise: restrict proxy access, disable affected users/revoke
 sessions, preserve audit/host evidence, rotate exposed credentials and keys with

@@ -1,13 +1,13 @@
-FROM node:24-bookworm-slim@sha256:d6aa754f16b3197301076f047b5def2f02ea1dbbc2ca920407d46d7ec7f87b20 AS assets
+FROM node:24-bookworm-slim@sha256:be8204d4bd327363357f532187b752ff62759c31bedf98e9e18fc08c9cbd605c AS assets
 WORKDIR /assets
 COPY package.json package-lock.json ./
 RUN npm ci --ignore-scripts
 COPY scripts/vendor-pdfjs.mjs scripts/vendor-pdfjs.mjs
 RUN node scripts/vendor-pdfjs.mjs
 
-FROM python:3.13-slim-trixie@sha256:bf44cdfcb76cd3b41e879bc058fc37ec5872002ccfde7fcb765e218cde0cd79c
+FROM python:3.13.18-alpine@sha256:bbc0290146ebe0a8b9a8ed07d3f2c7bdeb4d917fc93300a4e47490c8b5a11b48
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
-RUN groupadd -g 10001 app && useradd -u 10001 -g app -m app
+RUN addgroup -g 10001 app && adduser -D -u 10001 -G app app
 WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --require-hashes -r requirements.txt && python -m pip uninstall -y pip

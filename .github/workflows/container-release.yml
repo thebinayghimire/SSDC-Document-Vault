@@ -1,0 +1,52 @@
+name: Container release audit
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - Dockerfile
+      - deploy/**
+      - requirements.txt
+      - package.json
+      - package-lock.json
+      - scripts/vendor-pdfjs.mjs
+      - .github/workflows/container-release.yml
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: app
+            dockerfile: Dockerfile
+          - name: database
+            dockerfile: deploy/Dockerfile.db
+          - name: proxy
+            dockerfile: deploy/Dockerfile.proxy
+          - name: scanner
+            dockerfile: deploy/Dockerfile.scanner
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build release image
+        run: docker build --file '${{ matrix.dockerfile }}' --tag 'ssdc-release-${{ matrix.name }}' .
+      - name: Audit all high and critical findings
+        run: |
+          mkdir -p artifacts/container-scans
+          docker run --rm --cap-drop ALL --security-opt no-new-privileges:true \
+            --mount type=bind,source=/var/run/docker.sock,target=/var/run/docker.sock,readonly \
+            aquasec/trivy:latest@sha256:790fd66d1697395d8693d1acaa1ea702406a20f109b6fc7bac8db623eca6c06c \
+            image --scanners vuln --severity HIGH,CRITICAL --exit-code 1 \
+            --format json 'ssdc-release-${{ matrix.name }}' \
+            > 'artifacts/container-scans/${{ matrix.name }}.json'
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: container-audit-${{ matrix.name }}
+          path: artifacts/container-scans/
+          if-no-files-found: warn

@@ -5,21 +5,27 @@ services:
     region: singapore
     plan: free
     buildCommand: ./build.sh
-    startCommand: gunicorn config.wsgi:application --workers 2 --threads 2 --timeout 120
+    startCommand: gunicorn config.wsgi:application --workers 2 --threads 2 --timeout 120 --bind 0.0.0.0:$PORT --max-requests 1000 --max-requests-jitter 100 --no-control-socket
     healthCheckPath: /live/
     envVars:
       - key: APP_ENV
         value: production
       - key: DEBUG
         value: "0"
+      - key: PYTHON_VERSION
+        value: "3.13.18"
+      - key: NODE_VERSION
+        value: "24.22.1"
       - key: ENABLE_CLAMAV
         value: "false"
+      - key: ACCEPT_NO_MALWARE_SCANNING
+        sync: false
       - key: DOCUMENT_STORAGE_PROVIDER
         value: gdrive
       - key: SECRET_KEY
         generateValue: true
       - key: MFA_ENCRYPTION_KEY
-        generateValue: true
+        sync: false
       - key: DATABASE_URL
         sync: false
       - key: DRIVE_TOKEN_ENCRYPTION_KEY
@@ -35,6 +41,6 @@ services:
       - key: DJANGO_SUPERUSER_PASSWORD
         sync: false
       - key: ALLOWED_HOSTS
-        value: .onrender.com
+        sync: false
       - key: CSRF_TRUSTED_ORIGINS
         sync: false

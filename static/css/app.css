@@ -187,6 +187,12 @@ input[type="file"]::file-selector-button { border: 0; border-radius: var(--radiu
 .auth-card form { margin-top: var(--space-8); }
 .auth-foot { font-size: var(--text-xs); color: var(--color-secondary); line-height: 1.5; margin-top: var(--space-8); }
 .auth-caption { text-align: center; font-size: var(--text-xs); color: var(--color-secondary); line-height: 1.7; margin: var(--space-6) 0 0; }
+.portal-switch { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-2); margin-top: var(--space-6); }
+.portal-switch a { display: flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: 44px; padding: var(--space-2); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); color: var(--color-text); font-size: var(--text-xs); text-decoration: none; }
+.portal-switch a[aria-current="page"] { background: var(--color-primary-soft); color: var(--color-primary); border-color: var(--color-primary); font-weight: 600; }
+.portal-switch a:hover { background: var(--color-primary-soft); }
+.portal-switch .icon { width: 16px; height: 16px; flex-shrink: 0; }
+.portal-entry { display: grid; gap: var(--space-3); margin-top: var(--space-6); }
 .account-panel { max-width: 560px; }
 .auth-page .account-panel { width: 100%; }
 .secret { display: block; padding: var(--space-4); background: var(--color-canvas-secondary); border-radius: var(--radius-sm); overflow-wrap: anywhere; font-size: var(--text-base); margin: var(--space-6) 0; }

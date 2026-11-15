@@ -1,9 +1,13 @@
 """Prove snapshot exclusion and crash release without touching service volumes."""
 
+import argparse
 import subprocess
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--image", default="ssdc-vault-app")
+    options = parser.parse_args()
     code = r"""import os, subprocess, sys
 os.environ['PRIVATE_STORAGE_ROOT']='/tmp/synthetic'
 os.environ['DJANGO_SETTINGS_MODULE']='config.settings'
@@ -38,7 +42,7 @@ print('Linux maintenance checks passed: request/job exclusion, duplicate snapsho
             "no-new-privileges:true",
             "--tmpfs",
             "/tmp:rw,noexec,nosuid,size=64m",
-            "ssdc-vault-candidate-app",
+            options.image,
             "python",
             "-c",
             code,

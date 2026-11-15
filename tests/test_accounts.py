@@ -108,7 +108,7 @@ def test_mfa_challenge_does_not_authenticate_password_alone(client, users):
     assert response.url == "/accounts/mfa/"
     assert client.get("/admin/").status_code == 302
     response = client.post("/accounts/mfa/", {"code": pyotp.TOTP(secret).now()})
-    assert response.url == "/"
+    assert response.url == "/admin/"
     assert client.get("/admin/").status_code == 200
 
 

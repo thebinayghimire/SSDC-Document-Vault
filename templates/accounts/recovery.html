@@ -1,14 +1,15 @@
 {% extends "base.html" %}
-{% block title %}Save recovery codes{% endblock %}
+{% load i18n %}
+{% block title %}{% translate "Save recovery codes" %}{% endblock %}
 {% block content %}
   <section class="form-card account-panel" aria-labelledby="recovery-heading">
-    <span class="eyebrow">Account security · Step 2 of 2</span>
-    <h1 id="recovery-heading">Save your recovery codes.</h1>
-    <p class="muted">Each code can be used once if you lose access to your authenticator. Store them somewhere private, separate from your password.</p>
-    <div class="notice">{% include "components/icon.html" with name="info" %}<span>These codes are shown only once. Save them before continuing.</span></div>
+    <span class="eyebrow">{% translate "Account security · Step 2 of 2" %}</span>
+    <h1 id="recovery-heading">{% translate "Save your recovery codes." %}</h1>
+    <p class="muted">{% translate "Each code can be used once if you lose access to your authenticator. Store them somewhere private, separate from your password." %}</p>
+    <div class="notice">{% include "components/icon.html" with name="info" %}<span>{% translate "These codes are shown only once. Save them before continuing." %}</span></div>
     <div class="recovery-codes"
-         aria-label="One-use recovery codes">{% for code in codes %}<code>{{ code }}</code>{% endfor %}</div>
+         aria-label="{% translate "Single use recovery codes" %}">{% for code in codes %}<code>{{ code }}</code>{% endfor %}</div>
     <a class="button"
-       href="{% url 'library' %}">{% include "components/icon.html" with name="check" %}I've saved my codes</a>
+       href="{{ continue_url }}">{% include "components/icon.html" with name="check" %}{% translate "I've saved my codes" %}</a>
   </section>
 {% endblock %}

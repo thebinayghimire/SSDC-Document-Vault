@@ -3,6 +3,11 @@ from django.urls import path
 from . import drive_views, views
 
 urlpatterns = [
+    path(
+        "documents/<uuid:document_id>/versions/<uuid:version_id>/retry/",
+        views.retry_version,
+        name="retry_version",
+    ),
     path("storage/google/", drive_views.connection, name="drive_connection"),
     path("storage/google/callback/", drive_views.callback, name="drive_callback"),
     path(
@@ -11,6 +16,7 @@ urlpatterns = [
         name="restore_version",
     ),
     path("", views.library, name="library"),
+    path("staff/", views.staff_portal, name="staff_portal"),
     path("documents/import/", views.import_documents, name="import_documents"),
     path("folders/new/", views.create_folder, name="create_root_folder"),
     path("folders/<uuid:folder_id>/", views.library, name="folder"),

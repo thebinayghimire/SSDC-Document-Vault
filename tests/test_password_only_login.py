@@ -17,7 +17,7 @@ def test_local_admin_password_login_and_reauthentication(client, users, settings
     response = client.post(
         "/accounts/login/", {"staff_id": "admin", "password": "Strong-Admin-Password-42"}
     )
-    assert response.url == "/"
+    assert response.url == "/admin/"
     assert not client.session["mfa_verified"]
     assert client.get("/").status_code == 200
     assert client.get("/documents/import/").status_code == 200

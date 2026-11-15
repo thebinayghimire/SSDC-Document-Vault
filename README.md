@@ -66,6 +66,16 @@ background, so the UI is available immediately but uploads remain quarantined
 until the scanner is healthy (often several minutes). Run `retry_scans` after
 the scanner is ready.
 
+Administrators sign in at `/accounts/admin/login/` and land at `/admin/`.
+Staff and document managers sign in at `/accounts/staff/login/` and land at
+`/staff/`. The shared `/accounts/login/` also routes by the account's saved role;
+choosing a portal never changes permissions. Staff see only their granted
+documents, while managers retain scoped document-management access. Administrators
+can open the document library from their admin portal. Sign-out clears the session
+and returns to the matching sign-in page; other open tabs recheck their session
+and clear stale account screens. Each browser session uses one account. Use a
+private window or a separate browser profile to test both accounts simultaneously.
+
 Stop/restart: `docker compose stop` / `docker compose start`. After changing code,
 run `docker compose up -d --build app`; the proxy re-resolves the recreated app
 container automatically. Restart or reload the proxy only after changing its own
@@ -80,6 +90,39 @@ The file is ignored by Git. `demo.staff` demonstrates viewing; `demo.admin` uses
 MFA enrollment. Keep demo accounts confined to local development.
 
 ## Development checks
+
+When running Django directly on macOS/Linux, its scanner must also be reachable
+from the host. With Docker/OrbStack running and the Python environment installed:
+
+```sh
+docker compose -f compose.yaml -f compose.host.yaml up -d --no-deps clamav
+.venv/bin/python manage.py scanner_selftest
+```
+
+The host overlay exposes ClamAV only at `127.0.0.1:3310`; keep
+`SCAN_MODE=clamav`, `CLAMAV_HOST=127.0.0.1`, and `CLAMAV_PORT=3310` in
+the ignored `.env.local`. Wait for the scanner self-test to pass before uploading.
+For private local storage without a connected Google Drive account, also set
+`DOCUMENT_STORAGE_PROVIDER=filesystem` there, then restart Django. This selects
+storage for new uploads; it does not move existing versions. Keep `private-media/`
+private and backed up. If an upload was staged while the scanner was down, run
+`python manage.py retry_scans` after the scanner is healthy. Quarantined uploads
+targeting Drive still require their Drive connection to publish.
+
+On macOS/Linux, create a native environment (a Windows `.venv` cannot be reused):
+
+```sh
+uv venv --python 3.13 .venv
+uv pip sync --python .venv/bin/python requirements.txt requirements-dev.txt
+npm ci --ignore-scripts && npm run vendor
+.venv/bin/python -m playwright install chromium
+.venv/bin/python scripts/run_checks.py
+```
+
+The check runner creates and removes its own PostgreSQL container, ignores saved
+database credentials, and leaves application databases untouched. Use OpenSSL 3
+on your `PATH` for certificate tests; on Homebrew macOS this is
+`PATH="$(brew --prefix openssl@3)/bin:$PATH"`. Docker must be running.
 
 Git, Node/npm, uv and Python 3.13 are needed for host development. Runtime and
 development dependencies are pinned separately; npm supplies PDF.js assets.
@@ -115,6 +158,13 @@ previews, check scanner readiness and run `scanner_selftest`.
 
 ## Documentation and release status
 
+Existing Docker databases require a logical migration for the patched database
+image. The startup guard preserves unverified volumes; follow the
+[database image migration guide](docs/DATABASE_IMAGE_MIGRATION.md).
+
+- [Current release preparation and evidence](docs/RELEASE_READINESS.md): production
+  fixes, added management filters/retry controls, verified checks and external setup.
+
 - [Render Free deployment](docs/RENDER_DEPLOYMENT.md): Blueprint, managed
   PostgreSQL, environment secrets, automatic administrator bootstrap, and OAuth URLs.
 - [Google OAuth verification text](docs/GOOGLE_OAUTH_VERIFICATION.md): production
@@ -131,3 +181,18 @@ previews, check scanner readiness and run `scanner_selftest`.
 Local implementation and production configuration are reviewable. Public
 deployment needs approved hosting/policies and independent security review.
 Automated self-review cannot approve SSDC's release.
+
+### Interface languages
+
+The portal supports English and नेपाली. Use the language selector and Apply button
+at the top of any page, including sign in and administration. The choice is saved
+in a browser cookie for one year and keeps the current page and search filters.
+A browser that prefers Nepali receives Nepali on its first visit. Document titles,
+folder names, and uploaded document contents retain the text supplied by staff.
+
+Translations live in `locale/ne/LC_MESSAGES/django.po`. The compiled `django.mo`
+catalogue is included so deployments do not need gettext installed. After editing
+the catalogue, run `msgfmt locale/ne/LC_MESSAGES/django.po -o
+locale/ne/LC_MESSAGES/django.mo` and restart the app. Server templates and browser
+upload and preview messages share this catalogue. Devanagari fonts are served
+locally with their OFL license, so using Nepali requires no external font service.

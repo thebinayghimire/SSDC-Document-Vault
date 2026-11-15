@@ -23,7 +23,7 @@ def test_public_oauth_pages_are_available_without_a_session(client):
     assert b'href="/terms/"' in home.content
 
     login = client.get("/accounts/login/")
-    assert b"internal document library" in login.content
+    assert b"Sign in to SSDC Document Vault" in login.content
     assert b'href="/privacy/"' in login.content
 
     privacy = client.get("/privacy/")
@@ -137,6 +137,7 @@ def test_render_rejects_ephemeral_filesystem_storage():
             "POSTGRES_PASSWORD": "synthetic-password",
             "POSTGRES_HOST": "db.example.test",
             "POSTGRES_SSLMODE": "verify-full",
+            "SCAN_MODE": "clamav",
             "DATABASE_URL": "",
             "DATABASE_URL_UNPOOLED": "",
         }
@@ -170,3 +171,7 @@ def test_render_blueprint_and_build_script_cover_free_tier_requirements():
     assert "collectstatic --no-input" in script
     assert "migrate --no-input" in script
     assert "python manage.py ensure_admin" in script
+    assert "--require-hashes" in script
+    assert script.index("npm run vendor") < script.index("collectstatic")
+    assert "- key: MFA_ENCRYPTION_KEY\n        sync: false" in blueprint
+    assert "ACCEPT_NO_MALWARE_SCANNING" in blueprint

@@ -1,18 +1,20 @@
+{% load i18n %}
 {% with route=request.resolver_match.url_name %}
+  {% if request.user.is_portal_admin %}<a class="nav-link" href="{% url 'admin:index' %}">{% include "components/icon.html" with name="users" %}{% translate "Admin portal" %}</a>{% endif %}
   <a class="nav-link"
-     href="{% url 'library' %}"
-     {% if route == 'library' or route == 'folder' or route == 'preview' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="library" %}Document library</a>
+     href="{% if request.user.is_portal_admin %}{% url 'library' %}{% else %}{% url 'staff_portal' %}{% endif %}"
+     {% if route == 'library' or route == 'staff_portal' or route == 'folder' or route == 'preview' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="library" %}{% translate "Document library" %}</a>
   {% if request.user.can_manage %}<a class="nav-link"
      href="{% url 'import_documents' %}"
-     {% if route == 'import_documents' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="upload" %}Add documents</a>
+     {% if route == 'import_documents' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="upload" %}{% translate "Add documents" %}</a>
   {% endif %}
   {% if request.user.can_manage %}
     <a class="nav-link"
        href="{% url 'management' %}"
-       {% if route == 'management' or route == 'manage_document' or route == 'replace' or route == 'upload' or route == 'create_folder' or route == 'create_root_folder' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="manage" %}Manage documents</a>
+       {% if route == 'management' or route == 'manage_document' or route == 'replace' or route == 'upload' or route == 'create_folder' or route == 'create_root_folder' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="manage" %}{% translate "Manage documents" %}</a>
   {% endif %}
-  {% if request.user.is_portal_admin %}<a class="nav-link" href="{% url 'admin:index' %}">{% include "components/icon.html" with name="users" %}Administration</a><a class="nav-link" href="{% url 'drive_connection' %}">Document storage</a>{% endif %}
+  {% if request.user.is_portal_admin %}<a class="nav-link" href="{% url 'drive_connection' %}">{% translate "Document storage" %}</a>{% endif %}
   <a class="nav-link nav-security"
      href="{% url 'password_change' %}"
-     {% if route == 'password_change' or route == 'reauthenticate' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="lock" %}Account security</a>
+     {% if route == 'password_change' or route == 'reauthenticate' %}aria-current="page"{% endif %}>{% include "components/icon.html" with name="lock" %}{% translate "Account security" %}</a>
 {% endwith %}

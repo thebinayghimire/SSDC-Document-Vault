@@ -1,0 +1,12 @@
+FROM postgres:17-trixie@sha256:31ba9c94a03ada9988f2bb493a22a75eef3a185884533e5cdbcd498ea835b08f AS prepared
+# The service runs as postgres; the root-only privilege-drop helper is unnecessary.
+RUN rm /usr/local/bin/gosu
+# Copy the prepared filesystem so the obsolete helper is absent from image layers too.
+FROM scratch
+COPY --from=prepared / /
+ENV PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/17/bin
+ENV LANG=en_US.utf8 PG_MAJOR=17 PGDATA=/var/lib/postgresql/data
+USER postgres
+STOPSIGNAL SIGINT
+ENTRYPOINT ["docker-entrypoint.sh"]
+CMD ["postgres"]

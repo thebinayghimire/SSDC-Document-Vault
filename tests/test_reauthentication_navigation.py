@@ -185,4 +185,4 @@ def test_admin_reauthentication_validates_next_and_avoids_login_loops(client, us
 def test_non_admin_is_not_sent_through_admin_reauthentication_loop(client, users):
     authenticate_client(client, users["alice"])
     response = client.get("/admin/login/?next=/admin/")
-    assert response.url == "/"
+    assert response.url == "/staff/"
