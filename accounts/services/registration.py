@@ -1,5 +1,8 @@
 """Staff self-registration, OTP verification, review decisions, and expiry."""
 
+import hashlib
+import hmac
+import secrets
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
@@ -18,7 +21,7 @@ from accounts.models import (
     StaffRegistrationRequest,
     User,
 )
-from audit.services import record
+from audit.services import allow_rate, record
 
 from .email_claims import (
     EmailConflict,
@@ -193,6 +196,9 @@ def _issue_otp(request, *, base_url="", now=None):
         context={
             "language": request.language,
             "recipient_email": request.applicant_email,
+            "user_email": request.applicant_email,
+            "app_name": "SSDC Document Vault",
+            "purpose": "complete your staff registration",
             "otp_ciphertext": encrypt_otp(code),
             "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
             "verification_url": verification_url(request, base),
@@ -426,13 +432,25 @@ def resend_registration_otp(request, *, base_url=""):
         return _resend_locked(locked, base_url=base_url)
 
 
+def _dummy_constant_time_work():
+    # Mitigates timing-based applicant existence probing by mimicking crypto hashing operations
+    dummy_token = secrets.token_urlsafe(32)
+    hashlib.sha256(dummy_token.encode("ascii")).hexdigest()
+    hmac.new(settings.SECRET_KEY.encode(), b"staff_registration_otp:dummy:000000", hashlib.sha256).hexdigest()
+
+
 def resend_registration_for_email(email, *, base_url=""):
-    """Send a fresh code to a pending application, without revealing existence."""
+    """Send a fresh verification link to a registration on file (any state), without revealing existence.
+
+    Mitigates user enumeration, account state oracle attacks, and status disclosure (Phase 2.1 Items 2 & 3).
+    """
     try:
         normalized = normalize_email(email)
     except ValidationError:
+        _dummy_constant_time_work()
         return ResendResult("not_pending")
     if not normalized:
+        _dummy_constant_time_work()
         return ResendResult("not_pending")
     with transaction.atomic():
         user_id = (
@@ -441,25 +459,39 @@ def resend_registration_for_email(email, *, base_url=""):
             .first()
         )
         if user_id is None:
-            return ResendResult("not_pending")
-        user = User.objects.select_for_update().filter(pk=user_id).first()
-        if user is None:
-            return ResendResult("not_pending")
-        request = (
-            StaffRegistrationRequest.objects.select_for_update()
-            .filter(
-                user=user,
-                status=StaffRegistrationRequest.Status.EMAIL_PENDING,
+            request = (
+                StaffRegistrationRequest.objects.select_for_update()
+                .filter(applicant_email__iexact=email.strip())
+                .order_by("-created_at", "-pk")
+                .first()
             )
-            .order_by("-created_at", "-pk")
-            .first()
-        )
+        else:
+            request = (
+                StaffRegistrationRequest.objects.select_for_update()
+                .filter(user_id=user_id)
+                .order_by("-created_at", "-pk")
+                .first()
+            )
         if request is None:
+            _dummy_constant_time_work()
             return ResendResult("not_pending")
-        return _resend_locked(request, base_url=base_url)
+
+        # Mitigates registration harassment via cooldown: 1 email per resend window and 5 per 24 hours
+        if not allow_rate(
+            "staff-registration-resend-cooldown",
+            str(request.pk),
+            1,
+            seconds=settings.STAFF_REGISTRATION_OTP_RESEND_SECONDS,
+        ):
+            return ResendResult("sent")
+        if not allow_rate("staff-registration-resend-24hr", str(request.pk), 5, seconds=86400):
+            return ResendResult("sent")
+
+        notification = _issue_otp(request, base_url=base_url)
+        return ResendResult("sent", notification)
 
 
-def verify_registration_otp(request, code, *, now=None):
+def verify_registration_otp(request, code, *, ip=None, now=None):
     """Verify one code exactly once under row locks.
 
     A successful verification moves the request into the review queue. It never
@@ -474,25 +506,46 @@ def verify_registration_otp(request, code, *, now=None):
             return VerifyResult("already_verified", locked)
         if locked.status != StaffRegistrationRequest.Status.EMAIL_PENDING:
             return VerifyResult("not_pending", locked)
+
+        # Mitigates registration verification brute-forcing via per-IP and per-registration rate limits
+        if ip and not allow_rate("staff-registration-otp-ip", ip, 60, seconds=3600):
+            return VerifyResult("throttled", locked)
+        if not allow_rate("staff-registration-otp-reg", str(locked.pk), 10, seconds=60):
+            return VerifyResult("throttled", locked)
+
         lifetime = timedelta(days=settings.STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS)
         if locked.created_at + lifetime <= now:
             _expire_locked(locked, now=now)
             return VerifyResult("expired", locked)
+
+        # Mitigates brute-force guessing by invalidating code after maximum 5 attempts
         if locked.otp_attempts >= settings.STAFF_REGISTRATION_OTP_MAX_ATTEMPTS:
             return VerifyResult("locked", locked)
+
         if not locked.otp_digest or locked.otp_expires_at is None:
             return VerifyResult("invalid", locked)
         if locked.otp_expires_at <= now:
             return VerifyResult("code_expired", locked)
+
+        # Constant-time comparison using hmac.compare_digest in verify_otp
         if not verify_otp(OTP_PURPOSE, locked.pk, locked.otp_digest, (code or "").strip()):
             locked.otp_attempts += 1
-            locked.save(update_fields=["otp_attempts", "updated_at"])
-            status = (
-                "locked"
-                if locked.otp_attempts >= settings.STAFF_REGISTRATION_OTP_MAX_ATTEMPTS
-                else "invalid"
+            if locked.otp_attempts >= settings.STAFF_REGISTRATION_OTP_MAX_ATTEMPTS:
+                # Mitigates brute-force guessing by expiring and invalidating code upon 5th failure
+                locked.otp_expires_at = now
+                status = "locked"
+            else:
+                status = "invalid"
+            locked.save(
+                update_fields=[
+                    "otp_attempts",
+                    "otp_expires_at",
+                    "updated_at",
+                ]
             )
             return VerifyResult(status, locked)
+
+        # Mitigates code replay via single-use atomic consumption and digest destruction
         locked.status = StaffRegistrationRequest.Status.PENDING_REVIEW
         locked.email_verified_at = now
         locked.otp_digest = ""
@@ -518,6 +571,7 @@ def verify_registration_otp(request, code, *, now=None):
             "object_id": locked.pk,
             "subject_id": locked.user_id,
         }
+        record(None, "staff_registration_verified", locked.user_id, details=details)
         record(None, "staff_email_verified", locked.user_id, details=details)
         record(None, "staff_registration_submitted", locked.user_id, details=details)
         return VerifyResult("verified", locked)

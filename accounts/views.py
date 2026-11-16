@@ -13,6 +13,8 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 from django.http import Http404, JsonResponse
 from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.utils import timezone
 from django.utils.translation import gettext as tr
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_http_methods, require_POST
@@ -29,7 +31,7 @@ from .forms import (
     RegistrationResendForm,
 )
 from .mfa import create_recovery_codes, decrypt, encrypt, verify
-from .models import StaffRegistrationRequest, User
+from .models import StaffRegistrationRequest, StaffRegistrationToken, User
 from .navigation import portal_home, safe_portal_destination, safe_return_destination
 from .services.email_changes import (
     EmailChangeConflict,
@@ -45,6 +47,7 @@ from .services.email_changes import (
 from .services.email_claims import normalize_email, resolve
 from .services.otp import OtpCooldown, OtpRateLimited
 from .services.registration import (
+    ACTIVE_STATUSES,
     RegistrationConflict,
     RegistrationDisabled,
     RegistrationInvalid,
@@ -141,6 +144,30 @@ def locked_session_user(request):
 @require_http_methods(["GET", "POST"])
 def sign_in(request, portal=None):
     if request.user.is_authenticated:
+        if portal == "staff" and request.user.is_portal_admin:
+            record(request.user, "logout")
+            logout(request)
+            messages.info(
+                request,
+                tr("You were signed out of the administrator account to access Staff sign in."),
+            )
+            redirect_url = reverse("staff_login")
+            query = request.GET.urlencode()
+            if query:
+                redirect_url += f"?{query}"
+            return redirect(redirect_url)
+        if portal == "admin" and not request.user.is_portal_admin:
+            record(request.user, "logout")
+            logout(request)
+            messages.info(
+                request,
+                tr("You were signed out of the staff account to access Admin sign in."),
+            )
+            redirect_url = reverse("admin_login")
+            query = request.GET.urlencode()
+            if query:
+                redirect_url += f"?{query}"
+            return redirect(redirect_url)
         return redirect(portal_home(request.user))
     form = LoginForm(request.POST or None)
     if portal == "admin":
@@ -347,13 +374,16 @@ def sign_out(request):
 @require_http_methods(["GET", "HEAD"])
 def session_status(request):
     """Let restored pages and other tabs check their account against the live session."""
+    # Mitigates session identifier disclosure in API responses while providing irreversible account-switch tags
+    from .services.account_tag import compute_account_tag
+
     if not request.user.is_authenticated:
-        return JsonResponse({"authenticated": False, "marker": "", "home_url": "/accounts/login/"})
-    marker = (
-        f"{request.user.pk}:{request.user.auth_version}:{request.session.get('portal_session', '')}"
-    )
+        return JsonResponse(
+            {"authenticated": False, "account_tag": None, "home_url": "/accounts/login/"}
+        )
+    tag = compute_account_tag(request.user, request.session)
     return JsonResponse(
-        {"authenticated": True, "marker": marker, "home_url": portal_home(request.user)}
+        {"authenticated": True, "account_tag": tag, "home_url": portal_home(request.user)}
     )
 
 
@@ -427,6 +457,21 @@ def password_change(request):
     return render(request, "accounts/form.html", {"form": form, "title": tr("Change password")})
 
 
+def secure_registration_headers(response, referrer_policy="same-origin"):
+    # Mitigates token leakage via Referer header and caching of sensitive registration state (Step 2, Item 5)
+    # Default to same-origin so browsers do not send opaque 'null' Origin headers on form submissions.
+    response["Referrer-Policy"] = referrer_policy
+    response["Cache-Control"] = "no-store, no-cache, must-revalidate, private"
+    response["Pragma"] = "no-cache"
+    return response
+
+
+def generic_invalid_link_response(request, status=200):
+    # Mitigates account enumeration and token validation oracles by rendering an identical generic response (Step 2, Item 3)
+    response = render(request, "accounts/registration_link_invalid.html", status=status)
+    return secure_registration_headers(response)
+
+
 def registration_unavailable():
     raise Http404("Registration is not available.")
 
@@ -457,12 +502,13 @@ def staff_register(request):
                 None,
                 tr("Too many registration attempts. Please try again later."),
             )
-            return render(
+            response = render(
                 request,
                 "accounts/register.html",
                 {"form": form},
                 status=429,
             )
+            return secure_registration_headers(response)
         result = None
         try:
             result = register_applicant(
@@ -478,56 +524,96 @@ def staff_register(request):
         except RegistrationDisabled:
             registration_unavailable()
         if not form.errors:
+            raw_email = form.cleaned_data["email"]
             token = (
-                registration_token(result.request)
+                getattr(result.request, "_current_token", None) or registration_token(result.request)
                 if (result and result.request)
                 else None
             )
             if not token:
                 try:
                     resend_res = resend_registration_for_email(
-                        form.cleaned_data["email"],
+                        raw_email,
                         base_url=request.build_absolute_uri("/"),
                     )
                     if resend_res.status == "sent" and resend_res.notification:
                         req = resend_res.notification.registration_request
                         if req:
-                            token = registration_token(req)
+                            token = getattr(req, "_current_token", None) or registration_token(req)
                 except (OtpCooldown, OtpRateLimited):
                     try:
-                        normalized = normalize_email(form.cleaned_data["email"])
+                        normalized = normalize_email(raw_email)
                         req = (
                             StaffRegistrationRequest.objects.filter(
                                 applicant_email=normalized,
-                                status=StaffRegistrationRequest.Status.EMAIL_PENDING,
+                                status__in=ACTIVE_STATUSES,
                             )
                             .order_by("-created_at")
                             .first()
                         )
                         if req:
-                            token = registration_token(req)
+                            token = getattr(req, "_current_token", None) or registration_token(req)
                     except Exception:
                         pass
                 except Exception:
                     pass
 
-            return render(
+            if not token:
+                try:
+                    normalized = normalize_email(raw_email)
+                    req = (
+                        StaffRegistrationRequest.objects.filter(
+                            applicant_email=normalized,
+                            status__in=ACTIVE_STATUSES,
+                        )
+                        .order_by("-created_at")
+                        .first()
+                    )
+                    if req:
+                        token = getattr(req, "_current_token", None) or registration_token(req)
+                except Exception:
+                    pass
+
+            if result and result.request:
+                # Mitigates session-less URL tracking by binding registration identity directly to server session
+                request.session["registration_request_id"] = result.request.pk
+                request.session.modified = True
+            else:
+                try:
+                    normalized = normalize_email(raw_email)
+                    req = (
+                        StaffRegistrationRequest.objects.filter(
+                            applicant_email=normalized,
+                            status__in=ACTIVE_STATUSES,
+                        )
+                        .order_by("-created_at")
+                        .first()
+                    )
+                    if req:
+                        request.session["registration_request_id"] = req.pk
+                        request.session.modified = True
+                except Exception:
+                    pass
+
+            response = render(
                 request,
                 "accounts/registration_submitted.html",
                 {
                     "resend_form": RegistrationResendForm(),
                     "token": token,
-                    "masked_email": mask_email(form.cleaned_data["email"]),
+                    "masked_email": mask_email(raw_email),
+                    "raw_email": raw_email,
                     "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
                 },
             )
-    return render(request, "accounts/register.html", {"form": form})
+            return secure_registration_headers(response)
+    response = render(request, "accounts/register.html", {"form": form})
+    return secure_registration_headers(response)
 
 
 @never_cache
 @require_POST
 def staff_register_resend_email(request):
-    form = RegistrationResendForm(request.POST)
     ip = client_ip(request)
     if not allow_rate(
         "staff-registration-resend-ip",
@@ -535,21 +621,29 @@ def staff_register_resend_email(request):
         settings.STAFF_REGISTRATION_IP_LIMIT,
         seconds=3600,
     ):
-        form.add_error(
-            None,
-            tr("Too many requests. Please try again later."),
-        )
-        return render(
+        form = RegistrationResendForm(request.POST)
+        form.add_error(None, tr("Too many requests. Please try again later."))
+        response = render(
             request,
             "accounts/registration_submitted.html",
             {"resend_form": form, "resend_attempted": True},
             status=429,
         )
+        return secure_registration_headers(response)
+
+    form = RegistrationResendForm(request.POST)
     token = None
-    masked_email = ""
-    if form.is_valid():
-        raw_email = form.cleaned_data["email"]
-        masked_email = mask_email(raw_email)
+    raw_email = request.POST.get("email", "").strip()
+    if not raw_email or "*" in raw_email:
+        reg_id = request.session.get("registration_request_id")
+        if reg_id:
+            reg = StaffRegistrationRequest.objects.filter(pk=reg_id).first()
+            if reg:
+                raw_email = reg.applicant_email or (reg.user.email if reg.user else "")
+        elif form.is_valid():
+            raw_email = form.cleaned_data["email"]
+
+    if raw_email and "@" in raw_email and "*" not in raw_email:
         try:
             resend_res = resend_registration_for_email(
                 raw_email,
@@ -558,25 +652,45 @@ def staff_register_resend_email(request):
             if resend_res.status == "sent" and resend_res.notification:
                 req = resend_res.notification.registration_request
                 if req:
-                    token = registration_token(req)
+                    token = getattr(req, "_current_token", None) or registration_token(req)
         except (OtpCooldown, OtpRateLimited):
             try:
                 normalized = normalize_email(raw_email)
                 req = (
                     StaffRegistrationRequest.objects.filter(
                         applicant_email=normalized,
-                        status=StaffRegistrationRequest.Status.EMAIL_PENDING,
+                        status__in=ACTIVE_STATUSES,
                     )
                     .order_by("-created_at")
                     .first()
                 )
                 if req:
-                    token = registration_token(req)
+                    token = getattr(req, "_current_token", None) or registration_token(req)
             except Exception:
                 pass
         except Exception:
             pass
-    return render(
+
+    if not token and raw_email and "*" not in raw_email:
+        try:
+            normalized = normalize_email(raw_email)
+            req = (
+                StaffRegistrationRequest.objects.filter(
+                    applicant_email=normalized,
+                    status__in=ACTIVE_STATUSES,
+                )
+                .order_by("-created_at")
+                .first()
+            )
+            if req:
+                token = getattr(req, "_current_token", None) or registration_token(req)
+                request.session["registration_request_id"] = req.pk
+                request.session.modified = True
+        except Exception:
+            pass
+
+    masked_email = mask_email(raw_email) if raw_email else ""
+    response = render(
         request,
         "accounts/registration_submitted.html",
         {
@@ -584,136 +698,332 @@ def staff_register_resend_email(request):
             "resend_attempted": True,
             "token": token,
             "masked_email": masked_email,
+            "raw_email": raw_email,
             "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
         },
     )
+    return secure_registration_headers(response)
 
 
 @never_cache
-@require_http_methods(["GET", "POST"])
-def staff_register_verify(request, token):
-    registration = load_registration(token)
-    if registration is None:
-        raise Http404("This verification link is not valid.")
-    form = EmailOtpForm(request.POST or None)
-    if request.method == "POST":
-        if not allow_rate(
-            "staff-registration-verify-ip",
-            client_ip(request),
-            60,
-            seconds=3600,
-        ):
-            form.add_error(None, tr("Too many attempts. Please try again later."))
-        elif form.is_valid():
-            result = verify_registration_otp(
-                registration,
-                form.cleaned_data["code"],
+@require_http_methods(["GET", "HEAD", "POST"])
+def staff_register_verify(request, token=None):
+    """Prefetch-safe staff email verification endpoint.
+
+    GET: Read-only check; validates token without consuming it or establishing session.
+    POST: Atomically consumes token or validates 6-digit OTP code, binds session, and redirects to status.
+    Mitigates automated scanner link prefetch breaking verification for human applicants (Phase 2.1 Item 1).
+    """
+    ip = client_ip(request)
+    # Mitigates token brute-forcing by rate limiting verification per IP address
+    if not allow_rate("staff-registration-verify-ip", ip, 60, seconds=3600):
+        # Mitigates token leakage in audit logs by never logging token values
+        record(None, "staff_registration_verify_failed", outcome="denied", details={"object_type": "staff_registration_verify"})
+        return generic_invalid_link_response(request, status=429)
+
+    from .services.registration_tokens import consume_registration_token, validate_registration_token
+
+    if request.method in ("GET", "HEAD"):
+        if not token or not validate_registration_token(token):
+            record(None, "staff_registration_verify_failed", outcome="denied", details={"object_type": "staff_registration_verify"})
+            return generic_invalid_link_response(request)
+
+        response = render(
+            request,
+            "accounts/registration_verify.html",
+            {"token": token},
+        )
+        return secure_registration_headers(response, referrer_policy="no-referrer")
+
+    # POST: Handle 6-digit OTP verification or link confirmation
+    code = request.POST.get("code", "").strip()
+    if code:
+        token = token or request.POST.get("token", "").strip() or None
+        registration = None
+        if token:
+            from .services.registration_tokens import hash_token
+            token_hash = hash_token(token)
+            token_record = (
+                StaffRegistrationToken.objects.select_related("registration", "registration__user")
+                .filter(token_hash=token_hash, used_at__isnull=True)
+                .first()
             )
-            registration = result.request or registration
-            if result.status in {"verified", "already_verified"}:
+            if token_record and token_record.expires_at > timezone.now():
+                registration = token_record.registration
+        if registration is None:
+            reg_id = request.session.get("registration_request_id")
+            if reg_id:
+                registration = (
+                    StaffRegistrationRequest.objects.select_related("user")
+                    .filter(pk=reg_id)
+                    .first()
+                )
+        if registration is None:
+            email_val = request.POST.get("email", "").strip()
+            if email_val:
+                try:
+                    norm = normalize_email(email_val)
+                    registration = (
+                        StaffRegistrationRequest.objects.select_related("user")
+                        .filter(applicant_email=norm, status__in=ACTIVE_STATUSES)
+                        .order_by("-created_at")
+                        .first()
+                    )
+                except Exception:
+                    pass
+
+        if registration is None:
+            record(None, "staff_registration_verify_failed", outcome="denied", details={"object_type": "staff_registration_verify"})
+            return generic_invalid_link_response(request)
+
+        otp_result = verify_registration_otp(registration, code, ip=ip)
+        if otp_result.status in {"verified", "already_verified"}:
+            if token:
+                consume_registration_token(token)
+            registration.refresh_from_db()
+            if registration.status == StaffRegistrationRequest.Status.PENDING_REVIEW:
                 notify_admins_of_pending_review(
                     registration,
                     base_url=request.build_absolute_uri("/"),
                 )
-                messages.success(
-                    request,
-                    tr("Your email is verified. Your application is waiting for administrator approval."),
-                )
-                return redirect("staff_registration_status", token=token)
-            if result.status in {"expired", "not_pending"}:
-                return redirect("staff_registration_status", token=token)
-            if result.status == "locked":
-                form.add_error(
-                    None,
-                    tr("Too many incorrect codes. Request a new code to continue."),
-                )
-            elif result.status == "code_expired":
-                form.add_error(None, tr("That code has expired. Request a new code."))
-            else:
-                form.add_error(None, tr("That code is not valid. Check it and try again."))
-    elif registration.status != StaffRegistrationRequest.Status.EMAIL_PENDING:
-        return redirect("staff_registration_status", token=token)
-    return render(
-        request,
-        "accounts/registration_verify.html",
-        {
-            "form": form,
-            "registration": registration,
-            "token": token,
-            "masked_email": mask_email(
-                registration.applicant_email or registration.user.email
-            ),
-            "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
-        },
-    )
+            record(
+                None,
+                "staff_registration_verify_succeeded",
+                registration.user_id,
+                outcome="success",
+                details={
+                    "object_type": "staff_registration",
+                    "object_id": registration.pk,
+                    "subject_id": registration.user_id,
+                },
+            )
+            request.session["registration_request_id"] = registration.pk
+            request.session.modified = True
+            messages.success(
+                request,
+                tr("Your email is verified. Your application is waiting for administrator approval."),
+            )
+            response = redirect("staff_registration_status")
+            return secure_registration_headers(response, referrer_policy="no-referrer")
+        else:
+            err_msg = tr("That code is not valid. Check it and try again.")
+            if otp_result.status == "locked":
+                err_msg = tr("Too many incorrect codes. Request a new code to continue.")
+            elif otp_result.status == "code_expired":
+                err_msg = tr("That code has expired. Request a new code.")
+            messages.error(request, err_msg)
+            response = render(
+                request,
+                "accounts/registration_submitted.html",
+                {
+                    "resend_form": RegistrationResendForm(),
+                    "token": token,
+                    "error": err_msg,
+                    "masked_email": mask_email(registration.applicant_email or registration.user.email),
+                    "raw_email": registration.applicant_email or registration.user.email,
+                    "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
+                },
+            )
+            return secure_registration_headers(response)
 
-
-@never_cache
-@require_POST
-def staff_register_resend(request, token):
-    registration = load_registration(token)
+    # POST without code: direct link click confirmation (requires token)
+    if not token:
+        return generic_invalid_link_response(request)
+    registration = consume_registration_token(token)
     if registration is None:
-        raise Http404("This verification link is not valid.")
-    if not allow_rate(
-        "staff-registration-resend-ip",
-        client_ip(request),
-        settings.STAFF_REGISTRATION_IP_LIMIT,
-        seconds=3600,
-    ):
-        messages.error(request, tr("Too many requests. Please try again later."))
-        return redirect("staff_registration_status", token=token)
-    try:
-        result = resend_registration_otp(
+        # Mitigates token leakage in audit logs by never recording token values
+        record(None, "staff_registration_verify_failed", outcome="denied", details={"object_type": "staff_registration_verify"})
+        return generic_invalid_link_response(request)
+
+    # Notify administrators now that applicant email is confirmed (if transitioning from EMAIL_PENDING)
+    if registration.status == StaffRegistrationRequest.Status.PENDING_REVIEW:
+        notify_admins_of_pending_review(
             registration,
             base_url=request.build_absolute_uri("/"),
         )
-    except OtpCooldown as exc:
-        messages.error(
-            request,
-            tr("Please wait %(seconds)s seconds before requesting another code.")
-            % {"seconds": max(1, math.ceil(exc.retry_after))},
-        )
-    except OtpRateLimited:
-        messages.error(request, tr("Too many verification emails were requested."))
-    else:
-        if result.status == "sent":
-            messages.success(request, tr("A new verification code has been sent."))
-        elif result.status == "expired":
-            messages.error(request, tr("This application has expired."))
-        else:
-            messages.error(request, tr("There is no pending verification for this link."))
-    return redirect("staff_registration_status", token=token)
+    # Mitigates token leakage in audit logs by logging only non-sensitive subject and registration ID
+    record(
+        None,
+        "staff_registration_verify_succeeded",
+        registration.user_id,
+        outcome="success",
+        details={
+            "object_type": "staff_registration",
+            "object_id": registration.pk,
+            "subject_id": registration.user_id,
+        },
+    )
+    # Mitigates URL token exposure by storing registration in server-side session and redirecting
+    request.session["registration_request_id"] = registration.pk
+    request.session.modified = True
+    messages.success(
+        request,
+        tr("Your email is verified. Your application is waiting for administrator approval."),
+    )
+    response = redirect("staff_registration_status")
+    return secure_registration_headers(response, referrer_policy="no-referrer")
 
 
 @never_cache
-@require_http_methods(["GET"])
-def staff_registration_status(request, token):
-    registration = load_registration(token)
-    if registration is None:
-        raise Http404("This registration link is not valid.")
-    status = registration.status
-    can_reapply = settings.STAFF_SELF_REGISTRATION_ENABLED and (
-        status == StaffRegistrationRequest.Status.EXPIRED
-        or (
-            status == StaffRegistrationRequest.Status.DECLINED
-            and registration.reapplication_allowed
+@require_http_methods(["GET", "HEAD", "POST"])
+def staff_registration_status(request, token=None):
+    """Display registration status from server-side session or allow identifier lookup.
+
+    Mitigates token persistence in URLs and history by reading identity from server-side session (Step 2, Item 4).
+    """
+    if token:
+        # Legacy signed token URL: reject generically per Step 2 Item 8
+        return generic_invalid_link_response(request)
+
+    reg_id = request.session.get("registration_request_id")
+    registration = None
+    if reg_id:
+        registration = (
+            StaffRegistrationRequest.objects.select_related("user")
+            .filter(pk=reg_id)
+            .first()
         )
-    )
-    return render(
+
+    if registration is not None:
+        status = registration.status
+        can_reapply = settings.STAFF_SELF_REGISTRATION_ENABLED and (
+            status == StaffRegistrationRequest.Status.EXPIRED
+            or (
+                status == StaffRegistrationRequest.Status.DECLINED
+                and registration.reapplication_allowed
+            )
+        )
+        response = render(
+            request,
+            "accounts/registration_status.html",
+            {
+                "registration": registration,
+                "status": status,
+                "masked_email": mask_email(
+                    registration.applicant_email or registration.user.email
+                ),
+                "can_reapply": can_reapply,
+                "registration_enabled": settings.STAFF_SELF_REGISTRATION_ENABLED,
+                "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
+            },
+        )
+        return secure_registration_headers(response, referrer_policy="no-referrer")
+
+    # Cross-device access: session has no registration ID. Show email lookup form.
+    submitted = False
+    form = RegistrationResendForm(request.POST if request.method == "POST" else None)
+    if request.method == "POST":
+        ip = client_ip(request)
+        # Mitigates identity probing by rate limiting status lookup attempts per IP
+        if not allow_rate("staff-registration-status-ip", ip, 10, seconds=3600):
+            response = render(
+                request,
+                "accounts/registration_status_lookup.html",
+                {"form": form, "submitted": False},
+                status=429,
+            )
+            return secure_registration_headers(response)
+        if form.is_valid():
+            raw_email = form.cleaned_data["email"]
+            try:
+                resend_registration_for_email(
+                    raw_email,
+                    base_url=request.build_absolute_uri("/"),
+                )
+            except Exception:
+                pass
+            submitted = True
+
+    response = render(
         request,
-        "accounts/registration_status.html",
-        {
-            "registration": registration,
-            "token": token,
-            "status": status,
-            "masked_email": mask_email(
-                registration.applicant_email or registration.user.email
-            ),
-            "can_reapply": can_reapply,
-            "registration_enabled": settings.STAFF_SELF_REGISTRATION_ENABLED,
-            "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
-        },
+        "accounts/registration_status_lookup.html",
+        {"form": form, "submitted": submitted},
     )
+    return secure_registration_headers(response)
+
+
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
+def staff_register_resend(request, token=None):
+    """Resend verification link using session or applicant identifier without enumeration.
+
+    Mitigates user enumeration by responding identically whether registration exists (Step 2, Item 4).
+    """
+    if token:
+        # Legacy signed token URL: reject generically per Step 2 Item 8
+        return generic_invalid_link_response(request)
+
+    ip = client_ip(request)
+    form = RegistrationResendForm(request.POST if request.method == "POST" else None)
+    submitted = False
+
+    if request.method == "POST":
+        # Mitigates automated email flooding by rate limiting resend requests per IP
+        if not allow_rate(
+            "staff-registration-resend-ip",
+            ip,
+            settings.STAFF_REGISTRATION_IP_LIMIT,
+            seconds=3600,
+        ):
+            response = render(
+                request,
+                "accounts/registration_resend.html",
+                {"form": form, "submitted": False},
+                status=429,
+            )
+            return secure_registration_headers(response)
+
+        raw_email = None
+        if form.is_valid():
+            raw_email = form.cleaned_data["email"]
+        else:
+            reg_id = request.session.get("registration_request_id")
+            if reg_id:
+                reg = StaffRegistrationRequest.objects.filter(pk=reg_id).first()
+                if reg:
+                    raw_email = reg.applicant_email or reg.user.email
+
+        if raw_email:
+            # Mitigates targeted mailbox flooding by rate limiting per recipient email
+            allow_rate("staff-registration-resend-email", raw_email, 5, seconds=3600)
+            try:
+                resend_registration_for_email(
+                    raw_email,
+                    base_url=request.build_absolute_uri("/"),
+                )
+            except Exception:
+                pass
+            submitted = True
+        elif form.is_valid():
+            submitted = True
+
+    prefilled_email = ""
+    reg_id = request.session.get("registration_request_id")
+    if reg_id and not submitted:
+        reg = StaffRegistrationRequest.objects.filter(pk=reg_id).first()
+        if reg:
+            prefilled_email = reg.applicant_email or reg.user.email
+
+    response = render(
+        request,
+        "accounts/registration_resend.html",
+        {"form": form, "submitted": submitted, "email": prefilled_email},
+    )
+    return secure_registration_headers(response)
+
+
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
+def staff_registration_status_legacy(request, token):
+    # Mitigates legacy signed token replay by rejecting all legacy signed URLs with generic page
+    return generic_invalid_link_response(request)
+
+
+@never_cache
+@require_http_methods(["GET", "HEAD", "POST"])
+def staff_register_resend_legacy(request, token):
+    # Mitigates legacy signed token replay by rejecting all legacy signed URLs with generic page
+    return generic_invalid_link_response(request)
 
 
 @login_required

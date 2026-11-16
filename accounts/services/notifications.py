@@ -176,7 +176,43 @@ def _render(notification):
     ciphertext = context.pop("otp_ciphertext", None)
     if ciphertext is not None:
         # A failed decrypt intentionally raises and becomes a retryable failure.
-        context["otp"] = decrypt_otp(ciphertext)
+        otp_val = decrypt_otp(ciphertext)
+        context["otp"] = otp_val
+        context["otp_code"] = otp_val
+    elif "otp" in context and "otp_code" not in context:
+        context["otp_code"] = context["otp"]
+    elif "otp_code" in context and "otp" not in context:
+        context["otp"] = context["otp_code"]
+
+    context.setdefault("app_name", "SSDC Document Vault")
+    context.setdefault("accent", "#3D5AFE")
+    context.setdefault("company_address", "Kathmandu, Nepal")
+    context.setdefault("year", timezone.now().year)
+    if notification.recipient_email:
+        context.setdefault("user_email", notification.recipient_email)
+
+    user_name = "there"
+    if notification.user:
+        user_name = (
+            notification.user.first_name
+            or notification.user.username
+            or "there"
+        )
+    elif notification.registration_request and notification.registration_request.applicant_email:
+        prefix = (
+            notification.registration_request.applicant_email.split("@")[0]
+            .split(".")[0]
+            .capitalize()
+        )
+        if prefix and prefix.isalpha():
+            user_name = prefix
+    context.setdefault("user_name", user_name)
+
+    if notification.kind == "registration_otp":
+        context.setdefault("purpose", "complete your staff registration")
+    elif notification.kind == "email_change_otp":
+        context.setdefault("purpose", "confirm your new email address")
+
     language = context.get("language") or settings.LANGUAGE_CODE
     with translation.override(language):
         text_body = render_to_string(f"{notification.template_name}.txt", context)
@@ -296,8 +332,22 @@ def deliver_notification(notification_id, *, now=None):
 
     try:
         text_body, html_body = _render(notification)
+        subject = notification.subject
+        if notification.kind in {"registration_otp", "email_change_otp"}:
+            otp_val = None
+            if notification.context:
+                ct = notification.context.get("otp_ciphertext")
+                if ct:
+                    try:
+                        otp_val = decrypt_otp(ct)
+                    except Exception:
+                        pass
+                else:
+                    otp_val = notification.context.get("otp") or notification.context.get("otp_code")
+            if otp_val:
+                subject = f"{otp_val} is your SSDC Document Vault code"
         message = EmailMultiAlternatives(
-            notification.subject,
+            subject,
             text_body,
             settings.DEFAULT_FROM_EMAIL,
             [notification.recipient_email],
@@ -428,6 +478,7 @@ def notify_admins_of_pending_review(registration, base_url=""):
     if not getattr(settings, "EMAIL_DELIVERY_ENABLED", False):
         return
     from django.core.mail import send_mail
+
     from accounts.models import User
 
     admin_emails = list(
@@ -466,7 +517,8 @@ def notify_admins_of_pending_review(registration, base_url=""):
             message=text_body,
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=admin_emails,
-            fail_silently=True,
+            fail_silently=False,
         )
-    except Exception:
-        pass
+    except Exception as exc:
+        import logging
+        logging.getLogger("accounts").error("Failed to notify admins of pending review: %s", exc)
