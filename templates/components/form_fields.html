@@ -13,7 +13,18 @@
         {{ field.errors }}<label for="{{ field.id_for_label }}">{{ field }} {% translate field.label %}</label>
         {% if field.help_text %}<div class="helptext"
      id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>{% endif %}
-  {% else %}{{ field.as_field_group }}{% endif %}
+      {% elif field.field.widget.input_type == "password" %}
+        {{ field.errors }}
+        {{ field.label_tag }}
+        <div class="password-field-wrapper">
+          {{ field }}
+          <button type="button" class="password-toggle-btn" data-password-toggle aria-pressed="false" aria-label="{% translate "Show password" %}" title="{% translate "Show password" %}">
+            <span class="icon-eye">{% include "components/icon.html" with name="eye" %}</span>
+            <span class="icon-eye-off">{% include "components/icon.html" with name="eye-off" %}</span>
+          </button>
+        </div>
+        {% if field.help_text %}<div class="helptext" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>{% endif %}
+      {% else %}{{ field.as_field_group }}{% endif %}
     </div>
   {% endfor %}
 </div>

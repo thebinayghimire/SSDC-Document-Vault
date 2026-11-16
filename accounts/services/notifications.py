@@ -421,3 +421,52 @@ def process_notifications(*, limit=50, dry_run=False, now=None):
         "sent": outcomes.count("sent"),
         "failed": outcomes.count("failed"),
     }
+
+
+def notify_admins_of_pending_review(registration, base_url=""):
+    """Send an immediate email alert to administrators when an applicant verifies their email."""
+    if not getattr(settings, "EMAIL_DELIVERY_ENABLED", False):
+        return
+    from django.core.mail import send_mail
+    from accounts.models import User
+
+    admin_emails = list(
+        User.objects.filter(role=User.Role.ADMIN, is_active=True)
+        .exclude(email="")
+        .values_list("email", flat=True)
+    )
+    if getattr(settings, "EMAIL_HOST_USER", None) and settings.EMAIL_HOST_USER not in admin_emails:
+        admin_emails.append(settings.EMAIL_HOST_USER)
+    elif not admin_emails and getattr(settings, "DEFAULT_FROM_EMAIL", None):
+        admin_emails = [settings.DEFAULT_FROM_EMAIL]
+
+    if not admin_emails:
+        return
+
+    applicant = registration.applicant_email or (
+        registration.user.email if registration.user else "Unknown applicant"
+    )
+    base = (base_url or getattr(settings, "PUBLIC_BASE_URL", "")).rstrip("/")
+    review_url = f"{base}/admin/accounts/staffregistrationrequest/{registration.pk}/change/"
+
+    subject = "New Staff Registration Application Submitted - SSDC Document Vault"
+    text_body = (
+        f"A new staff registration application has been verified and submitted for review.\n\n"
+        f"Applicant: {applicant}\n"
+        f"Verification Date: {timezone.now().strftime('%Y-%m-%d %H:%M:%S UTC')}\n\n"
+        f"You can review and approve or decline the application here:\n"
+        f"{review_url}\n\n"
+        f"--\n"
+        f"SSDC Document Vault"
+    )
+
+    try:
+        send_mail(
+            subject=subject,
+            message=text_body,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=admin_emails,
+            fail_silently=True,
+        )
+    except Exception:
+        pass

@@ -151,6 +151,16 @@ select { min-height: 44px; padding: var(--space-2) var(--space-3); border: 1px s
 .form-field { min-width: 0; }
 .form-field label { display: block; margin-bottom: var(--space-2); font-size: var(--text-sm); font-weight: 600; }
 .form-field input:not([type="checkbox"]), .form-field textarea, .form-field select { display: block; width: 100%; min-height: 48px; padding: var(--space-3); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); background: var(--color-white); font-size: 16px; }
+.password-field-wrapper { position: relative; display: flex; align-items: center; width: 100%; }
+.password-field-wrapper input { padding-right: 48px !important; }
+.password-toggle-btn { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); background: transparent; border: none; cursor: pointer; color: var(--color-secondary); padding: 8px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-sm); }
+.password-toggle-btn:hover, .password-toggle-btn:focus-visible { color: var(--color-primary); }
+.password-toggle-btn .icon-eye { display: inline-flex; }
+.password-toggle-btn .icon-eye-off { display: none; }
+.password-toggle-btn[aria-pressed="true"] .icon-eye { display: none; }
+.password-toggle-btn[aria-pressed="true"] .icon-eye-off { display: inline-flex; }
+.otp-verification-card { margin: var(--space-6) 0; padding: var(--space-6); background: var(--color-surface-soft); border: 1px solid var(--color-border-strong); border-radius: var(--radius-sm); }
+.otp-input-field { text-align: center !important; letter-spacing: 0.35em !important; font-size: 1.5rem !important; font-family: monospace !important; font-weight: bold !important; height: 52px !important; max-width: 260px !important; margin: 0 auto !important; display: block; }
 .form-field input:focus-visible, .form-field textarea:focus-visible, .form-field select:focus-visible { border-color: var(--color-primary-focus); }
 .form-field input[aria-invalid="true"] { border-color: var(--color-danger); }
 .form-field input[type="file"] { background: var(--color-surface-soft); padding: var(--space-3); font-size: var(--text-sm); }

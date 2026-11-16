@@ -12,15 +12,40 @@
         {% translate "If an eligible application exists for that address, a fresh verification email has been sent." %}
       </div>
     {% endif %}
-    <form method="post" action="{% url 'staff_register_resend_email' %}" data-progress="{% translate "Sending…" %}">
-      {% csrf_token %}
-      {% with form=resend_form %}
-        {% include "components/form_fields.html" %}
-      {% endwith %}
-      <div class="form-actions">
-        <button class="button secondary full" type="submit">{% translate "Resend verification email" %}</button>
+
+    {% if token %}
+      <div class="otp-verification-card">
+        <h2 style="font-size: 1.15rem; margin-top: 0; margin-bottom: 0.5rem; color: var(--color-primary, #0f172a);">{% translate "Enter 6-digit verification code" %}</h2>
+        <p class="muted" style="margin-bottom: 1.25rem; font-size: 0.9rem;">
+          {% blocktranslate with email=masked_email minutes=expiry_minutes %}We sent a code to <strong>{{ email }}</strong>. Enter it below to complete your registration:{% endblocktranslate %}
+        </p>
+        <form method="post" action="{% url 'staff_register_verify' token=token %}" data-progress="{% translate "Verifying…" %}">
+          {% csrf_token %}
+          <div class="form-fields">
+            <div class="form-field">
+              <label for="id_otp_code">{% translate "Six-digit verification code" %}</label>
+              <input type="text" name="code" id="id_otp_code" required minlength="6" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" class="otp-input-field">
+            </div>
+          </div>
+          <div class="form-actions" style="margin-top: 1.25rem;">
+            <button class="button full" type="submit">{% translate "Verify code & submit to admin" %} {% include "components/icon.html" with name="arrow" %}</button>
+          </div>
+        </form>
       </div>
-    </form>
+    {% endif %}
+
+    <div style="margin-top: var(--space-6); padding-top: var(--space-4); border-top: 1px solid var(--color-border-subtle);">
+      <p class="muted" style="font-size: var(--text-xs); margin-bottom: var(--space-2);">{% translate "Didn't receive the email?" %}</p>
+      <form method="post" action="{% url 'staff_register_resend_email' %}" data-progress="{% translate "Sending…" %}">
+        {% csrf_token %}
+        {% with form=resend_form %}
+          {% include "components/form_fields.html" %}
+        {% endwith %}
+        <div class="form-actions" style="margin-top: var(--space-3);">
+          <button class="button secondary full" type="submit">{% translate "Resend verification email" %}</button>
+        </div>
+      </form>
+    </div>
     <div class="auth-foot">
       <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
     </div>

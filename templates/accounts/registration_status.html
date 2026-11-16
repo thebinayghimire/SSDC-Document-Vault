@@ -16,12 +16,12 @@
       </div>
 
     {% elif status == "pending_review" %}
-      <h1 id="status-heading">{% translate "Your email has been verified." %}</h1>
+      <h1 id="status-heading">{% translate "Registration submitted." %}</h1>
       <p class="muted">
-        {% translate "Your request has been submitted successfully and is waiting for administrator approval." %}
+        {% translate "Your email has been verified. Your application has been sent to the administrator for review and approval." %}
       </p>
       <div class="message info" role="status">
-        {% translate "You will receive an email notification when your request has been reviewed. Access to the staff portal is granted only after administrator approval." %}
+        {% translate "Your request is now in the administrator review queue. You will receive an email notification once an administrator reviews and approves your account." %}
       </div>
 
     {% elif status == "approved" %}

@@ -225,9 +225,19 @@ STAFF_SELF_REGISTRATION_ENABLED = env_flag("STAFF_SELF_REGISTRATION_ENABLED", Fa
 EMAIL_LOGIN_ENABLED = env_flag("EMAIL_LOGIN_ENABLED", False)
 SELF_REGISTERED_EMAIL_CHANGE_ENABLED = env_flag("SELF_REGISTERED_EMAIL_CHANGE_ENABLED", False)
 # Locmem keeps offline tests deterministic and prevents accidental real delivery.
-# Real SMTP configuration is deliberately absent from Phase 2.
-EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+# Configurable via EMAIL_BACKEND (e.g., console or smtp backend) outside of tests.
+if ENVIRONMENT == "test":
+    EMAIL_BACKEND = "django.core.mail.backends.locmem.EmailBackend"
+else:
+    EMAIL_BACKEND = os.getenv("EMAIL_BACKEND", "django.core.mail.backends.locmem.EmailBackend")
 EMAIL_DELIVERY_ENABLED = env_flag("EMAIL_DELIVERY_ENABLED", False)
+EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
+EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
+EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_USE_TLS = env_flag("EMAIL_USE_TLS", True)
+EMAIL_USE_SSL = env_flag("EMAIL_USE_SSL", False)
+EMAIL_TIMEOUT = positive_int("EMAIL_TIMEOUT", 10, 60)
 DEFAULT_FROM_EMAIL = os.getenv(
     "EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>"
 )

@@ -94,6 +94,8 @@ class EmailOtpForm(forms.Form):
                 "pattern": "[0-9]{6}",
                 "autocapitalize": "none",
                 "spellcheck": "false",
+                "class": "otp-input-field",
+                "placeholder": "123456",
             }
         ),
     )

@@ -10,9 +10,9 @@
     <title>{% block title %}{% translate "Document Vault" %}{% endblock %} · SSDC</title>
     {% include "components/font_preload.html" %}
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=3">
     <script src="{% url 'javascript-catalog' %}"></script>
-    <script type="module" src="{% static 'js/app.mjs' %}"></script>
+    <script type="module" src="{% static 'js/app.mjs' %}?v=3"></script>
     {% include "components/session_guard.html" %}
     {% block head %}{% endblock %}
   </head>

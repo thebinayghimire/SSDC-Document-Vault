@@ -209,3 +209,26 @@ def test_email_change_view_workflow(phase2_enabled, client, users):
     assert alice.email == "alice.brandnew@example.test"
     # User was logged out because auth_version updated
     assert "_auth_user_id" not in client.session
+
+
+@pytest.mark.django_db
+def test_registration_view_resubmission_keeps_otp_box(phase2_enabled, client):
+    post_data = {
+        "email": "reapplicant@example.test",
+        "password1": PASSWORD,
+        "password2": PASSWORD,
+    }
+    # Initial submission
+    res1 = client.post(reverse("staff_register"), post_data)
+    assert res1.status_code == 200
+    assert res1.context["token"] is not None
+
+    # Resubmission with same email while pending
+    res2 = client.post(reverse("staff_register"), post_data)
+    assert res2.status_code == 200
+    assert res2.context["token"] is not None
+
+    # Resend email view also provides token
+    res3 = client.post(reverse("staff_register_resend_email"), {"email": "reapplicant@example.test"})
+    assert res3.status_code == 200
+    assert res3.context["token"] is not None

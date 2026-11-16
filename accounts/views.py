@@ -54,7 +54,8 @@ from .services.registration import (
     resend_registration_otp,
     verify_registration_otp,
 )
-from .services.registration_tokens import load_registration
+from .services.notifications import notify_admins_of_pending_review
+from .services.registration_tokens import load_registration, registration_token
 
 
 def client_ip(request):
@@ -462,8 +463,9 @@ def staff_register(request):
                 {"form": form},
                 status=429,
             )
+        result = None
         try:
-            register_applicant(
+            result = register_applicant(
                 email=form.cleaned_data["email"],
                 password=form.cleaned_data["password1"],
                 language=request.LANGUAGE_CODE,
@@ -472,14 +474,52 @@ def staff_register(request):
         except RegistrationInvalid as exc:
             form.add_error(None, exc.messages)
         except (RegistrationConflict, RegistrationStateError):
-            pass
+            result = None
         except RegistrationDisabled:
             registration_unavailable()
         if not form.errors:
+            token = (
+                registration_token(result.request)
+                if (result and result.request)
+                else None
+            )
+            if not token:
+                try:
+                    resend_res = resend_registration_for_email(
+                        form.cleaned_data["email"],
+                        base_url=request.build_absolute_uri("/"),
+                    )
+                    if resend_res.status == "sent" and resend_res.notification:
+                        req = resend_res.notification.registration_request
+                        if req:
+                            token = registration_token(req)
+                except (OtpCooldown, OtpRateLimited):
+                    try:
+                        normalized = normalize_email(form.cleaned_data["email"])
+                        req = (
+                            StaffRegistrationRequest.objects.filter(
+                                applicant_email=normalized,
+                                status=StaffRegistrationRequest.Status.EMAIL_PENDING,
+                            )
+                            .order_by("-created_at")
+                            .first()
+                        )
+                        if req:
+                            token = registration_token(req)
+                    except Exception:
+                        pass
+                except Exception:
+                    pass
+
             return render(
                 request,
                 "accounts/registration_submitted.html",
-                {"resend_form": RegistrationResendForm()},
+                {
+                    "resend_form": RegistrationResendForm(),
+                    "token": token,
+                    "masked_email": mask_email(form.cleaned_data["email"]),
+                    "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
+                },
             )
     return render(request, "accounts/register.html", {"form": form})
 
@@ -505,19 +545,47 @@ def staff_register_resend_email(request):
             {"resend_form": form, "resend_attempted": True},
             status=429,
         )
+    token = None
+    masked_email = ""
     if form.is_valid():
+        raw_email = form.cleaned_data["email"]
+        masked_email = mask_email(raw_email)
         try:
-            resend_registration_for_email(
-                form.cleaned_data["email"],
+            resend_res = resend_registration_for_email(
+                raw_email,
                 base_url=request.build_absolute_uri("/"),
             )
+            if resend_res.status == "sent" and resend_res.notification:
+                req = resend_res.notification.registration_request
+                if req:
+                    token = registration_token(req)
         except (OtpCooldown, OtpRateLimited):
-            # Never distinguish whether a pending application exists.
+            try:
+                normalized = normalize_email(raw_email)
+                req = (
+                    StaffRegistrationRequest.objects.filter(
+                        applicant_email=normalized,
+                        status=StaffRegistrationRequest.Status.EMAIL_PENDING,
+                    )
+                    .order_by("-created_at")
+                    .first()
+                )
+                if req:
+                    token = registration_token(req)
+            except Exception:
+                pass
+        except Exception:
             pass
     return render(
         request,
         "accounts/registration_submitted.html",
-        {"resend_form": form, "resend_attempted": True},
+        {
+            "resend_form": form,
+            "resend_attempted": True,
+            "token": token,
+            "masked_email": masked_email,
+            "expiry_minutes": settings.STAFF_REGISTRATION_OTP_MINUTES,
+        },
     )
 
 
@@ -543,6 +611,10 @@ def staff_register_verify(request, token):
             )
             registration = result.request or registration
             if result.status in {"verified", "already_verified"}:
+                notify_admins_of_pending_review(
+                    registration,
+                    base_url=request.build_absolute_uri("/"),
+                )
                 messages.success(
                     request,
                     tr("Your email is verified. Your application is waiting for administrator approval."),
