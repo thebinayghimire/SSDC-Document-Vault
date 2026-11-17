@@ -1,5 +1,11 @@
 limit_req_zone $binary_remote_addr zone=portal:10m rate=10r/s;
+# Mitigates registration token leakage in access logs and redirects by redacting the token segment
+map $request_uri $redacted_request_uri {
+    ~*^(/accounts/register/verify/)[^/?#]+(.*)$ $1[REDACTED]$2;
+    default $request_uri;
+}
 log_format private '$request_id $remote_addr $request_method $status $body_bytes_sent $request_time';
+log_format secure_access '$request_id $remote_addr "$request_method $redacted_request_uri" $status $body_bytes_sent $request_time';
 server {
     listen 8080 default_server;
     server_name _;
@@ -15,7 +21,7 @@ server {
         access_log off;
     }
     location / {
-        return 301 https://${HTTPS_AUTHORITY}$request_uri;
+        return 301 https://${HTTPS_AUTHORITY}$redacted_request_uri;
     }
 }
 server {

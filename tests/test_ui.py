@@ -12,6 +12,7 @@ from urllib.parse import parse_qs, urlsplit
 import pyotp
 import pytest
 from cryptography.fernet import Fernet
+from django.conf import settings as django_settings
 from django.db import connections
 from django.test import Client
 from playwright.sync_api import expect, sync_playwright
@@ -24,6 +25,15 @@ from .conftest import authenticate_client, image_upload, pdf_upload
 pytestmark = pytest.mark.django_db(transaction=True)
 ARTIFACTS = Path("artifacts/redesign")
 WIDTHS = (375, 390, 430, 768, 1024, 1280, 1440, 1920)
+
+
+@pytest.fixture(autouse=True)
+def configure_browser_cookies(settings):
+    # LiveServer runs on plain HTTP (http://localhost:<port>); Playwright/Chromium rejects
+    # __Host- prefixes and Secure cookies without HTTPS/TLS.
+    settings.SESSION_COOKIE_SECURE = False
+    settings.CSRF_COOKIE_SECURE = False
+    settings.SESSION_COOKIE_NAME = "sessionid"
 
 
 @pytest.fixture
@@ -59,9 +69,13 @@ def database_call(callback):
 
 def browser_session(context, base, user):
     client = database_call(lambda: authenticate_client(Client(), user))
-    context.add_cookies(
-        [{"name": "sessionid", "value": client.cookies["sessionid"].value, "url": base}]
+    cookie_name = django_settings.SESSION_COOKIE_NAME
+    cookie_val = (
+        client.cookies[cookie_name].value
+        if cookie_name in client.cookies
+        else client.cookies["sessionid"].value
     )
+    context.add_cookies([{"name": cookie_name, "value": cookie_val, "url": base}])
 
 
 def no_overflow(page):
@@ -551,6 +565,8 @@ def test_role_portal_sign_in_and_sign_out(browser_page, settings):
     page.get_by_label("Admin ID").fill("admin")
     page.get_by_label("Password:", exact=True).fill("Strong-Admin-Password-42")
     page.get_by_role("button", name="Sign in", exact=False).click()
+    expect(page).to_have_url(base + "/")
+    page.get_by_role("link", name="Admin portal", exact=True).click()
     expect(page).to_have_url(base + "/admin/")
     expect(page.get_by_role("heading", name="Accounts, access, and oversight.")).to_be_visible()
     page.get_by_role("button", name="Sign out", exact=True).click()

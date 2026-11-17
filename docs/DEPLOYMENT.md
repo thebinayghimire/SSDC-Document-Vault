@@ -268,6 +268,48 @@ DB/storage/scanner failures produce unavailable health or quarantined uploads.
 Investigate infrastructure/limits; never weaken permissions or bypass scanning.
 Keep debug off. Patch dependencies/images and test before releasing.
 
+## Staff registration and transactional email
+
+Staff self-registration, email login, and self-service email change are gated by
+three independent flags: `STAFF_SELF_REGISTRATION_ENABLED`, `EMAIL_LOGIN_ENABLED`,
+and `SELF_REGISTERED_EMAIL_CHANGE_ENABLED`. All default to `0`. Enable them only
+after the approval workflow and SMTP delivery have been verified on the target
+deployment.
+
+Email is written to a durable outbox and is never sent inside the approval
+transaction. Configure SMTP with `EMAIL_BACKEND`, `EMAIL_HOST`, `EMAIL_PORT`,
+`EMAIL_USE_TLS`/`EMAIL_USE_SSL`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD` (or
+`EMAIL_HOST_PASSWORD_FILE`), and `EMAIL_FROM_ADDRESS`, then set
+`EMAIL_DELIVERY_ENABLED=1`. Set `PUBLIC_BASE_URL` to the approved HTTPS origin
+so command-generated links are absolute. Prefer a mounted
+`EMAIL_HOST_PASSWORD_FILE` over the environment value; do not commit the SMTP
+password or place it in the image.
+
+Deliver due messages from the application service (run every minute, for
+example from cron or a systemd timer):
+
+```sh
+docker compose --env-file .env.production -f compose.prod.yaml run --rm app python manage.py process_email_notifications --limit 50
+```
+
+The outbox retries transient failures with backoff up to
+`EMAIL_NOTIFICATION_MAX_ATTEMPTS`. Inspect dead letters before retrying; requeue
+specific IDs with `--requeue <ID>` or all exhausted rows with
+`--requeue-dead-letter`. A failed delivery never rolls back an approval or
+decline, so the decision remains effective even while the outbox is retried.
+
+Expire applications that passed their verification or review window (run daily):
+
+```sh
+docker compose --env-file .env.production -f compose.prod.yaml run --rm app python manage.py expire_staff_registrations --limit 100 --base-url https://vault.example.org
+```
+
+Both commands support `--dry-run`. Review the due count before the first
+production run. OTP lifetime, attempt limits, resend cooldowns, and hourly caps
+are controlled by the `STAFF_REGISTRATION_OTP_*` and `EMAIL_CHANGE_OTP_*`
+settings; the defaults match the approved policy (10 minutes, 5 attempts,
+60-second cooldown, 5 emails per hour).
+
 ## Local production smoke fixture
 
 The local smoke uses separate volumes and a two-day self-signed certificate:

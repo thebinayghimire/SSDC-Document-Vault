@@ -21,6 +21,10 @@ KIND_TEMPLATES = {
         "email/registration_otp",
         "Verify your email - SSDC Document Vault",
     ),
+    "registration_status_link": (
+        "email/registration_status_link",
+        "Your SSDC Document Vault application status",
+    ),
     "registration_approved": (
         "email/registration_approved",
         "Your SSDC Document Vault access has been approved",
@@ -193,11 +197,7 @@ def _render(notification):
 
     user_name = "there"
     if notification.user:
-        user_name = (
-            notification.user.first_name
-            or notification.user.username
-            or "there"
-        )
+        user_name = notification.user.first_name or notification.user.username or "there"
     elif notification.registration_request and notification.registration_request.applicant_email:
         prefix = (
             notification.registration_request.applicant_email.split("@")[0]
@@ -343,7 +343,9 @@ def deliver_notification(notification_id, *, now=None):
                     except Exception:
                         pass
                 else:
-                    otp_val = notification.context.get("otp") or notification.context.get("otp_code")
+                    otp_val = notification.context.get("otp") or notification.context.get(
+                        "otp_code"
+                    )
             if otp_val:
                 subject = f"{otp_val} is your SSDC Document Vault code"
         message = EmailMultiAlternatives(
@@ -360,9 +362,7 @@ def deliver_notification(notification_id, *, now=None):
         error = _safe_error(exc)
         with transaction.atomic():
             notification = (
-                EmailNotification.objects.select_for_update()
-                .filter(pk=notification_pk)
-                .first()
+                EmailNotification.objects.select_for_update().filter(pk=notification_pk).first()
             )
             if notification is None or notification.status != EmailNotification.Status.SENDING:
                 return "superseded"
@@ -372,9 +372,7 @@ def deliver_notification(notification_id, *, now=None):
             if notification.attempts >= notification.max_attempts:
                 _mark_dead_letter(notification, now=now, error=error)
                 transaction.on_commit(
-                    lambda pk=notification_pk, kind=notification_kind: _audit_failure(
-                        pk, kind
-                    )
+                    lambda pk=notification_pk, kind=notification_kind: _audit_failure(pk, kind)
                 )
             else:
                 delay = min(
@@ -521,4 +519,5 @@ def notify_admins_of_pending_review(registration, base_url=""):
         )
     except Exception as exc:
         import logging
+
         logging.getLogger("accounts").error("Failed to notify admins of pending review: %s", exc)

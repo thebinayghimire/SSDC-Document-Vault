@@ -14,24 +14,41 @@ urlpatterns = [
     path("password/", views.password_change, name="password_change"),
     path("register/", views.staff_register, name="staff_register"),
     path(
-        "register/resend/",
-        views.staff_register_resend_email,
-        name="staff_register_resend_email",
+        "register/verify/",
+        views.staff_register_verify,
+        name="staff_register_verify_session",
     ),
     path(
         "register/verify/<str:token>/",
         views.staff_register_verify,
         name="staff_register_verify",
     ),
+    # Phase 2: status and resend routes hold no tokens in URLs
     path(
-        "register/resend/<str:token>/",
+        "register/status/",
+        views.staff_registration_status,
+        name="staff_registration_status",
+    ),
+    path(
+        "register/resend/",
         views.staff_register_resend,
         name="staff_register_resend",
     ),
     path(
+        "register/resend-email/",
+        views.staff_register_resend_email,
+        name="staff_register_resend_email",
+    ),
+    # Legacy routes reject old signed tokens generically per Step 2 Item 8
+    path(
+        "register/resend/<str:token>/",
+        views.staff_register_resend_legacy,
+        name="staff_register_resend_legacy",
+    ),
+    path(
         "register/status/<str:token>/",
-        views.staff_registration_status,
-        name="staff_registration_status",
+        views.staff_registration_status_legacy,
+        name="staff_registration_status_legacy",
     ),
     path("email/change/", views.email_change, name="email_change"),
 ]

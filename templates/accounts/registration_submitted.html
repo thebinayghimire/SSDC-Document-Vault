@@ -6,10 +6,11 @@
     <div class="auth-brand"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
     <span class="eyebrow">{% translate "Registration submitted" %}</span>
     <h1 id="submitted-heading">{% translate "Check your email." %}</h1>
-    <p class="muted">{% translate "We sent a six-digit verification code to your email. Enter it below to complete your registration and send your application for administrator review." %}</p>
+    <p class="muted">{% translate "We sent a six-digit verification code to your email. Enter it below to verify your address and send your application for administrator review." %}</p>
+
     {% if resend_attempted %}
       <div class="message info" role="status" style="margin-bottom: 1rem;">
-        {% translate "A fresh six-digit verification code has been sent to your email." %}
+        {% translate "If an application exists for that address, a fresh verification message has been sent. Please check your inbox and spam folder." %}
       </div>
     {% endif %}
 
@@ -19,7 +20,6 @@
       </div>
     {% endif %}
 
-    {% if token %}
     <div class="otp-verification-card">
       <h2 style="font-size: 1.15rem; margin-top: 0; margin-bottom: 0.5rem; color: var(--color-primary, #0f172a);">{% translate "Enter 6-digit verification code" %}</h2>
       {% if masked_email %}
@@ -27,12 +27,17 @@
           {% blocktranslate with email=masked_email %}Code sent to <strong>{{ email }}</strong>:{% endblocktranslate %}
         </p>
       {% endif %}
-      <form method="post" action="{% url 'staff_register_verify' token=token %}" data-progress="{% translate "Verifying…" %}">
+      <form method="post" action="{% if token %}{% url 'staff_register_verify' token=token %}{% else %}{% url 'staff_register_verify_session' %}{% endif %}" data-progress="{% translate "Verifying…" %}">
         {% csrf_token %}
+        {% if token %}<input type="hidden" name="token" value="{{ token }}">{% endif %}
+        {% if raw_email %}<input type="hidden" name="email" value="{{ raw_email }}">{% endif %}
         <div class="form-fields">
           <div class="form-field">
             <label for="id_otp_code">{% translate "Six-digit verification code" %}</label>
             <input type="text" name="code" id="id_otp_code" required minlength="6" maxlength="6" pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code" placeholder="123456" class="otp-input-field" autofocus>
+            <p class="field-help muted">
+              {% blocktranslate with minutes=expiry_minutes %}The code expires in {{ minutes }} minutes. It can only be used once.{% endblocktranslate %}
+            </p>
           </div>
         </div>
         <div class="form-actions" style="margin-top: 1.25rem;">
@@ -43,16 +48,17 @@
       <div style="margin-top: 1.25rem; text-align: center;">
         <form method="post" action="{% url 'staff_register_resend_email' %}" style="display: inline;">
           {% csrf_token %}
-          {% if raw_email %}<input type="hidden" name="email" value="{{ raw_email }}">{% elif masked_email %}<input type="hidden" name="email" value="{{ masked_email }}">{% endif %}
+          {% if raw_email %}<input type="hidden" name="email" value="{{ raw_email }}">{% endif %}
           <button type="submit" class="text-button" style="font-size: 0.875rem; color: var(--color-primary, #3b82f6); background: none; border: none; cursor: pointer; text-decoration: underline; padding: 0;">
             {% translate "Didn't receive the code? Resend code" %}
           </button>
         </form>
       </div>
     </div>
-    {% endif %}
 
     <div class="auth-foot">
+      <a class="back-link" href="{% url 'staff_registration_status' %}">{% translate "Check application status" %}</a>
+      <br>
       <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
     </div>
   </section>

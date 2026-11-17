@@ -51,6 +51,7 @@ ACTIVE_STATUSES = (
     StaffRegistrationRequest.Status.PENDING_REVIEW,
 )
 OTP_NOTIFICATION_KINDS = {"registration_otp"}
+STATUS_NOTIFICATION_KINDS = {"registration_status_link"}
 DECISION_NOTIFICATION_KINDS = {
     "registration_approved",
     "registration_declined",
@@ -181,7 +182,7 @@ def _issue_otp(request, *, base_url="", now=None):
         ]
     )
     supersede_notifications(
-        kinds=OTP_NOTIFICATION_KINDS,
+        kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS,
         registration_request=request,
         reason="A newer verification code replaced this one.",
     )
@@ -219,6 +220,41 @@ def _issue_otp(request, *, base_url="", now=None):
     return notification
 
 
+def _issue_status_link(request, *, base_url="", now=None):
+    """Email a single-use link that lets an applicant reopen their status page.
+
+    The link only binds the application to a new server-side session.  It does
+    not verify an address and does not reveal the application state to anyone
+    who merely knows the email address.
+    """
+    now = now or timezone.now()
+    supersede_notifications(
+        kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS,
+        registration_request=request,
+        reason="A newer status link replaced this one.",
+    )
+    base = _notification_base(base_url)
+    notification = enqueue_notification(
+        kind="registration_status_link",
+        recipient_email=request.applicant_email,
+        user_id=request.user_id,
+        registration_request=request,
+        dedupe_key=None,
+        language=request.language,
+        context={
+            "language": request.language,
+            "recipient_email": request.applicant_email,
+            "user_email": request.applicant_email,
+            "app_name": "SSDC Document Vault",
+            "status_url": status_url(request, base),
+            "verification_url": verification_url(request, base),
+            "expiry_hours": 24,
+        },
+    )
+    schedule_delivery(notification)
+    return notification
+
+
 def _expire_locked(request, *, now, base_url=""):
     if request.status not in ACTIVE_STATUSES:
         return False
@@ -238,7 +274,7 @@ def _expire_locked(request, *, now, base_url=""):
         ]
     )
     supersede_notifications(
-        kinds=OTP_NOTIFICATION_KINDS | DECISION_NOTIFICATION_KINDS,
+        kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS | DECISION_NOTIFICATION_KINDS,
         registration_request=request,
         reason="The registration expired.",
     )
@@ -253,6 +289,7 @@ def _expire_locked(request, *, now, base_url=""):
         context={
             "language": request.language,
             "status_url": status_url(request, base),
+            "reapply_url": base + "/accounts/register/",
             "registration_enabled": settings.STAFF_SELF_REGISTRATION_ENABLED,
         },
     )
@@ -276,8 +313,7 @@ def _eligible_for_reapplication(request):
     if request.status == StaffRegistrationRequest.Status.EXPIRED:
         return True
     return (
-        request.status == StaffRegistrationRequest.Status.DECLINED
-        and request.reapplication_allowed
+        request.status == StaffRegistrationRequest.Status.DECLINED and request.reapplication_allowed
     )
 
 
@@ -321,7 +357,9 @@ def register_applicant(*, email, password, language="en", base_url=""):
             if user.is_active or not _eligible_for_reapplication(latest):
                 return RegistrationResult(None, False)
             supersede_notifications(
-                kinds=OTP_NOTIFICATION_KINDS | DECISION_NOTIFICATION_KINDS,
+                kinds=OTP_NOTIFICATION_KINDS
+                | STATUS_NOTIFICATION_KINDS
+                | DECISION_NOTIFICATION_KINDS,
                 user=user,
                 reason="A new application superseded earlier messages.",
             )
@@ -384,11 +422,7 @@ def register_applicant(*, email, password, language="en", base_url=""):
 
 
 def _lock_registration(request):
-    row = (
-        StaffRegistrationRequest.objects.filter(pk=request.pk)
-        .values("user_id")
-        .first()
-    )
+    row = StaffRegistrationRequest.objects.filter(pk=request.pk).values("user_id").first()
     if row is None:
         return None, None
     user = User.objects.select_for_update().filter(pk=row["user_id"]).first()
@@ -436,7 +470,9 @@ def _dummy_constant_time_work():
     # Mitigates timing-based applicant existence probing by mimicking crypto hashing operations
     dummy_token = secrets.token_urlsafe(32)
     hashlib.sha256(dummy_token.encode("ascii")).hexdigest()
-    hmac.new(settings.SECRET_KEY.encode(), b"staff_registration_otp:dummy:000000", hashlib.sha256).hexdigest()
+    hmac.new(
+        settings.SECRET_KEY.encode(), b"staff_registration_otp:dummy:000000", hashlib.sha256
+    ).hexdigest()
 
 
 def resend_registration_for_email(email, *, base_url=""):
@@ -477,6 +513,26 @@ def resend_registration_for_email(email, *, base_url=""):
             return ResendResult("not_pending")
 
         # Mitigates registration harassment via cooldown: 1 email per resend window and 5 per 24 hours
+        now = timezone.now()
+        cooldown = timedelta(seconds=settings.STAFF_REGISTRATION_OTP_RESEND_SECONDS)
+        if request.status == StaffRegistrationRequest.Status.EMAIL_PENDING:
+            if request.otp_sent_at and now < request.otp_sent_at + cooldown:
+                return ResendResult("sent")
+            recent_codes = EmailNotification.objects.filter(
+                registration_request=request,
+                kind="registration_otp",
+                created_at__gte=now - timedelta(hours=1),
+            ).count()
+            if recent_codes >= settings.STAFF_REGISTRATION_OTP_HOURLY_LIMIT:
+                return ResendResult("sent")
+        else:
+            latest = (
+                EmailNotification.objects.filter(registration_request=request)
+                .order_by("-created_at", "-pk")
+                .first()
+            )
+            if latest and now < latest.created_at + cooldown:
+                return ResendResult("sent")
         if not allow_rate(
             "staff-registration-resend-cooldown",
             str(request.pk),
@@ -487,7 +543,12 @@ def resend_registration_for_email(email, *, base_url=""):
         if not allow_rate("staff-registration-resend-24hr", str(request.pk), 5, seconds=86400):
             return ResendResult("sent")
 
-        notification = _issue_otp(request, base_url=base_url)
+        if request.status == StaffRegistrationRequest.Status.EMAIL_PENDING:
+            notification = _issue_otp(request, base_url=base_url)
+        else:
+            # Already verified or decided: the applicant needs a secure way to
+            # reopen the status page, not another unusable verification code.
+            notification = _issue_status_link(request, base_url=base_url)
         return ResendResult("sent", notification)
 
 
@@ -562,7 +623,7 @@ def verify_registration_otp(request, code, *, ip=None, now=None):
             ]
         )
         supersede_notifications(
-            kinds=OTP_NOTIFICATION_KINDS,
+            kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS,
             registration_request=locked,
             reason="The verification code was used.",
         )
@@ -578,20 +639,12 @@ def verify_registration_otp(request, code, *, ip=None, now=None):
 
 
 def _require_admin(actor):
-    if (
-        actor is None
-        or not getattr(actor, "is_authenticated", False)
-        or not actor.is_portal_admin
-    ):
+    if actor is None or not getattr(actor, "is_authenticated", False) or not actor.is_portal_admin:
         raise PermissionDenied("Administrator permission is required.")
 
 
 def _locked_review_request(request_id):
-    row = (
-        StaffRegistrationRequest.objects.filter(pk=request_id)
-        .values("user_id")
-        .first()
-    )
+    row = StaffRegistrationRequest.objects.filter(pk=request_id).values("user_id").first()
     if row is None:
         return None, None
     user = User.objects.select_for_update().filter(pk=row["user_id"]).first()
@@ -674,7 +727,7 @@ def approve_registration(request_id, actor, *, note="", base_url=""):
             ]
         )
         supersede_notifications(
-            kinds=DECISION_NOTIFICATION_KINDS,
+            kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS | DECISION_NOTIFICATION_KINDS,
             registration_request=request,
             reason="A newer approval decision superseded this message.",
         )
@@ -751,7 +804,7 @@ def decline_registration(
             ]
         )
         supersede_notifications(
-            kinds=DECISION_NOTIFICATION_KINDS,
+            kinds=OTP_NOTIFICATION_KINDS | STATUS_NOTIFICATION_KINDS | DECISION_NOTIFICATION_KINDS,
             registration_request=request,
             reason="A newer decline decision superseded this message.",
         )
@@ -765,8 +818,10 @@ def decline_registration(
             language=request.language,
             context={
                 "language": request.language,
+                "note": request.review_note,
                 "reapplication_allowed": request.reapplication_allowed,
                 "register_url": base + "/accounts/register/",
+                "reapply_url": base + "/accounts/register/",
             },
         )
         schedule_delivery(notification)
@@ -807,6 +862,7 @@ def allow_reapplication(request_id, actor, *, base_url=""):
             context={
                 "language": request.language,
                 "register_url": base + "/accounts/register/",
+                "reapply_url": base + "/accounts/register/",
             },
         )
         schedule_delivery(notification)
@@ -832,7 +888,7 @@ def expire_registration(request_id, *, now=None, base_url=""):
         return _expire_locked(request, now=now, base_url=base_url)
 
 
-def expire_due_registrations(*, now=None, limit=100, base_url=""):
+def expire_due_registrations(*, now=None, limit=100, base_url="", dry_run=False):
     """Expire applications whose email or review window has elapsed."""
     now = now or timezone.now()
     email_cutoff = now - timedelta(days=settings.STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS)
@@ -851,6 +907,8 @@ def expire_due_registrations(*, now=None, limit=100, base_url=""):
         .order_by("created_at", "pk")
         .values_list("pk", flat=True)[:limit]
     )
+    if dry_run:
+        return len(candidates)
     expired = 0
     for request_id in candidates:
         if expire_registration(request_id, now=now, base_url=base_url):

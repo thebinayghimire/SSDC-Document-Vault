@@ -19,7 +19,9 @@ def hash_token(raw_token: str) -> str:
     return hashlib.sha256(raw_token.strip().encode("ascii", errors="ignore")).hexdigest()
 
 
-def create_registration_token(registration: StaffRegistrationRequest, *, lifetime_hours: int = 24) -> str:
+def create_registration_token(
+    registration: StaffRegistrationRequest, *, lifetime_hours: int = 24
+) -> str:
     """Generate a high-entropy random token and persist its SHA-256 hash."""
     # Mitigates token prediction and brute-force attacks via 256-bit cryptographically secure random secret
     raw_token = secrets.token_urlsafe(32)
@@ -50,25 +52,43 @@ def registration_token(registration: StaffRegistrationRequest) -> str:
     return token
 
 
+def registration_for_token(raw_token: str) -> StaffRegistrationRequest | None:
+    """Return the registration behind a valid, unconsumed link token.
+
+    The token proves control of the mailbox, but it is never sufficient to mark
+    an address verified.  OTP verification alone performs that transition.
+    """
+    if not raw_token or not isinstance(raw_token, str):
+        return None
+    token_hash = hash_token(raw_token)
+    now = timezone.now()
+    token_record = (
+        StaffRegistrationToken.objects.select_related("registration", "registration__user")
+        .filter(token_hash=token_hash)
+        .first()
+    )
+    if token_record is None or token_record.used_at is not None:
+        return None
+    if token_record.expires_at <= now:
+        return None
+    return token_record.registration
+
+
 def validate_registration_token(raw_token: str) -> bool:
     """Read-only check of token validity without consuming or altering database state.
 
     Mitigates email security scanner prefetch consumption breaking human verification (Phase 2.1 Item 1).
     """
-    if not raw_token or not isinstance(raw_token, str):
-        return False
-    token_hash = hash_token(raw_token)
-    now = timezone.now()
-    token_record = StaffRegistrationToken.objects.filter(token_hash=token_hash).first()
-    if token_record is None or token_record.used_at is not None or token_record.expires_at <= now:
-        return False
-    return True
+    return registration_for_token(raw_token) is not None
 
 
 def consume_registration_token(raw_token: str) -> StaffRegistrationRequest | None:
-    """Atomically validate, expire, and consume a registration verification token.
+    """Atomically consume a link token without changing verification state.
 
-    Mitigates token replay attacks via select_for_update row locking and used_at tracking.
+    Email verification is deliberately performed only by
+    ``verify_registration_otp``.  This function is used to prove mailbox control
+    for status access and to retire a link after the OTP succeeds, not to grant
+    the verified state itself.
     """
     if not raw_token or not isinstance(raw_token, str):
         return None
@@ -83,37 +103,15 @@ def consume_registration_token(raw_token: str) -> StaffRegistrationRequest | Non
             .first()
         )
         if token_record is None:
-            # Token does not exist or was an old signed token
             return None
         if token_record.used_at is not None:
-            # Token has already been consumed
             return None
         if token_record.expires_at <= now:
-            # Token has expired
             return None
 
-        # Mark token consumed
         token_record.used_at = now
         token_record.save(update_fields=["used_at"])
-
-        registration = token_record.registration
-        if registration.status == StaffRegistrationRequest.Status.EMAIL_PENDING:
-            registration.status = StaffRegistrationRequest.Status.PENDING_REVIEW
-            registration.email_verified_at = now
-            registration.otp_digest = ""
-            registration.otp_expires_at = None
-            registration.otp_attempts = 0
-            registration.save(
-                update_fields=[
-                    "status",
-                    "email_verified_at",
-                    "otp_digest",
-                    "otp_expires_at",
-                    "otp_attempts",
-                    "updated_at",
-                ]
-            )
-        return registration
+        return token_record.registration
 
 
 def load_registration(token: str) -> StaffRegistrationRequest | None:

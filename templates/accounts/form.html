@@ -5,7 +5,7 @@
   {% if request.user.is_authenticated %}<nav class="breadcrumb" aria-label="{% translate "Breadcrumb" %}"><a href="{% url 'library' %}">{% translate "Document library" %}</a>{% include "components/icon.html" with name="chevron" %}<span aria-current="page">{% translate "Account security" %}</span></nav>{% endif %}
   <section class="{% if request.user.is_authenticated %}form-panel account-panel{% else %}auth-card{% endif %}"
            aria-labelledby="security-heading">
-    {% if not request.user.is_authenticated %}<div class="auth-brand"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>{% endif %}
+    {% if not request.user.is_authenticated %}<div class="auth-brand"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>{% endif %}
     <span class="eyebrow">{% translate "Account security" %}</span>
     <h1 id="security-heading">{% translate title %}</h1>
     <p class="muted">{% if request.resolver_match.url_name == "password_change" %}{% translate "Choose a strong password you haven’t used elsewhere." %}{% elif request.resolver_match.url_name == "reauthenticate" %}{% translate "Confirm your credentials to continue with administrative actions." %}{% else %}{% translate "Enter a code from your authenticator app, or use a recovery code." %}{% endif %}</p>

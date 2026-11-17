@@ -92,9 +92,7 @@ def _legacy_collision(normalized, *, exclude_user_pk=None, using=None):
     return rows.exists()
 
 
-def _assert_address_available(
-    locked_user, normalized, *, using, exclude_change_request_pk=None
-):
+def _assert_address_available(locked_user, normalized, *, using, exclude_change_request_pk=None):
     other = (
         EmailClaim.objects.using(using)
         .select_for_update()

@@ -49,7 +49,7 @@ def safe_admin_destination(request, destination, fallback=None):
 
 
 def portal_home(user):
-    return reverse("admin:index" if user.is_portal_admin else "staff_portal")
+    return reverse("library" if user.is_portal_admin else "staff_portal")
 
 
 def safe_portal_destination(request, destination):
@@ -69,7 +69,15 @@ def safe_portal_destination(request, destination):
         return (
             safe_admin_destination(request, candidate) if request.user.is_portal_admin else fallback
         )
-    allowed = {"library", "folder", "preview", "content", "thumbnail", "password_change", "email_change"}
+    allowed = {
+        "library",
+        "folder",
+        "preview",
+        "content",
+        "thumbnail",
+        "password_change",
+        "email_change",
+    }
     if not request.user.is_portal_admin:
         allowed.add("staff_portal")
     if request.user.can_manage:

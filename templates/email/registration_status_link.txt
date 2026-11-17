@@ -1,0 +1,9 @@
+{% load i18n %}{% firstof app_name 'SSDC Document Vault' as app_name %}{% firstof user_name 'there' as user_name %}{% firstof expiry_hours 24 as expiry_hours %}{% blocktranslate with hours=expiry_hours %}Hi {{ user_name }},
+
+Use the secure link below to open the current status of your SSDC Document Vault staff registration application:
+
+{{ verification_url }}
+
+This link can only be used once and expires in {{ hours }} hours. It does not verify your email address or sign you in.
+
+If you did not request this message, you can ignore it. Your application has not changed.{% endblocktranslate %}

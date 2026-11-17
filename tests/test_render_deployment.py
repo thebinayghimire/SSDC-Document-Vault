@@ -70,6 +70,7 @@ def test_database_url_uses_ssl_and_persistent_connections():
         {
             "APP_ENV": "development",
             "DEBUG": "0",
+            "ALLOW_INSECURE_COOKIES": "0",
             "DATABASE_URL": "postgresql://render:password@db.example.test:5432/vault",
         }
     )
@@ -101,6 +102,7 @@ def test_neon_unpooled_url_is_preferred_for_session_advisory_locks():
         {
             "APP_ENV": "development",
             "DEBUG": "0",
+            "ALLOW_INSECURE_COOKIES": "0",
             "DATABASE_URL": "postgresql://pooled:password@pooled.example.test:5432/vault",
             "DATABASE_URL_UNPOOLED": (
                 "postgresql://direct:password@direct.example.test:5432/vault"

@@ -16,7 +16,7 @@ pytestmark = pytest.mark.django_db
 @pytest.mark.parametrize(
     ("account", "password", "destination"),
     [
-        ("admin", "Strong-Admin-Password-42", "/admin/"),
+        ("admin", "Strong-Admin-Password-42", "/"),
         ("alice", "Strong-Staff-Password-42", "/staff/"),
         ("manager", "Strong-Manager-Password-42", "/staff/"),
     ],
@@ -35,7 +35,7 @@ def test_shared_sign_in_uses_server_account_role(
 @pytest.mark.parametrize(
     ("portal", "account", "password", "allowed", "destination"),
     [
-        ("admin", "admin", "Strong-Admin-Password-42", True, "/admin/"),
+        ("admin", "admin", "Strong-Admin-Password-42", True, "/"),
         ("staff", "alice", "Strong-Staff-Password-42", True, "/staff/"),
         ("staff", "manager", "Strong-Manager-Password-42", True, "/staff/"),
         ("admin", "alice", "Strong-Staff-Password-42", False, None),
@@ -121,7 +121,7 @@ def test_portal_boundaries_and_staff_controls(client, users, document):
     assert client.post("/documents/import/", {}).status_code == 404
     assert client.get(f"/documents/{document.pk}/manage/").status_code == 404
     authenticate_client(client, users["admin"])
-    assert client.get("/staff/").url == "/admin/"
+    assert client.get("/staff/").url == "/"
 
 
 @pytest.mark.parametrize(("account", "portal"), [("alice", "staff"), ("admin", "admin")])
@@ -152,13 +152,17 @@ def test_admin_logout_uses_the_same_session_revocation(client, users):
 
 def test_session_status_is_private_and_obeys_revocation(client, users):
     response = client.get("/accounts/session/")
-    assert response.json() == {"authenticated": False, "marker": "", "home_url": "/accounts/login/"}
+    assert response.json() == {
+        "authenticated": False,
+        "account_tag": None,
+        "home_url": "/accounts/login/",
+    }
     assert "no-store" in response["Cache-Control"]
     authenticate_client(client, users["alice"])
     response = client.get("/accounts/session/")
     assert response.json()["authenticated"]
     assert response.json()["home_url"] == "/staff/"
-    assert response.json()["marker"] in client.get("/staff/").content.decode()
+    assert response.json()["account_tag"] in client.get("/staff/").content.decode()
     users["alice"].role = "manager"
     users["alice"].save(update_fields=["role"])
     assert not client.get("/accounts/session/").json()["authenticated"]
@@ -189,5 +193,61 @@ def test_mfa_enrollment_continues_to_correct_portal(client, users):
     secret = decrypt(client.session["enrollment_secret"])
     response = client.post("/accounts/mfa/enroll/", {"code": pyotp.TOTP(secret).now()})
     assert response.status_code == 200
-    assert response.context["continue_url"] == "/admin/"
+    assert response.context["continue_url"] == "/"
     assert client.session["mfa_verified"]
+
+
+def test_authenticated_admin_visiting_staff_login_terminates_session(client, users):
+    authenticate_client(client, users["admin"])
+    assert client.session.get("_auth_user_id")
+
+    response = client.get("/accounts/staff/login/?next=%2Fstaff%2F")
+    assert response.status_code == 302
+    assert response.url == "/accounts/staff/login/?next=%2Fstaff%2F"
+    assert "_auth_user_id" not in client.session
+    assert not client.get("/accounts/session/").json()["authenticated"]
+
+    # Follow redirect and verify staff login form is shown with flash message
+    follow_response = client.get(response.url)
+    assert follow_response.status_code == 200
+    assert "Staff sign in" in follow_response.content.decode()
+    assert (
+        "You were signed out of the administrator account to access Staff sign in."
+        in follow_response.content.decode()
+    )
+    assert Event.objects.filter(kind="logout", actor=users["admin"]).exists()
+
+
+def test_authenticated_staff_visiting_admin_login_terminates_session(client, users):
+    authenticate_client(client, users["alice"])
+    assert client.session.get("_auth_user_id")
+
+    response = client.get("/accounts/admin/login/")
+    assert response.status_code == 302
+    assert response.url == "/accounts/admin/login/"
+    assert "_auth_user_id" not in client.session
+    assert not client.get("/accounts/session/").json()["authenticated"]
+
+    # Follow redirect and verify admin login form is shown with flash message
+    follow_response = client.get(response.url)
+    assert follow_response.status_code == 200
+    assert "Admin sign in" in follow_response.content.decode()
+    assert (
+        "You were signed out of the staff account to access Admin sign in."
+        in follow_response.content.decode()
+    )
+    assert Event.objects.filter(kind="logout", actor=users["alice"]).exists()
+
+
+def test_authenticated_user_visiting_matching_portal_login_redirects_home(client, users):
+    authenticate_client(client, users["admin"])
+    admin_response = client.get("/accounts/admin/login/")
+    assert admin_response.status_code == 302
+    assert admin_response.url == "/"
+    assert client.session.get("_auth_user_id")
+
+    authenticate_client(client, users["alice"])
+    staff_response = client.get("/accounts/staff/login/")
+    assert staff_response.status_code == 302
+    assert staff_response.url == "/staff/"
+    assert client.session.get("_auth_user_id")

@@ -104,6 +104,7 @@ INSTALLED_APPS = [
 ]
 MIDDLEWARE = [
     "config.middleware.RequestReferenceMiddleware",
+    "config.middleware.NullOriginMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "config.middleware.MaintenanceMiddleware",
@@ -131,6 +132,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "config.context_processors.feature_flags",
+                "config.context_processors.account_tag",
             ]
         },
     }
@@ -195,8 +197,27 @@ SESSION_COOKIE_HTTPONLY = True
 # Owner OAuth returns through a top-level cross-site GET; CSRF remains mandatory on writes.
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Strict"
-SESSION_COOKIE_SECURE = PRODUCTION
-CSRF_COOKIE_SECURE = PRODUCTION
+# Mitigates cleartext credential leakage, cookie-tossing, and session hijacking
+# Secure cookies and __Host- prefix are enforced by default; disabling requires explicit local-only flags
+ALLOW_INSECURE_COOKIES = os.getenv("ALLOW_INSECURE_COOKIES", "0")
+if ALLOW_INSECURE_COOKIES == "1":
+    local_hosts = {"localhost", "127.0.0.1", "::1", "[::1]", "testserver"}
+    if not (DEBUG and all(h in local_hosts for h in ALLOWED_HOSTS)):
+        raise ImproperlyConfigured(
+            "ALLOW_INSECURE_COOKIES=1 is only permitted when DEBUG=1 and ALLOWED_HOSTS is limited to localhost/127.0.0.1"
+        )
+    SESSION_COOKIE_SECURE = False
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_NAME = "sessionid"
+elif ALLOW_INSECURE_COOKIES == "0":
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_NAME = "__Host-sessionid"
+else:
+    raise ImproperlyConfigured("ALLOW_INSECURE_COOKIES must be 0 or 1")
+
+SESSION_COOKIE_PATH = "/"
+SESSION_COOKIE_DOMAIN = None
 SESSION_COOKIE_AGE = positive_int("SESSION_ABSOLUTE_SECONDS", 28800, 86400)
 SESSION_IDLE_SECONDS = positive_int("SESSION_IDLE_SECONDS", 1800, SESSION_COOKIE_AGE)
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
@@ -213,6 +234,20 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 CSRF_TRUSTED_ORIGINS = [
     origin.strip() for origin in os.getenv("CSRF_TRUSTED_ORIGINS", "").split(",") if origin.strip()
 ]
+if not PRODUCTION:
+    for dev_origin in [
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "http://[::1]:8000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+        "http://localhost:8080",
+        "http://127.0.0.1:8080",
+    ]:
+        if dev_origin not in CSRF_TRUSTED_ORIGINS:
+            CSRF_TRUSTED_ORIGINS.append(dev_origin)
 if RENDER_EXTERNAL_HOSTNAME:
     render_origin = f"https://{RENDER_EXTERNAL_HOSTNAME}"
     if render_origin not in CSRF_TRUSTED_ORIGINS:
@@ -224,6 +259,8 @@ MFA_ENABLED = PRODUCTION or os.getenv("MFA_ENABLED", "1") == "1"
 STAFF_SELF_REGISTRATION_ENABLED = env_flag("STAFF_SELF_REGISTRATION_ENABLED", False)
 EMAIL_LOGIN_ENABLED = env_flag("EMAIL_LOGIN_ENABLED", False)
 SELF_REGISTERED_EMAIL_CHANGE_ENABLED = env_flag("SELF_REGISTERED_EMAIL_CHANGE_ENABLED", False)
+# Used by management commands that build links outside a request context.
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "").rstrip("/")
 # Locmem keeps offline tests deterministic and prevents accidental real delivery.
 # Configurable via EMAIL_BACKEND (e.g., console or smtp backend) outside of tests.
 if ENVIRONMENT == "test":
@@ -234,38 +271,33 @@ EMAIL_DELIVERY_ENABLED = env_flag("EMAIL_DELIVERY_ENABLED", False)
 EMAIL_HOST = os.getenv("EMAIL_HOST", "localhost")
 EMAIL_PORT = int(os.getenv("EMAIL_PORT", "587"))
 EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
-EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+EMAIL_HOST_PASSWORD_FILE = os.getenv("EMAIL_HOST_PASSWORD_FILE", "")
+if EMAIL_HOST_PASSWORD_FILE:
+    try:
+        EMAIL_HOST_PASSWORD = Path(EMAIL_HOST_PASSWORD_FILE).read_text(encoding="utf-8").strip()
+    except OSError as exc:
+        raise ImproperlyConfigured("EMAIL_HOST_PASSWORD_FILE could not be read") from exc
+else:
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
 EMAIL_USE_TLS = env_flag("EMAIL_USE_TLS", True)
 EMAIL_USE_SSL = env_flag("EMAIL_USE_SSL", False)
 EMAIL_TIMEOUT = positive_int("EMAIL_TIMEOUT", 10, 60)
-DEFAULT_FROM_EMAIL = os.getenv(
-    "EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>"
-)
+DEFAULT_FROM_EMAIL = os.getenv("EMAIL_FROM_ADDRESS", "SSDC Document Vault <no-reply@localhost>")
 STAFF_REGISTRATION_OTP_MINUTES = positive_int("STAFF_REGISTRATION_OTP_MINUTES", 10, 60)
-STAFF_REGISTRATION_OTP_MAX_ATTEMPTS = positive_int(
-    "STAFF_REGISTRATION_OTP_MAX_ATTEMPTS", 5, 20
-)
+STAFF_REGISTRATION_OTP_MAX_ATTEMPTS = positive_int("STAFF_REGISTRATION_OTP_MAX_ATTEMPTS", 5, 20)
 STAFF_REGISTRATION_OTP_RESEND_SECONDS = positive_int(
     "STAFF_REGISTRATION_OTP_RESEND_SECONDS", 60, 3600
 )
-STAFF_REGISTRATION_OTP_HOURLY_LIMIT = positive_int(
-    "STAFF_REGISTRATION_OTP_HOURLY_LIMIT", 5, 50
-)
+STAFF_REGISTRATION_OTP_HOURLY_LIMIT = positive_int("STAFF_REGISTRATION_OTP_HOURLY_LIMIT", 5, 50)
 STAFF_REGISTRATION_IP_LIMIT = positive_int("STAFF_REGISTRATION_IP_LIMIT", 20, 1000)
-STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS = positive_int(
-    "STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS", 3, 30
-)
+STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS = positive_int("STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS", 3, 30)
 STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS = positive_int(
     "STAFF_REGISTRATION_REVIEW_EXPIRY_DAYS", 30, 365
 )
-STAFF_REGISTRATION_LINK_MAX_AGE_DAYS = positive_int(
-    "STAFF_REGISTRATION_LINK_MAX_AGE_DAYS", 30, 365
-)
+STAFF_REGISTRATION_LINK_MAX_AGE_DAYS = positive_int("STAFF_REGISTRATION_LINK_MAX_AGE_DAYS", 30, 365)
 EMAIL_CHANGE_OTP_MINUTES = positive_int("EMAIL_CHANGE_OTP_MINUTES", 10, 60)
 EMAIL_CHANGE_OTP_MAX_ATTEMPTS = positive_int("EMAIL_CHANGE_OTP_MAX_ATTEMPTS", 5, 20)
-EMAIL_CHANGE_OTP_RESEND_SECONDS = positive_int(
-    "EMAIL_CHANGE_OTP_RESEND_SECONDS", 60, 3600
-)
+EMAIL_CHANGE_OTP_RESEND_SECONDS = positive_int("EMAIL_CHANGE_OTP_RESEND_SECONDS", 60, 3600)
 EMAIL_CHANGE_OTP_HOURLY_LIMIT = positive_int("EMAIL_CHANGE_OTP_HOURLY_LIMIT", 5, 50)
 EMAIL_CHANGE_EXPIRY_DAYS = positive_int("EMAIL_CHANGE_EXPIRY_DAYS", 3, 30)
 EMAIL_NOTIFICATION_MAX_ATTEMPTS = positive_int("EMAIL_NOTIFICATION_MAX_ATTEMPTS", 5, 20)
@@ -275,9 +307,7 @@ EMAIL_NOTIFICATION_BACKOFF_BASE_SECONDS = positive_int(
 EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS = positive_int(
     "EMAIL_NOTIFICATION_BACKOFF_MAX_SECONDS", 3600, 86400
 )
-EMAIL_NOTIFICATION_LEASE_SECONDS = positive_int(
-    "EMAIL_NOTIFICATION_LEASE_SECONDS", 900, 86400
-)
+EMAIL_NOTIFICATION_LEASE_SECONDS = positive_int("EMAIL_NOTIFICATION_LEASE_SECONDS", 900, 86400)
 MAX_UPLOAD_BYTES = positive_int("MAX_UPLOAD_BYTES", 25 * 1024 * 1024, 100 * 1024 * 1024)
 MAX_STORAGE_BYTES = positive_int("MAX_STORAGE_BYTES", 10 * 1024**3, 100 * 1024**4)
 MAX_IMAGE_PIXELS = positive_int("MAX_IMAGE_PIXELS", 20000000, 50000000)

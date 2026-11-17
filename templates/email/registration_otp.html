@@ -1,16 +1,179 @@
-{% load i18n %}<!DOCTYPE html>
-<html lang="{{ request.LANGUAGE_CODE|default:'en' }}">
-<head><meta charset="utf-8"><title>{% translate "Verify your email" %}</title></head>
-<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; color: #1e293b; padding: 20px;">
-  <div style="max-width: 560px; margin: 0 auto; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 32px;">
-    <h2 style="margin-top: 0; color: #0f172a;">SSDC <span style="font-weight: normal; color: #64748b;">{% translate "Document Vault" %}</span></h2>
-    <p>{% translate "A request was made to register a staff account for SSDC Document Vault using this email address." %}</p>
-    <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 16px; text-align: center; margin: 24px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 6px; font-family: monospace; color: #0f172a;">{{ otp }}</span>
-    </div>
-    <p>{% blocktranslate %}This code expires in {{ expiry_minutes }} minutes.{% endblocktranslate %}</p>
-    <p><a href="{{ verification_url }}" style="display: inline-block; background: #2563eb; color: #ffffff; padding: 10px 20px; border-radius: 6px; text-decoration: none; font-weight: 500;">{% translate "Verify Email Address" %}</a></p>
-    <p style="font-size: 13px; color: #64748b; margin-top: 24px;">{% translate "If you did not initiate this request, no action is needed. Do not share this code with anyone." %}</p>
+{% load i18n %}{% firstof otp_code otp as otp_code %}{% firstof app_name 'SSDC Document Vault' as app_name %}{% firstof user_name 'there' as user_name %}{% firstof purpose 'complete your staff registration' as purpose %}{% firstof expiry_minutes 10 as expiry_minutes %}{% firstof accent '#3D5AFE' as accent %}{% firstof year 2026 as year %}<!DOCTYPE html>
+<html lang="{{ request.LANGUAGE_CODE|default:'en' }}" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="color-scheme" content="light dark">
+  <meta name="supported-color-schemes" content="light dark">
+  <meta name="format-detection" content="telephone=no, date=no, address=no, email=no">
+  <title>{{ otp_code }} is your {{ app_name }} code</title>
+
+  <!--[if mso]>
+  <noscript><xml><o:OfficeDocumentSettings><o:PixelsPerInch>96</o:PixelsPerInch></o:OfficeDocumentSettings></xml></noscript>
+  <style>
+    table, td, div, h1, p { font-family: Arial, sans-serif !important; }
+  </style>
+  <![endif]-->
+
+  <!--[if !mso]><!-->
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@600&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+  <!--<![endif]-->
+
+  <style>
+    :root { color-scheme: light dark; supported-color-schemes: light dark; }
+    body { margin: 0; padding: 0; width: 100% !important; -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
+    img { border: 0; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+
+    /* Small screens */
+    @media only screen and (max-width: 560px) {
+      .card-pad { padding: 28px 22px 26px 22px !important; }
+      .h1 { font-size: 24px !important; line-height: 30px !important; }
+      .code-digits { font-size: 32px !important; line-height: 40px !important; letter-spacing: 8px !important; padding-left: 8px !important; }
+    }
+
+    /* Dark mode: Apple Mail, iOS Mail, Outlook for Mac/iOS, Samsung Mail */
+    @media (prefers-color-scheme: dark) {
+      .bg-page { background-color: #0C0D12 !important; }
+      .bg-card { background-color: #161823 !important; border-color: #262A3B !important; }
+      .t-head { color: #F2F3F8 !important; }
+      .t-body { color: #B4B8CB !important; }
+      .t-muted { color: #8087A0 !important; }
+      .divider { border-color: #262A3B !important; }
+      .code-panel { background-color: #252A47 !important; }
+      .link { color: #9AA8FF !important; }
+    }
+
+    /* Dark mode: Outlook.com / new Outlook */
+    [data-ogsb] .bg-page { background-color: #0C0D12 !important; }
+    [data-ogsb] .bg-card { background-color: #161823 !important; }
+    [data-ogsb] .code-panel { background-color: #252A47 !important; }
+    [data-ogsc] .t-head { color: #F2F3F8 !important; }
+    [data-ogsc] .t-body { color: #B4B8CB !important; }
+    [data-ogsc] .t-muted { color: #8087A0 !important; }
+    [data-ogsc] .link { color: #9AA8FF !important; }
+  </style>
+</head>
+
+<body class="bg-page" style="margin:0;padding:0;background-color:#ECEFF4;">
+
+  <!-- Preheader: the grey preview text shown next to the subject in the inbox -->
+  <div style="display:none;font-size:1px;line-height:1px;max-height:0;max-width:0;opacity:0;overflow:hidden;mso-hide:all;">
+    Your {{ app_name }} code is {{ otp_code }}. It expires in {{ expiry_minutes }} minutes.
+    &zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;&zwnj;&nbsp;
   </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="bg-page" bgcolor="#ECEFF4" style="background-color:#ECEFF4;">
+    <tr>
+      <td align="center" style="padding:32px 16px 40px 16px;">
+
+        <!--[if mso]><table role="presentation" width="520" align="center" cellpadding="0" cellspacing="0" border="0"><tr><td><![endif]-->
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:520px;">
+
+          <!-- Brand -->
+          <tr>
+            <td style="padding:0 4px 20px 4px;">
+              <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <!--
+                    To use a real logo, replace this cell with:
+                    <td><img src="https://yourdomain.com/logo.png" width="120" alt="{{ app_name }}" style="display:block;height:auto;"></td>
+                    (Many clients block remote images by default, so the text mark below is the safe fallback.)
+                  -->
+                  <td width="32" height="32" align="center" valign="middle" bgcolor="{{ accent }}" style="width:32px;height:32px;background-color:{{ accent }};border-radius:9px;color:#FFFFFF;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:32px;font-weight:800;">{{ app_name|slice:":1"|upper }}</td>
+                  <td class="t-head" style="padding-left:10px;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:16px;line-height:32px;font-weight:800;color:#12141C;">{{ app_name }}</td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Card -->
+          <tr>
+            <td class="bg-card" bgcolor="#FFFFFF" style="background-color:#FFFFFF;border:1px solid #DDE1EA;border-radius:18px;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="card-pad" style="padding:40px 40px 36px 40px;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;">
+
+                    <h1 class="h1 t-head" style="margin:0 0 12px 0;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:28px;line-height:34px;font-weight:800;letter-spacing:-0.02em;color:#12141C;">Here&rsquo;s your code</h1>
+
+                    <p class="t-body" style="margin:0 0 28px 0;font-size:16px;line-height:25px;font-weight:400;color:#4A4F63;">
+                      Hi {{ user_name }}, enter this code in {{ app_name }} to {{ purpose }}.
+                    </p>
+
+                    <p class="t-body" style="margin:0 0 24px 0;font-size:15px;line-height:23px;font-weight:400;color:#4A4F63;">
+                      {% translate "Opening the link alone does not verify your email address. You must enter the six-digit code to finish your registration." %}
+                    </p>
+
+                    <!-- The code. One text node (not one box per digit) so a double-tap selects all of it. -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td class="code-panel" align="center" bgcolor="#12141C" style="background-color:#12141C;border-radius:14px;padding:30px 16px 26px 16px;">
+                          <div class="code-digits" style="font-family:'JetBrains Mono',ui-monospace,SFMono-Regular,Menlo,Consolas,'Liberation Mono',monospace;font-size:40px;line-height:48px;font-weight:600;letter-spacing:12px;padding-left:12px;color:#FFFFFF;-webkit-user-select:all;user-select:all;mso-line-height-rule:exactly;">{{ otp_code }}</div>
+                          <div style="margin-top:14px;font-size:13px;line-height:18px;font-weight:600;color:#A8B0D6;">
+                            Single use. Expires in {{ expiry_minutes }} minutes.
+                          </div>
+                        </td>
+                      </tr>
+                    </table>
+
+                    {% if verification_url %}
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                      <tr>
+                        <td align="center">
+                          <a href="{{ verification_url }}" style="display:inline-block;background-color:{{ accent }};color:#FFFFFF;padding:12px 28px;border-radius:10px;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;">{% translate "Enter verification code" %}</a>
+                        </td>
+                      </tr>
+                    </table>
+                    {% elif change_url %}
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:24px;">
+                      <tr>
+                        <td align="center">
+                          <a href="{{ change_url }}" style="display:inline-block;background-color:{{ accent }};color:#FFFFFF;padding:12px 28px;border-radius:10px;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:15px;font-weight:700;text-decoration:none;">Confirm Email Change</a>
+                        </td>
+                      </tr>
+                    </table>
+                    {% endif %}
+
+                    <!-- Security notes -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:32px;">
+                      <tr>
+                        <td class="divider" style="border-top:1px solid #E6E9F0;padding-top:24px;">
+                          <p class="t-body" style="margin:0 0 14px 0;font-size:14px;line-height:22px;color:#4A4F63;">
+                            <strong class="t-head" style="color:#12141C;font-weight:800;">Didn&rsquo;t request this?</strong>
+                            You can ignore this email. If you keep getting codes you didn&rsquo;t ask for, change your password.
+                            {% if security_url %}
+                            <a class="link" href="{{ security_url }}" style="color:{{ accent }};font-weight:800;text-decoration:underline;">Secure your account</a>.
+                            {% endif %}
+                          </p>
+                          <p class="t-body" style="margin:0;font-size:14px;line-height:22px;color:#4A4F63;">
+                            <strong class="t-head" style="color:#12141C;font-weight:800;">Keep it private.</strong>
+                            {{ app_name }} will never ask you for this code by phone, chat, or email.
+                          </p>
+                        </td>
+                      </tr>
+                    </table>
+
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td class="t-muted" style="padding:24px 8px 0 8px;font-family:'Manrope',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;font-size:12px;line-height:19px;color:#7A8096;">
+              {% if user_email %}Sent to {{ user_email }}.<br>{% endif %}
+              This is an automated message, so replies aren&rsquo;t monitored.<br>
+              &copy; {{ year }} {{ app_name }}{% if company_address %}, {{ company_address }}{% endif %}
+            </td>
+          </tr>
+
+        </table>
+        <!--[if mso]></td></tr></table><![endif]-->
+
+      </td>
+    </tr>
+  </table>
 </body>
 </html>

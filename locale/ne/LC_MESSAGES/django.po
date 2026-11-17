@@ -1,17 +1,2271 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: SSDC Document Vault\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-17 12:04+0545\n"
 "PO-Revision-Date: 2026-11-02 00:00+0545\n"
 "Last-Translator: SSDC\n"
 "Language-Team: Nepali\n"
-"MIME-Version: 1.0\n"
-"Content-Transfer-Encoding: 8bit\n"
-"Content-Type: text/plain; charset=UTF-8\n"
 "Language: ne\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-msgid "%(added)s added to library. %(checking)s awaiting checks. %(rejected)s rejected. %(remaining)s need attention."
-msgstr "%(added)s पुस्तकालयमा थपिए। %(checking)s जाँचको प्रतीक्षामा छन्। %(rejected)s अस्वीकृत भए। %(remaining)s फाइलमा ध्यान दिनुहोस्।"
+#: accounts/admin.py:187
+msgid "registration status"
+msgstr "दर्ता स्थिति"
+
+#: accounts/admin.py:238 accounts/admin.py:304
+msgid "Applicant account"
+msgstr "आवेदक खाता"
+
+#: accounts/admin.py:242
+#, fuzzy
+#| msgid "Preview"
+msgid "Review"
+msgstr "पूर्वावलोकन"
+
+#: accounts/admin.py:278
+msgid "Applicant email"
+msgstr "आवेदकको इमेल"
+
+#: accounts/admin.py:282 templates/vault/manage.html:40
+msgid "Status"
+msgstr "स्थिति"
+
+#: accounts/admin.py:290 templates/accounts/registration_verify.html:7
+#, fuzzy
+#| msgid "Main navigation"
+msgid "Email verification"
+msgstr "मुख्य नेभिगेसन"
+
+#: accounts/admin.py:295
+msgid "Not verified"
+msgstr "प्रमाणित भएको छैन"
+
+#: accounts/admin.py:300
+#, fuzzy
+#| msgid "Verifying…"
+msgid "Verified"
+msgstr "प्रमाणित हुँदैछ…"
+
+#: accounts/admin.py:307
+#, fuzzy
+#| msgid "Staff accounts"
+msgid "No account"
+msgstr "कर्मचारी खाता"
+
+#: accounts/admin.py:311
+#, fuzzy
+#| msgid "Account security"
+msgid "Account status"
+msgstr "खाताको सुरक्षा"
+
+#: accounts/admin.py:316 templates/vault/manage.html:10
+msgid "Active"
+msgstr "सक्रिय"
+
+#: accounts/admin.py:320
+#, fuzzy
+#| msgid "Active"
+msgid "Inactive"
+msgstr "सक्रिय"
+
+#: accounts/admin.py:323
+#, fuzzy
+#| msgid "Password"
+msgid "Password staged"
+msgstr "पासवर्ड"
+
+#: accounts/admin.py:325
+msgid "Yes"
+msgstr "हो"
+
+#: accounts/admin.py:325
+msgid "No"
+msgstr "होइन"
+
+#: accounts/admin.py:327
+#, fuzzy
+#| msgid "Preview"
+msgid "Reviewer"
+msgstr "पूर्वावलोकन"
+
+#: accounts/admin.py:329
+msgid "—"
+msgstr "—"
+
+#: accounts/admin.py:361
+msgid "Staff registration requests"
+msgstr "कर्मचारी दर्ता अनुरोधहरू"
+
+#: accounts/admin.py:402
+msgid "This application cannot be approved because its status has changed."
+msgstr "यो आवेदनको स्थिति परिवर्तन भएकाले स्वीकृत गर्न सकिँदैन।"
+
+#: accounts/admin.py:405 accounts/admin.py:445 accounts/admin.py:476
+msgid "That registration request no longer exists."
+msgstr "त्यो दर्ता अनुरोध अब अवस्थित छैन।"
+
+#: accounts/admin.py:410
+#, python-format
+msgid "Staff registration for %(email)s was approved."
+msgstr "%(email)s को कर्मचारी दर्ता स्वीकृत भयो।"
+
+#: accounts/admin.py:416
+#, python-format
+msgid "Staff registration for %(email)s was already approved."
+msgstr "%(email)s को कर्मचारी दर्ता पहिले नै स्वीकृत भइसकेको छ।"
+
+#: accounts/admin.py:428
+msgid "Provide a valid review note of no more than 2000 characters."
+msgstr "२००० अक्षरभन्दा बढी नहुने मान्य समीक्षा टिप्पणी दिनुहोस्।"
+
+#: accounts/admin.py:442
+msgid "This application cannot be declined because its status has changed."
+msgstr "यो आवेदनको स्थिति परिवर्तन भएकाले अस्वीकृत गर्न सकिँदैन।"
+
+#: accounts/admin.py:450
+#, python-format
+msgid "Staff registration for %(email)s was declined."
+msgstr "%(email)s को कर्मचारी दर्ता अस्वीकृत भयो।"
+
+#: accounts/admin.py:456
+#, python-format
+msgid "Staff registration for %(email)s was already declined."
+msgstr "%(email)s को कर्मचारी दर्ता पहिले नै अस्वीकृत भइसकेको छ।"
+
+#: accounts/admin.py:473
+msgid "Reapplication can only be allowed for a declined application."
+msgstr "अस्वीकृत आवेदनका लागि मात्र पुनः आवेदन अनुमति दिन सकिन्छ।"
+
+#: accounts/admin.py:481
+#, python-format
+msgid "Reapplication has been allowed for %(email)s."
+msgstr "%(email)s का लागि पुनः आवेदन अनुमति दिइयो।"
+
+#: accounts/admin.py:487
+#, python-format
+msgid "Reapplication is already allowed for %(email)s."
+msgstr "%(email)s का लागि पुनः आवेदन पहिले नै अनुमति दिइसकेको छ।"
+
+#: accounts/forms.py:13
+msgid "Staff ID"
+msgstr "कर्मचारी परिचय"
+
+#: accounts/forms.py:17 accounts/forms.py:30 accounts/forms.py:135
+msgid "Password"
+msgstr "पासवर्ड"
+
+#: accounts/forms.py:24 accounts/forms.py:63
+#: templates/accounts/registration_resend.html:32
+#: templates/accounts/registration_status_lookup.html:32
+msgid "Email address"
+msgstr "इमेल ठेगाना"
+
+#: accounts/forms.py:35
+#, fuzzy
+#| msgid "Change password"
+msgid "Confirm password"
+msgstr "पासवर्ड बदल्नुहोस्"
+
+#: accounts/forms.py:51
+msgid "The two passwords do not match."
+msgstr "दुई पासवर्ड मिलेनन्।"
+
+#: accounts/forms.py:77
+msgid "Authenticator or recovery code"
+msgstr "प्रमाणक वा पुनःप्राप्ति कोड"
+
+#: accounts/forms.py:88
+msgid "Six-digit code"
+msgstr "छ अङ्कको कोड"
+
+#: accounts/forms.py:89
+msgid "Enter the six-digit code."
+msgstr "छ अङ्कको कोड लेख्नुहोस्।"
+
+#: accounts/forms.py:107
+msgid "New email address"
+msgstr "नयाँ इमेल ठेगाना"
+
+#: accounts/forms.py:124
+msgid "Review note"
+msgstr "समीक्षा टिप्पणी"
+
+#: accounts/forms.py:129
+msgid "Allow this applicant to reapply"
+msgstr "यो आवेदकलाई पुनः आवेदन गर्न अनुमति दिनुहोस्"
+
+#: accounts/forms.py:140
+msgid "MFA code (if enabled)"
+msgstr "सुरक्षा कोड (सक्षम भएमा)"
+
+#: templates/404.html:3 templates/404.html:4
+msgid "Page unavailable"
+msgstr "पृष्ठ उपलब्ध छैन"
+
+#: templates/404.html:4
+msgid "This page isn't available."
+msgstr "यो पृष्ठ उपलब्ध छैन।"
+
+#: templates/404.html:4
+msgid "The item may have moved, or your account may not have access."
+msgstr "सामग्री सरेको हुन सक्छ वा तपाईंको खातामा पहुँच नहुन सक्छ।"
+
+#: templates/404.html:4 templates/500.html:4
+msgid "Return to library"
+msgstr "पुस्तकालयमा फर्कनुहोस्"
+
+#: templates/500.html:3
+msgid "Unable to complete request"
+msgstr "अनुरोध पूरा भएन"
+
+#: templates/500.html:4
+msgid "Something went wrong"
+msgstr "समस्या आयो"
+
+#: templates/500.html:4
+msgid "We couldn't complete that request."
+msgstr "अनुरोध पूरा गर्न सकिएन।"
+
+#: templates/500.html:4
+msgid "Try again shortly. Contact your administrator if the problem continues."
+msgstr "केही बेरपछि प्रयास गर्नुहोस्। समस्या रहिरहे प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/accounts/email_change.html:3
+#: templates/accounts/email_change.html:8
+msgid "Change email address"
+msgstr "इमेल ठेगाना परिवर्तन गर्नुहोस्"
+
+#: templates/accounts/email_change.html:5 templates/accounts/form.html:5
+#: templates/vault/form.html:5 templates/vault/import.html:12
+#: templates/vault/library.html:15 templates/vault/manage.html:5
+#: templates/vault/viewer.html:6
+msgid "Breadcrumb"
+msgstr "पृष्ठ मार्ग"
+
+#: templates/accounts/email_change.html:5 templates/accounts/form.html:5
+#: templates/admin/base_site.html:17 templates/components/navigation.html:6
+#: templates/vault/form.html:5 templates/vault/import.html:12
+#: templates/vault/library.html:11 templates/vault/library.html:16
+#: templates/vault/library.html:21 templates/vault/viewer.html:6
+msgid "Document library"
+msgstr "कागजात पुस्तकालय"
+
+#: templates/accounts/email_change.html:5
+#, fuzzy
+#| msgid "Change"
+msgid "Change email"
+msgstr "बदल्नुहोस्"
+
+#: templates/accounts/email_change.html:7
+#, fuzzy
+#| msgid "Account security"
+msgid "Account settings"
+msgstr "खाताको सुरक्षा"
+
+#: templates/accounts/email_change.html:12
+#, python-format
+msgid ""
+"A verification code was sent to <strong>%(new_email)s</strong>. Enter the "
+"six-digit code within %(minutes)s minutes to complete the change."
+msgstr "<strong>%(new_email)s</strong> मा प्रमाणीकरण कोड पठाइयो। परिवर्तन पूरा गर्न %(minutes)s मिनेटभित्र छ अङ्कको कोड लेख्नुहोस्।"
+
+#: templates/accounts/email_change.html:14 templates/accounts/enroll.html:15
+#: templates/accounts/form.html:13
+#: templates/accounts/registration_status.html:16
+#: templates/accounts/registration_submitted.html:30
+#: templates/accounts/registration_verify.html:25
+msgid "Verifying…"
+msgstr "प्रमाणित हुँदैछ…"
+
+#: templates/accounts/email_change.html:21
+msgid "Confirm email change"
+msgstr "इमेल परिवर्तन पुष्टि गर्नुहोस्"
+
+#: templates/accounts/email_change.html:22
+#, fuzzy
+#| msgid "Added to library"
+msgid "Back to library"
+msgstr "पुस्तकालयमा थपियो"
+
+#: templates/accounts/email_change.html:29
+msgid "Resend verification code"
+msgstr "प्रमाणीकरण कोड पुनः पठाउनुहोस्"
+
+#: templates/accounts/email_change.html:34
+#, fuzzy
+#| msgid "Save changes"
+msgid "Cancel change request"
+msgstr "परिवर्तन सुरक्षित गर्नुहोस्"
+
+#: templates/accounts/email_change.html:39
+#, python-format
+msgid ""
+"Your current email address is <strong>%(current)s</strong>. Enter your new "
+"email address below. We will send a confirmation code to the new address."
+msgstr "तपाईंको हालको इमेल ठेगाना <strong>%(current)s</strong> हो। तल नयाँ इमेल ठेगाना लेख्नुहोस्। हामी नयाँ ठेगानामा पुष्टि कोड पठाउनेछौं।"
+
+#: templates/accounts/email_change.html:41
+#: templates/accounts/registration_resend.html:28
+#, fuzzy
+#| msgid "Saving…"
+msgid "Sending…"
+msgstr "सुरक्षित हुँदैछ…"
+
+#: templates/accounts/email_change.html:48
+msgid "Send verification code"
+msgstr "प्रमाणीकरण कोड पठाउनुहोस्"
+
+#: templates/accounts/email_change.html:49 templates/accounts/form.html:17
+#: templates/base.html:69 templates/vault/form.html:14
+msgid "Cancel"
+msgstr "रद्द गर्नुहोस्"
+
+#: templates/accounts/enroll.html:3
+msgid "Set up your authenticator"
+msgstr "प्रमाणक एप तयार गर्नुहोस्"
+
+#: templates/accounts/enroll.html:6
+msgid "Account security · Step 1 of 2"
+msgstr "खाताको सुरक्षा · चरण १ मध्ये २"
+
+#: templates/accounts/enroll.html:7
+msgid "Set up your authenticator."
+msgstr "प्रमाणक एप तयार गर्नुहोस्।"
+
+#: templates/accounts/enroll.html:9
+msgid "Open your authenticator app and add an account using a timed code."
+msgstr "प्रमाणक एप खोल्नुहोस् र समयअनुसार कोड दिने खाता थप्नुहोस्।"
+
+#: templates/accounts/enroll.html:10
+msgid "Name it"
+msgstr "नाम दिनुहोस्"
+
+#: templates/accounts/enroll.html:10 templates/base.html:35
+msgid "SSDC Vault"
+msgstr "SSDC भण्डार"
+
+#: templates/accounts/enroll.html:10
+msgid "and enter the setup key below."
+msgstr "र तलको सेटअप कुञ्जी राख्नुहोस्।"
+
+#: templates/accounts/enroll.html:11
+msgid "Enter the current code to finish setup."
+msgstr "सेटअप पूरा गर्न हालको कोड राख्नुहोस्।"
+
+#: templates/accounts/enroll.html:13
+msgid "Private authenticator setup key"
+msgstr "गोप्य प्रमाणक सेटअप कुञ्जी"
+
+#: templates/accounts/enroll.html:14
+msgid "Keep this key private. You’ll save your recovery codes next."
+msgstr "यो कुञ्जी गोप्य राख्नुहोस्। अर्को चरणमा पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्।"
+
+#: templates/accounts/enroll.html:15
+msgid "Verify and continue"
+msgstr "प्रमाणित गरी जारी राख्नुहोस्"
+
+#: templates/accounts/enroll.html:16 templates/accounts/form.html:19
+#: templates/accounts/registration_link_invalid.html:19
+#: templates/accounts/registration_resend.html:46
+#: templates/accounts/registration_status.html:95
+#: templates/accounts/registration_status_lookup.html:46
+#: templates/accounts/registration_submitted.html:62
+#: templates/accounts/registration_verify.html:66
+msgid "Back to sign in"
+msgstr "साइन इनमा फर्कनुहोस्"
+
+#: templates/accounts/form.html:5 templates/accounts/form.html:9
+#: templates/admin/base_site.html:17 templates/components/navigation.html:19
+msgid "Account security"
+msgstr "खाताको सुरक्षा"
+
+#: templates/accounts/form.html:8 templates/accounts/login.html:6
+#: templates/accounts/register.html:6
+#: templates/accounts/registration_link_invalid.html:6
+#: templates/accounts/registration_resend.html:6
+#: templates/accounts/registration_status.html:6
+#: templates/accounts/registration_status_lookup.html:6
+#: templates/accounts/registration_submitted.html:6
+#: templates/accounts/registration_verify.html:6 templates/base.html:10
+#: templates/email/email_change_completed.html:6
+#: templates/email/email_change_expired.html:6
+#: templates/email/email_change_security_notice.html:6
+#: templates/email/registration_approved.html:6
+#: templates/email/registration_declined.html:6
+#: templates/email/registration_expired.html:6
+#: templates/email/registration_reapplication_allowed.html:6
+#: templates/email/registration_status_link.html:6 templates/home.html:6
+msgid "Document Vault"
+msgstr "कागजात भण्डार"
+
+#: templates/accounts/form.html:11
+msgid "Choose a strong password you haven’t used elsewhere."
+msgstr "अन्यत्र प्रयोग नगरेको बलियो पासवर्ड छान्नुहोस्।"
+
+#: templates/accounts/form.html:11
+msgid "Confirm your credentials to continue with administrative actions."
+msgstr "प्रशासनिक काम जारी राख्न आफ्नो पहिचान प्रमाणित गर्नुहोस्।"
+
+#: templates/accounts/form.html:11
+msgid "Enter a code from your authenticator app, or use a recovery code."
+msgstr "प्रमाणक एपको कोड वा पुनःप्राप्ति कोड राख्नुहोस्।"
+
+#: templates/accounts/form.html:13
+msgid "Updating password…"
+msgstr "पासवर्ड बदलिँदैछ…"
+
+#: templates/accounts/form.html:17
+msgid "Update password"
+msgstr "पासवर्ड बदल्नुहोस्"
+
+#: templates/accounts/form.html:17
+msgid "Continue"
+msgstr "जारी राख्नुहोस्"
+
+#: templates/accounts/login.html:3 templates/home.html:10
+msgid "Admin sign in"
+msgstr "प्रशासक साइन इन"
+
+#: templates/accounts/login.html:3 templates/home.html:10
+msgid "Staff sign in"
+msgstr "कर्मचारी साइन इन"
+
+#: templates/accounts/login.html:3 templates/accounts/login.html:14
+#: templates/accounts/register.html:18
+msgid "Sign in"
+msgstr "साइन इन गर्नुहोस्"
+
+#: templates/accounts/login.html:7 templates/admin/base_site.html:13
+#: templates/base.html:26
+msgid "Administration"
+msgstr "प्रशासन"
+
+#: templates/accounts/login.html:7 templates/base.html:26
+msgid "Staff workspace"
+msgstr "कर्मचारी कार्यक्षेत्र"
+
+#: templates/accounts/login.html:7
+msgid "Your private workspace"
+msgstr "तपाईंको निजी कार्यक्षेत्र"
+
+#: templates/accounts/login.html:8
+msgid "Admin sign in."
+msgstr "प्रशासक साइन इन"
+
+#: templates/accounts/login.html:8
+msgid "Staff sign in."
+msgstr "कर्मचारी साइन इन"
+
+#: templates/accounts/login.html:8
+msgid "Welcome back."
+msgstr "फेरि स्वागत छ।"
+
+#: templates/accounts/login.html:9
+msgid ""
+"Manage accounts, document access, and vault activity with your administrator "
+"account."
+msgstr "प्रशासक खाताबाट कर्मचारी खाता, कागजात पहुँच र गतिविधि व्यवस्थापन गर्नुहोस्।"
+
+#: templates/accounts/login.html:9
+msgid "Sign in with your staff account to browse documents shared with you."
+msgstr "तपाईंसँग साझा गरिएका कागजात हेर्न कर्मचारी खाताबाट साइन इन गर्नुहोस्।"
+
+#: templates/accounts/login.html:9
+msgid ""
+"Sign in to SSDC Document Vault. Your account determines which portal and "
+"documents you can access."
+msgstr ""
+"SSDC कागजात भण्डारमा साइन इन गर्नुहोस्। तपाईंको खाताले उपलब्ध पोर्टल र कागजात "
+"निर्धारण गर्छ।"
+
+#: templates/accounts/login.html:10
+msgid "Choose a portal"
+msgstr "पोर्टल छान्नुहोस्"
+
+#: templates/accounts/login.html:11 templates/base.html:25
+msgid "Staff portal"
+msgstr "कर्मचारी पोर्टल"
+
+#: templates/accounts/login.html:12 templates/base.html:25
+#: templates/components/navigation.html:3
+msgid "Admin portal"
+msgstr "प्रशासक पोर्टल"
+
+#: templates/accounts/login.html:14
+msgid "Signing in…"
+msgstr "साइन इन हुँदैछ…"
+
+#: templates/accounts/login.html:17
+msgid "Don't have an account?"
+msgstr "खाता छैन?"
+
+#: templates/accounts/login.html:17
+msgid "Register for staff access"
+msgstr "कर्मचारी पहुँचका लागि दर्ता गर्नुहोस्"
+
+#: templates/accounts/login.html:20
+msgid "Need access or help signing in?"
+msgstr "पहुँच वा साइन इन गर्न सहयोग चाहिन्छ?"
+
+#: templates/accounts/login.html:22
+msgid "Contact your SSDC administrator."
+msgstr "आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/accounts/login.html:24 templates/accounts/register.html:20
+#: templates/accounts/registration_status.html:97 templates/base.html:58
+#: templates/base.html:60 templates/home.html:11 templates/privacy.html:3
+#: templates/privacy.html:7 templates/terms.html:11
+msgid "Privacy Policy"
+msgstr "गोपनीयता नीति"
+
+#: templates/accounts/login.html:24 templates/accounts/register.html:20
+#: templates/accounts/registration_status.html:97 templates/base.html:58
+#: templates/base.html:60 templates/home.html:11 templates/privacy.html:13
+#: templates/terms.html:3 templates/terms.html:7
+msgid "Terms of Service"
+msgstr "सेवाका सर्तहरू"
+
+#: templates/accounts/login.html:28 templates/accounts/register.html:24
+#: templates/accounts/registration_link_invalid.html:23
+#: templates/accounts/registration_resend.html:50
+#: templates/accounts/registration_status.html:101
+#: templates/accounts/registration_status_lookup.html:50
+#: templates/accounts/registration_submitted.html:66
+#: templates/accounts/registration_verify.html:70 templates/base.html:40
+#: templates/home.html:7
+msgid "Siddhartha Social Development Centre"
+msgstr "सिद्धार्थ सामाजिक विकास केन्द्र"
+
+#: templates/accounts/login.html:30 templates/accounts/register.html:26
+#: templates/accounts/registration_link_invalid.html:25
+#: templates/accounts/registration_resend.html:52
+#: templates/accounts/registration_status.html:103
+#: templates/accounts/registration_status_lookup.html:52
+#: templates/accounts/registration_submitted.html:68
+#: templates/accounts/registration_verify.html:72 templates/base.html:58
+msgid "For authorized staff use only"
+msgstr "अधिकारप्राप्त कर्मचारीका लागि मात्र"
+
+#: templates/accounts/recovery.html:3
+msgid "Save recovery codes"
+msgstr "पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्"
+
+#: templates/accounts/recovery.html:6
+msgid "Account security · Step 2 of 2"
+msgstr "खाताको सुरक्षा · चरण २ मध्ये २"
+
+#: templates/accounts/recovery.html:7
+msgid "Save your recovery codes."
+msgstr "पुनःप्राप्ति कोड सुरक्षित राख्नुहोस्।"
+
+#: templates/accounts/recovery.html:8
+msgid ""
+"Each code can be used once if you lose access to your authenticator. Store "
+"them somewhere private, separate from your password."
+msgstr ""
+"प्रमाणक एप चलाउन नसके प्रत्येक कोड एक पटक प्रयोग गर्न सकिन्छ। पासवर्डबाट छुट्टै गोप्य "
+"ठाउँमा राख्नुहोस्।"
+
+#: templates/accounts/recovery.html:9
+msgid "These codes are shown only once. Save them before continuing."
+msgstr "यी कोड एक पटक मात्र देखाइन्छन्। अगाडि बढ्नुअघि सुरक्षित राख्नुहोस्।"
+
+#: templates/accounts/recovery.html:11
+msgid "Single use recovery codes"
+msgstr "एक पटक प्रयोग हुने पुनःप्राप्ति कोड"
+
+#: templates/accounts/recovery.html:13
+msgid "I've saved my codes"
+msgstr "मैले कोड सुरक्षित राखेँ"
+
+#: templates/accounts/register.html:3 templates/accounts/register.html:7
+#: templates/accounts/registration_resend.html:7
+#: templates/accounts/registration_status_lookup.html:7
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:9
+#: templates/admin/accounts/staffregistrationrequest/change_list.html:7
+#, fuzzy
+#| msgid "Staff portal"
+msgid "Staff registration"
+msgstr "कर्मचारी पोर्टल"
+
+#: templates/accounts/register.html:8
+msgid "Register for staff access."
+msgstr "कर्मचारी पहुँचका लागि दर्ता गर्नुहोस्।"
+
+#: templates/accounts/register.html:9
+msgid ""
+"Submit your work email and create a password. An administrator will review "
+"your request before access is granted."
+msgstr "आफ्नो कार्य इमेल पेश गरी पासवर्ड सिर्जना गर्नुहोस्। पहुँच दिनुअघि प्रशासकले तपाईंको अनुरोध समीक्षा गर्नेछ।"
+
+#: templates/accounts/register.html:10
+#, fuzzy
+#| msgid "Saving…"
+msgid "Submitting…"
+msgstr "सुरक्षित हुँदैछ…"
+
+#: templates/accounts/register.html:14
+msgid "Register"
+msgstr "दर्ता गर्नुहोस्"
+
+#: templates/accounts/register.html:18
+msgid "Already have an account?"
+msgstr "पहिले नै खाता छ?"
+
+#: templates/accounts/registration_link_invalid.html:3
+msgid "Verification link invalid"
+msgstr "प्रमाणीकरण लिङ्क अमान्य"
+
+#: templates/accounts/registration_link_invalid.html:7
+msgid "Verification link"
+msgstr "प्रमाणीकरण लिङ्क"
+
+#: templates/accounts/registration_link_invalid.html:8
+#, fuzzy
+#| msgid "Unable to verify this code."
+msgid "Unable to verify email"
+msgstr "कोड प्रमाणित भएन।"
+
+#: templates/accounts/registration_link_invalid.html:10
+msgid ""
+"This verification link is invalid, expired, or has already been used. For "
+"your security, verification links are single-use and expire within 24 hours."
+msgstr "यो प्रमाणीकरण लिङ्क अमान्य, म्याद सकिएको वा पहिले नै प्रयोग भइसकेको छ। तपाईंको सुरक्षाका लागि प्रमाणीकरण लिङ्क एकपटक मात्र प्रयोग गर्न सकिने र २४ घण्टाभित्र म्याद सकिने हुन्छ।"
+
+#: templates/accounts/registration_link_invalid.html:13
+msgid ""
+"If you are completing your registration, please request a new verification "
+"link below."
+msgstr "यदि तपाईं दर्ता पूरा गर्दै हुनुहुन्छ भने तल नयाँ प्रमाणीकरण लिङ्क अनुरोध गर्नुहोस्।"
+
+#: templates/accounts/registration_link_invalid.html:16
+msgid "Request a new link"
+msgstr "नयाँ लिङ्क अनुरोध गर्नुहोस्"
+
+#: templates/accounts/registration_resend.html:3
+#: templates/accounts/registration_resend.html:8
+msgid "Resend verification link"
+msgstr "प्रमाणीकरण लिङ्क पुनः पठाउनुहोस्"
+
+#: templates/accounts/registration_resend.html:12
+msgid ""
+"If an active registration exists for that email address, a new verification "
+"link has been sent. Please check your inbox and spam folder."
+msgstr "यदि त्यो इमेल ठेगानाका लागि सक्रिय दर्ता छ भने नयाँ प्रमाणीकरण लिङ्क पठाइएको छ। कृपया आफ्नो इनबक्स र स्प्याम फोल्डर जाँच्नुहोस्।"
+
+#: templates/accounts/registration_resend.html:15
+msgid ""
+"For security, verification links expire after 24 hours and can only be used "
+"once."
+msgstr "सुरक्षाका लागि प्रमाणीकरण लिङ्क २४ घण्टापछि म्याद सकिन्छ र एकपटक मात्र प्रयोग गर्न सकिन्छ।"
+
+#: templates/accounts/registration_resend.html:19
+msgid ""
+"Enter your email address to receive a fresh verification link. The link will "
+"remain valid for 24 hours."
+msgstr "नयाँ प्रमाणीकरण लिङ्क प्राप्त गर्न आफ्नो इमेल ठेगाना लेख्नुहोस्। लिङ्क २४ घण्टासम्म मान्य रहनेछ।"
+
+#: templates/accounts/registration_resend.html:40
+msgid "Send verification link"
+msgstr "प्रमाणीकरण लिङ्क पठाउनुहोस्"
+
+#: templates/accounts/registration_status.html:3
+#: templates/accounts/registration_status.html:7
+#: templates/accounts/registration_status.html:90
+msgid "Application status"
+msgstr "आवेदन स्थिति"
+
+#: templates/accounts/registration_status.html:10
+msgid "Email verification pending."
+msgstr "इमेल प्रमाणीकरण बाँकी छ।"
+
+#: templates/accounts/registration_status.html:12
+#, python-format
+msgid ""
+"Your email address <strong>%(email)s</strong> has not been verified yet."
+msgstr "तपाईंको इमेल ठेगाना <strong>%(email)s</strong> अझै प्रमाणित भएको छैन।"
+
+#: templates/accounts/registration_status.html:15
+#: templates/accounts/registration_submitted.html:24
+msgid "Enter 6-digit verification code"
+msgstr "छ अङ्कको प्रमाणीकरण कोड लेख्नुहोस्"
+
+#: templates/accounts/registration_status.html:21
+#: templates/accounts/registration_submitted.html:36
+#: templates/accounts/registration_verify.html:31
+msgid "Six-digit verification code"
+msgstr "छ अङ्कको प्रमाणीकरण कोड"
+
+#: templates/accounts/registration_status.html:24
+#: templates/accounts/registration_submitted.html:39
+#: templates/accounts/registration_verify.html:34
+#, python-format
+msgid "The code expires in %(minutes)s minutes. It can only be used once."
+msgstr "कोड %(minutes)s मिनेटमा म्याद सकिन्छ। यो एकपटक मात्र प्रयोग गर्न सकिन्छ।"
+
+#: templates/accounts/registration_status.html:29
+#: templates/accounts/registration_submitted.html:44
+#: templates/accounts/registration_verify.html:39
+msgid "Verify code & submit to admin"
+msgstr "कोड प्रमाणित गरी प्रशासकलाई पेश गर्नुहोस्"
+
+#: templates/accounts/registration_status.html:38
+#: templates/accounts/registration_submitted.html:53
+#: templates/accounts/registration_verify.html:47
+msgid "Didn't receive the code? Resend code"
+msgstr "कोड प्राप्त भएन? कोड पुनः पठाउनुहोस्"
+
+#: templates/accounts/registration_status.html:44
+msgid "Registration submitted."
+msgstr "दर्ता पेश भयो।"
+
+#: templates/accounts/registration_status.html:46
+msgid ""
+"Your email has been verified. Your application has been sent to the "
+"administrator for review and approval."
+msgstr "तपाईंको इमेल प्रमाणित भयो। तपाईंको आवेदन समीक्षा र स्वीकृतिका लागि प्रशासकलाई पठाइएको छ।"
+
+#: templates/accounts/registration_status.html:49
+msgid ""
+"Your request is now in the administrator review queue. You will receive an "
+"email notification once an administrator reviews and approves your account."
+msgstr "तपाईंको अनुरोध अब प्रशासक समीक्षा सूचीमा छ। प्रशासकले तपाईंको खाता समीक्षा र स्वीकृत गरेपछि तपाईंलाई इमेल सूचना प्राप्त हुनेछ।"
+
+#: templates/accounts/registration_status.html:53
+msgid "Application approved."
+msgstr "आवेदन स्वीकृत भयो।"
+
+#: templates/accounts/registration_status.html:55
+msgid ""
+"Your staff access has been approved by an administrator. You can now sign in "
+"using your registered email and password."
+msgstr "तपाईंको कर्मचारी पहुँच प्रशासकले स्वीकृत गरेको छ। अब तपाईं दर्ता गरिएको इमेल र पासवर्ड प्रयोग गरी साइन इन गर्न सक्नुहुन्छ।"
+
+#: templates/accounts/registration_status.html:58
+#: templates/email/registration_approved.html:9
+#, fuzzy
+#| msgid "Staff portal"
+msgid "Sign in to Staff Portal"
+msgstr "कर्मचारी पोर्टल"
+
+#: templates/accounts/registration_status.html:62
+msgid "Application declined."
+msgstr "आवेदन अस्वीकृत भयो।"
+
+#: templates/accounts/registration_status.html:64
+msgid "Your staff registration request was declined by an administrator."
+msgstr "तपाईंको कर्मचारी दर्ता अनुरोध प्रशासकले अस्वीकृत गरेको छ।"
+
+#: templates/accounts/registration_status.html:68
+#: templates/email/registration_declined.html:11
+#: templates/email/registration_declined.txt:5
+#, fuzzy
+#| msgid "Administrator"
+msgid "Administrator note:"
+msgstr "प्रशासक"
+
+#: templates/accounts/registration_status.html:72
+#: templates/email/registration_declined.html:15
+msgid "You are permitted to submit a new application."
+msgstr "तपाईंलाई नयाँ आवेदन पेश गर्न अनुमति छ।"
+
+#: templates/accounts/registration_status.html:74
+#: templates/accounts/registration_status.html:85
+#, fuzzy
+#| msgid "Awaiting publication"
+msgid "Submit new application"
+msgstr "प्रकाशनको प्रतीक्षामा"
+
+#: templates/accounts/registration_status.html:79
+msgid "Application expired."
+msgstr "आवेदनको म्याद सकियो।"
+
+#: templates/accounts/registration_status.html:81
+msgid ""
+"This registration request has expired because it was not verified or "
+"reviewed within the required timeframe."
+msgstr "आवश्यक समयभित्र प्रमाणीकरण वा समीक्षा नभएकाले यो दर्ता अनुरोधको म्याद सकिएको छ।"
+
+#: templates/accounts/registration_status_lookup.html:3
+#: templates/accounts/registration_status_lookup.html:8
+#: templates/accounts/registration_submitted.html:60
+msgid "Check application status"
+msgstr "आवेदन स्थिति जाँच्नुहोस्"
+
+#: templates/accounts/registration_status_lookup.html:12
+msgid "If a registration exists for that address, we have emailed a link."
+msgstr "यदि त्यो ठेगानाका लागि दर्ता छ भने हामीले लिङ्क इमेल गरेका छौं।"
+
+#: templates/accounts/registration_status_lookup.html:15
+msgid ""
+"Please check your inbox. If you need a new verification link, you can also "
+"request one from the email."
+msgstr "कृपया आफ्नो इनबक्स जाँच्नुहोस्। नयाँ प्रमाणीकरण लिङ्क चाहिएमा इमेलबाट पनि अनुरोध गर्न सक्नुहुन्छ।"
+
+#: templates/accounts/registration_status_lookup.html:19
+msgid ""
+"To view your application status on this device, enter the email address used "
+"during registration."
+msgstr "यो उपकरणमा आफ्नो आवेदन स्थिति हेर्न दर्ताका क्रममा प्रयोग गरिएको इमेल ठेगाना लेख्नुहोस्।"
+
+#: templates/accounts/registration_status_lookup.html:28
+#, fuzzy
+#| msgid "Checking document…"
+msgid "Checking…"
+msgstr "कागजात जाँच हुँदैछ…"
+
+#: templates/accounts/registration_status_lookup.html:40
+msgid "Check status"
+msgstr "स्थिति जाँच्नुहोस्"
+
+#: templates/accounts/registration_submitted.html:3
+#, fuzzy
+#| msgid "Check your upload"
+msgid "Check your email"
+msgstr "अपलोड जाँच्नुहोस्"
+
+#: templates/accounts/registration_submitted.html:7
+msgid "Registration submitted"
+msgstr "दर्ता पेश भयो"
+
+#: templates/accounts/registration_submitted.html:8
+#, fuzzy
+#| msgid "Check your upload"
+msgid "Check your email."
+msgstr "अपलोड जाँच्नुहोस्"
+
+#: templates/accounts/registration_submitted.html:9
+msgid ""
+"We sent a six-digit verification code to your email. Enter it below to "
+"verify your address and send your application for administrator review."
+msgstr "हामीले तपाईंको इमेलमा छ अङ्कको प्रमाणीकरण कोड पठाएका छौं। आफ्नो ठेगाना प्रमाणित गरी आवेदन प्रशासकीय समीक्षाका लागि पठाउन तल कोड लेख्नुहोस्।"
+
+#: templates/accounts/registration_submitted.html:13
+msgid ""
+"If an application exists for that address, a fresh verification message has "
+"been sent. Please check your inbox and spam folder."
+msgstr "यदि त्यो ठेगानाका लागि आवेदन छ भने नयाँ प्रमाणीकरण सन्देश पठाइएको छ। कृपया आफ्नो इनबक्स र स्प्याम फोल्डर जाँच्नुहोस्।"
+
+#: templates/accounts/registration_submitted.html:27
+#: templates/accounts/registration_verify.html:22
+#, python-format
+msgid "Code sent to <strong>%(email)s</strong>:"
+msgstr "कोड <strong>%(email)s</strong> मा पठाइयो:"
+
+#: templates/accounts/registration_verify.html:3
+#, fuzzy
+#| msgid "Confirm your identity"
+msgid "Confirm your email"
+msgstr "आफ्नो पहिचान पुष्टि गर्नुहोस्"
+
+#: templates/accounts/registration_verify.html:8
+#, fuzzy
+#| msgid "Confirm your identity"
+msgid "Confirm your email."
+msgstr "आफ्नो पहिचान पुष्टि गर्नुहोस्"
+
+#: templates/accounts/registration_verify.html:18
+msgid ""
+"This link confirms that you can open messages sent to this mailbox. Enter "
+"the six-digit code from the email to verify your address and submit your "
+"application for review."
+msgstr "यो लिङ्कले तपाईं यो मेलबक्समा पठाइएका सन्देश खोल्न सक्नुहुन्छ भन्ने पुष्टि गर्छ। आफ्नो ठेगाना प्रमाणित गरी आवेदन समीक्षाका लागि पेश गर्न इमेलमा रहेको छ अङ्कको कोड लेख्नुहोस्।"
+
+#: templates/accounts/registration_verify.html:53
+msgid ""
+"Your email address is already verified. Continue to view the current status "
+"of your application."
+msgstr "तपाईंको इमेल ठेगाना पहिले नै प्रमाणित छ। आफ्नो आवेदनको हालको स्थिति हेर्न अगाडि बढ्नुहोस्।"
+
+#: templates/accounts/registration_verify.html:55
+#, fuzzy
+#| msgid "Uploading…"
+msgid "Opening…"
+msgstr "अपलोड हुँदैछ…"
+
+#: templates/accounts/registration_verify.html:60
+#: templates/email/registration_status_link.html:9
+msgid "View application status"
+msgstr "आवेदन स्थिति हेर्नुहोस्"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:10
+msgid "Review decision"
+msgstr "समीक्षा निर्णय"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:16
+msgid ""
+"Approval grants the normal staff role only. It never grants administrator "
+"access."
+msgstr "स्वीकृतिले सामान्य कर्मचारी भूमिका मात्र दिन्छ। यसले कहिल्यै प्रशासक पहुँच दिँदैन।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:19
+msgid "Approve"
+msgstr "स्वीकृत गर्नुहोस्"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:20
+msgid "Activate this applicant's account and allow staff portal access."
+msgstr "यो आवेदकको खाता सक्रिय गरी कर्मचारी पोर्टलमा पहुँच दिनुहोस्।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:23
+msgid "Approve staff registration"
+msgstr "कर्मचारी दर्ता स्वीकृत गर्नुहोस्"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:27
+msgid "Decline"
+msgstr "अस्वीकृत गर्नुहोस्"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:38
+msgid "Decline staff registration"
+msgstr "कर्मचारी दर्ता अस्वीकृत गर्नुहोस्"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:43
+msgid ""
+"This application was declined. The applicant cannot submit a new application "
+"unless reapplication is explicitly allowed."
+msgstr "यो आवेदन अस्वीकृत भयो। पुनः आवेदन स्पष्ट रूपमा अनुमति नदिएसम्म आवेदकले नयाँ आवेदन पेश गर्न सक्दैन।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:46
+#, fuzzy
+#| msgid "Awaiting publication"
+msgid "Allow reapplication"
+msgstr "प्रकाशनको प्रतीक्षामा"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:49
+msgid "This application was declined and the applicant is allowed to reapply."
+msgstr "यो आवेदन अस्वीकृत भयो र आवेदकलाई पुनः आवेदन गर्न अनुमति छ।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:51
+msgid ""
+"This application is approved. The applicant can sign in to the staff portal."
+msgstr "यो आवेदन स्वीकृत छ। आवेदकले कर्मचारी पोर्टलमा साइन इन गर्न सक्नुहुन्छ।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:53
+msgid ""
+"This application is waiting for email verification and cannot be reviewed "
+"yet."
+msgstr "यो आवेदन इमेल प्रमाणीकरणको प्रतीक्षामा छ र अझै समीक्षा गर्न सकिँदैन।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_form.html:55
+msgid "This application has expired and cannot be reviewed."
+msgstr "यो आवेदनको म्याद सकिएको छ र समीक्षा गर्न सकिँदैन।"
+
+#: templates/admin/accounts/staffregistrationrequest/change_list.html:8
+msgid "Review queue"
+msgstr "समीक्षा सूची"
+
+#: templates/admin/accounts/staffregistrationrequest/change_list.html:10
+#, python-format
+msgid ""
+"\n"
+"          %(counter)s verified application is waiting for a decision.\n"
+"        "
+msgid_plural ""
+"\n"
+"          %(counter)s verified applications are waiting for a decision.\n"
+"        "
+msgstr[0] ""
+"\n"
+"          %(counter)s प्रमाणित आवेदन निर्णयको प्रतीक्षामा छ।\n"
+"        "
+msgstr[1] ""
+"\n"
+"          %(counter)s प्रमाणित आवेदनहरू निर्णयको प्रतीक्षामा छन्।\n"
+"        "
+
+#: templates/admin/accounts/staffregistrationrequest/change_list.html:17
+msgid "Review pending applications"
+msgstr "बाँकी आवेदनहरू समीक्षा गर्नुहोस्"
+
+#: templates/admin/app_list.html:7
+msgid "Resource"
+msgstr "स्रोत"
+
+#: templates/admin/app_list.html:7 templates/admin/app_list.html:16
+#: templates/admin/index.html:15
+msgid "Add"
+msgstr "थप्नुहोस्"
+
+#: templates/admin/app_list.html:7 templates/vault/library.html:94
+msgid "Open"
+msgstr "खोल्नुहोस्"
+
+#: templates/admin/app_list.html:18
+msgid "View"
+msgstr "हेर्नुहोस्"
+
+#: templates/admin/app_list.html:18
+msgid "Change"
+msgstr "बदल्नुहोस्"
+
+#: templates/admin/app_list.html:25
+msgid "You don’t have permission to view or edit any resources."
+msgstr "तपाईंलाई स्रोत हेर्ने वा सम्पादन गर्ने अनुमति छैन।"
+
+#: templates/admin/base_site.html:4
+msgid "· SSDC Administration"
+msgstr "· SSDC प्रशासन"
+
+#: templates/admin/base_site.html:17 templates/base.html:44
+msgid "Sign out"
+msgstr "साइन आउट"
+
+#: templates/admin/index.html:7
+msgid "Workspace administration"
+msgstr "कार्यक्षेत्र प्रशासन"
+
+#: templates/admin/index.html:7
+msgid "Accounts, access, and oversight."
+msgstr "खाता, पहुँच र अनुगमन।"
+
+#: templates/admin/index.html:7
+msgid ""
+"Manage staff permissions and review the activity in your document vault."
+msgstr "कर्मचारीको अनुमति व्यवस्थापन गर्नुहोस् र भण्डारको गतिविधि हेर्नुहोस्।"
+
+#: templates/admin/index.html:12
+msgid "Staff accounts"
+msgstr "कर्मचारी खाता"
+
+#: templates/admin/index.html:12
+msgid "Documents &amp; permissions"
+msgstr "कागजात र अनुमतिहरू"
+
+#: templates/admin/index.html:12
+msgid "Audit &amp; activity"
+msgstr "लेखापरीक्षण र गतिविधि"
+
+#: templates/admin/index.html:16
+msgid "You don’t have permission to manage any resources."
+msgstr "तपाईंलाई स्रोत व्यवस्थापन गर्ने अनुमति छैन।"
+
+#: templates/admin/index.html:18
+msgid "Your recent changes"
+msgstr "तपाईंका हालैका परिवर्तन"
+
+#: templates/admin/index.html:18
+msgid "Your administrative changes will appear here."
+msgstr "तपाईंका प्रशासनिक परिवर्तन यहाँ देखिन्छन्।"
+
+#: templates/admin/index.html:18
+msgid "Return to document library"
+msgstr "कागजात पुस्तकालयमा फर्कनुहोस्"
+
+#: templates/base.html:22
+msgid "Skip to content"
+msgstr "मुख्य सामग्रीमा जानुहोस्"
+
+#: templates/base.html:27
+msgid "Main navigation"
+msgstr "मुख्य नेभिगेसन"
+
+#: templates/base.html:30
+msgid "Access follows your account permissions."
+msgstr "तपाईंको खाताको अनुमतिअनुसार पहुँच दिइन्छ।"
+
+#: templates/base.html:35
+msgid "Workspace navigation"
+msgstr "कार्यक्षेत्र नेभिगेसन"
+
+#: templates/base.html:36
+msgid "Mobile navigation"
+msgstr "मोबाइल नेभिगेसन"
+
+#: templates/base.html:58 templates/base.html:60 templates/home.html:3
+#: templates/home.html:8 templates/privacy.html:6 templates/terms.html:6
+msgid "SSDC Document Vault"
+msgstr "SSDC कागजात भण्डार"
+
+#: templates/base.html:66
+msgid "Move to deleted?"
+msgstr "मेटाइएका कागजातमा सार्ने हो?"
+
+#: templates/base.html:67
+msgid ""
+"This document will leave the library. You can restore it from document "
+"management while it is retained."
+msgstr ""
+"यो कागजात पुस्तकालयबाट हट्नेछ। सुरक्षित राखिएको अवधिभित्र कागजात व्यवस्थापनबाट फिर्ता "
+"ल्याउन सक्नुहुन्छ।"
+
+#: templates/base.html:69 templates/vault/manage.html:22
+msgid "Move to deleted"
+msgstr "मेटाइएका कागजातमा सार्नुहोस्"
+
+#: templates/components/form_fields.html:4
+msgid "Please try again"
+msgstr "फेरि प्रयास गर्नुहोस्"
+
+#: templates/components/form_fields.html:4
+msgid "Check the highlighted fields"
+msgstr "देखाइएका विवरण सच्याउनुहोस्"
+
+#: templates/components/form_fields.html:21
+#, fuzzy
+#| msgid "Change password"
+msgid "Show password"
+msgstr "पासवर्ड बदल्नुहोस्"
+
+#: templates/components/language_switcher.html:6
+msgid "Language"
+msgstr "भाषा"
+
+#: templates/components/language_switcher.html:11
+msgid "Apply"
+msgstr "लागू गर्नुहोस्"
+
+#: templates/components/navigation.html:9 templates/vault/import.html:4
+#: templates/vault/import.html:12 templates/vault/import.html:13
+#: templates/vault/library.html:25
+msgid "Add documents"
+msgstr "कागजात थप्नुहोस्"
+
+#: templates/components/navigation.html:14 templates/vault/import.html:13
+#: templates/vault/manage.html:5 templates/vault/management.html:3
+msgid "Manage documents"
+msgstr "कागजात व्यवस्थापन"
+
+#: templates/components/navigation.html:16
+#: templates/vault/drive_connection.html:3
+#: templates/vault/drive_connection.html:5
+msgid "Document storage"
+msgstr "कागजात भण्डारण"
+
+#: templates/email/email_change_completed.html:3
+msgid "Email Address Changed"
+msgstr "इमेल ठेगाना परिवर्तन भयो"
+
+#: templates/email/email_change_completed.html:7
+msgid "Your email address has changed."
+msgstr "तपाईंको इमेल ठेगाना परिवर्तन भएको छ।"
+
+#: templates/email/email_change_completed.html:8
+#, python-format
+msgid ""
+"The email address for your account was changed from <strong>%(old_email)s</"
+"strong> to <strong>%(new_email)s</strong>."
+msgstr "तपाईंको खाताको इमेल ठेगाना <strong>%(old_email)s</strong> बाट <strong>%(new_email)s</strong> मा परिवर्तन गरियो।"
+
+#: templates/email/email_change_completed.html:9
+msgid "You can now sign in using your new email address."
+msgstr "अब तपाईं नयाँ इमेल ठेगाना प्रयोग गरी साइन इन गर्न सक्नुहुन्छ।"
+
+#: templates/email/email_change_completed.html:10
+#, fuzzy
+#| msgid "Sign in"
+msgid "Sign In"
+msgstr "साइन इन गर्नुहोस्"
+
+#: templates/email/email_change_completed.html:11
+msgid ""
+"If you did not authorize this change, contact your SSDC administrator "
+"immediately."
+msgstr "यदि तपाईंले यो परिवर्तन अधिकृत गर्नुभएको छैन भने तुरुन्तै आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/email/email_change_completed.txt:1
+#, python-format
+msgid ""
+"SSDC Document Vault - Email Address Changed\n"
+"\n"
+"The email address for your SSDC Document Vault account was successfully "
+"changed from %(old_email)s to %(new_email)s.\n"
+"\n"
+"You can now sign in using your new email address:\n"
+"%(login_url)s\n"
+"\n"
+"If you did not authorize this change, contact your SSDC administrator "
+"immediately."
+msgstr "SSDC Document Vault - इमेल ठेगाना परिवर्तन भयो\n\nतपाईंको SSDC Document Vault खाताको इमेल ठेगाना %(old_email)s बाट %(new_email)s मा सफलतापूर्वक परिवर्तन गरियो।\n\nअब तपाईं नयाँ इमेल ठेगाना प्रयोग गरी साइन इन गर्न सक्नुहुन्छ:\n%(login_url)s\n\nयदि तपाईंले यो परिवर्तन अधिकृत गर्नुभएको छैन भने तुरुन्तै आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/email/email_change_expired.html:3
+msgid "Email Change Expired"
+msgstr "इमेल परिवर्तनको म्याद सकियो"
+
+#: templates/email/email_change_expired.html:7
+msgid "Pending email change expired."
+msgstr "बाँकी इमेल परिवर्तनको म्याद सकियो।"
+
+#: templates/email/email_change_expired.html:8
+#, python-format
+msgid ""
+"The pending email change to <strong>%(new_email)s</strong> has expired. Your "
+"account email address remains <strong>%(old_email)s</strong>."
+msgstr "<strong>%(new_email)s</strong> मा गर्न लागिएको इमेल परिवर्तनको म्याद सकियो। तपाईंको खाताको इमेल ठेगाना <strong>%(old_email)s</strong> नै रहेको छ।"
+
+#: templates/email/email_change_expired.html:9
+msgid "Request New Email Change"
+msgstr "नयाँ इमेल परिवर्तन अनुरोध गर्नुहोस्"
+
+#: templates/email/email_change_expired.txt:1
+#, python-format
+msgid ""
+"SSDC Document Vault - Email Change Expired\n"
+"\n"
+"The pending email change from %(old_email)s to %(new_email)s for your SSDC "
+"Document Vault account has expired.\n"
+"\n"
+"Your account email address remains unchanged (%(old_email)s).\n"
+"\n"
+"If you still want to change your email address, you can submit a new "
+"request:\n"
+"%(change_url)s\n"
+msgstr "SSDC Document Vault - इमेल परिवर्तनको म्याद सकियो\n\nतपाईंको SSDC Document Vault खाताको %(old_email)s बाट %(new_email)s मा गर्न लागिएको इमेल परिवर्तनको म्याद सकियो।\n\nतपाईंको खाताको इमेल ठेगाना अपरिवर्तित छ (%(old_email)s)।\n\nयदि तपाईं अझै इमेल ठेगाना परिवर्तन गर्न चाहनुहुन्छ भने नयाँ अनुरोध पेश गर्न सक्नुहुन्छ:\n%(change_url)s\n"
+
+#: templates/email/email_change_otp.txt:1
+#: templates/email/registration_otp.txt:1
+#, python-format
+msgid ""
+"Your %(app_name)s code is: %(otp_code)s\n"
+"\n"
+"Enter it to %(purpose)s. It works once and expires in %(expiry_minutes)s "
+"minutes."
+msgstr "तपाईंको %(app_name)s कोड हो: %(otp_code)s\n\nयसलाई %(purpose)s का लागि लेख्नुहोस्। यो एकपटक मात्र काम गर्छ र %(expiry_minutes)s मिनेटमा म्याद सकिन्छ।"
+
+#: templates/email/email_change_otp.txt:5
+#, fuzzy
+#| msgid "Confirm your identity"
+msgid "Confirm your email using this link:"
+msgstr "आफ्नो पहिचान पुष्टि गर्नुहोस्"
+
+#: templates/email/email_change_otp.txt:8
+#: templates/email/registration_otp.txt:9
+#, python-format
+msgid ""
+"Didn't request this? You can ignore this email.\n"
+"%(app_name)s will never ask you for this code by phone, chat, or email."
+msgstr "यो अनुरोध गर्नुभएको छैन? यो इमेल बेवास्ता गर्न सक्नुहुन्छ।\n%(app_name)s ले फोन, च्याट वा इमेलमा यो कोड कहिल्यै सोध्ने छैन।"
+
+#: templates/email/email_change_security_notice.html:3
+#: templates/email/email_change_security_notice.html:7
+msgid "Security Notice: Email Change Requested"
+msgstr "सुरक्षा सूचना: इमेल परिवर्तन अनुरोध गरियो"
+
+#: templates/email/email_change_security_notice.html:8
+#, python-format
+msgid ""
+"A request was made to change the email address on your SSDC Document Vault "
+"account from <strong>%(current_email)s</strong> to <strong>%(new_email)s</"
+"strong>."
+msgstr "तपाईंको SSDC Document Vault खाताको इमेल ठेगाना <strong>%(current_email)s</strong> बाट <strong>%(new_email)s</strong> मा परिवर्तन गर्न अनुरोध गरिएको छ।"
+
+#: templates/email/email_change_security_notice.html:9
+msgid ""
+"A verification code has been sent to the new address. The change will not "
+"take effect until the code is verified."
+msgstr "नयाँ ठेगानामा प्रमाणीकरण कोड पठाइएको छ। कोड प्रमाणित नभएसम्म परिवर्तन लागू हुँदैन।"
+
+#: templates/email/email_change_security_notice.html:10
+msgid ""
+"If you did NOT request this change, sign in immediately to cancel it or "
+"contact your SSDC administrator."
+msgstr "यदि तपाईंले यो परिवर्तन अनुरोध गर्नुभएको छैन भने तुरुन्तै साइन इन गरी रद्द गर्नुहोस् वा आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/email/email_change_security_notice.html:11
+msgid "Review or Cancel Change"
+msgstr "परिवर्तन समीक्षा वा रद्द गर्नुहोस्"
+
+#: templates/email/email_change_security_notice.txt:1
+#, python-format
+msgid ""
+"SSDC Document Vault - Security Notice: Email Change Requested\n"
+"\n"
+"A request was made to change the email address on your SSDC Document Vault "
+"account from %(current_email)s to %(new_email)s.\n"
+"\n"
+"A verification code has been sent to the new address.\n"
+"\n"
+"If you initiated this change, no action is needed here.\n"
+"\n"
+"If you did NOT request this change, sign in immediately to cancel it or "
+"contact your SSDC administrator:\n"
+"%(change_url)s\n"
+msgstr "SSDC Document Vault - सुरक्षा सूचना: इमेल परिवर्तन अनुरोध गरियो\n\nतपाईंको SSDC Document Vault खाताको इमेल ठेगाना %(current_email)s बाट %(new_email)s मा परिवर्तन गर्न अनुरोध गरिएको छ।\n\nनयाँ ठेगानामा प्रमाणीकरण कोड पठाइएको छ।\n\nयदि तपाईंले यो परिवर्तन सुरु गर्नुभएको हो भने यहाँ कुनै कार्य आवश्यक छैन।\n\nयदि तपाईंले यो परिवर्तन अनुरोध गर्नुभएको छैन भने तुरुन्तै साइन इन गरी रद्द गर्नुहोस् वा आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्:\n%(change_url)s\n"
+
+#: templates/email/registration_approved.html:3
+msgid "Access Approved"
+msgstr "पहुँच स्वीकृत भयो"
+
+#: templates/email/registration_approved.html:7
+msgid "Your access request has been approved."
+msgstr "तपाईंको पहुँच अनुरोध स्वीकृत भएको छ।"
+
+#: templates/email/registration_approved.html:8
+msgid ""
+"Your account is now authorized for staff access. You can sign in using your "
+"registered email and password."
+msgstr "तपाईंको खाता अब कर्मचारी पहुँचका लागि अधिकृत छ। दर्ता गरिएको इमेल र पासवर्ड प्रयोग गरी साइन इन गर्न सक्नुहुन्छ।"
+
+#: templates/email/registration_approved.txt:1
+#, python-format
+msgid ""
+"SSDC Document Vault - Access Approved\n"
+"\n"
+"Your SSDC Document Vault access request has been approved by an "
+"administrator.\n"
+"\n"
+"Your account is now authorized for staff access. You can sign in using your "
+"registered email and password:\n"
+"%(login_url)s\n"
+msgstr "SSDC Document Vault - पहुँच स्वीकृत भयो\n\nतपाईंको SSDC Document Vault पहुँच अनुरोध प्रशासकले स्वीकृत गर्नुभएको छ।\n\nतपाईंको खाता अब कर्मचारी पहुँचका लागि अधिकृत छ। दर्ता गरिएको इमेल र पासवर्ड प्रयोग गरी साइन इन गर्न सक्नुहुन्छ:\n%(login_url)s\n"
+
+#: templates/email/registration_declined.html:3
+msgid "Registration Declined"
+msgstr "दर्ता अस्वीकृत भयो"
+
+#: templates/email/registration_declined.html:7
+msgid "Your registration request was declined."
+msgstr "तपाईंको दर्ता अनुरोध अस्वीकृत भयो।"
+
+#: templates/email/registration_declined.html:8
+msgid ""
+"Your staff registration request for SSDC Document Vault was declined by an "
+"administrator."
+msgstr "SSDC Document Vault का लागि तपाईंको कर्मचारी दर्ता अनुरोध प्रशासकले अस्वीकृत गर्नुभएको छ।"
+
+#: templates/email/registration_declined.html:16
+#: templates/email/registration_expired.html:10
+#: templates/email/registration_reapplication_allowed.html:9
+msgid "Submit New Application"
+msgstr "नयाँ आवेदन पेश गर्नुहोस्"
+
+#: templates/email/registration_declined.txt:1
+msgid ""
+"SSDC Document Vault - Registration Declined\n"
+"\n"
+"Your staff registration request for SSDC Document Vault was declined by an "
+"administrator.\n"
+msgstr "SSDC Document Vault - दर्ता अस्वीकृत भयो\n\nSSDC Document Vault का लागि तपाईंको कर्मचारी दर्ता अनुरोध प्रशासकले अस्वीकृत गर्नुभएको छ।\n"
+
+#: templates/email/registration_declined.txt:7
+#, python-format
+msgid ""
+"You are permitted to submit a new application:\n"
+"%(reapply_url)s"
+msgstr "तपाईंलाई नयाँ आवेदन पेश गर्न अनुमति छ:\n%(reapply_url)s"
+
+#: templates/email/registration_expired.html:3
+msgid "Registration Expired"
+msgstr "दर्ताको म्याद सकियो"
+
+#: templates/email/registration_expired.html:7
+msgid "Registration request expired."
+msgstr "दर्ता अनुरोधको म्याद सकियो।"
+
+#: templates/email/registration_expired.html:8
+msgid ""
+"Your staff registration request for SSDC Document Vault has expired because "
+"it was not verified or reviewed within the allowed timeframe."
+msgstr "अनुमत समयभित्र प्रमाणीकरण वा समीक्षा नभएकाले SSDC Document Vault का लागि तपाईंको कर्मचारी दर्ता अनुरोधको म्याद सकिएको छ।"
+
+#: templates/email/registration_expired.txt:1
+msgid ""
+"SSDC Document Vault - Registration Expired\n"
+"\n"
+"Your staff registration request for SSDC Document Vault has expired because "
+"it was not verified or reviewed within the allowed timeframe.\n"
+msgstr "SSDC Document Vault - दर्ताको म्याद सकियो\n\nअनुमत समयभित्र प्रमाणीकरण वा समीक्षा नभएकाले SSDC Document Vault का लागि तपाईंको कर्मचारी दर्ता अनुरोधको म्याद सकिएको छ।\n"
+
+#: templates/email/registration_expired.txt:6
+#, python-format
+msgid ""
+"You may submit a fresh registration request here:\n"
+"%(reapply_url)s"
+msgstr "यहाँ नयाँ दर्ता अनुरोध पेश गर्न सक्नुहुन्छ:\n%(reapply_url)s"
+
+#: templates/email/registration_otp.html:105
+#: templates/email/registration_otp.txt:7
+msgid ""
+"Opening the link alone does not verify your email address. You must enter "
+"the six-digit code to finish your registration."
+msgstr "लिङ्क खोल्न मात्रै तपाईंको इमेल ठेगाना प्रमाणित हुँदैन। दर्ता पूरा गर्न छ अङ्कको कोड लेख्नु अनिवार्य छ।"
+
+#: templates/email/registration_otp.html:124
+#, fuzzy
+#| msgid "Unable to verify this code."
+msgid "Enter verification code"
+msgstr "कोड प्रमाणित भएन।"
+
+#: templates/email/registration_otp.txt:5
+msgid "Enter the code on the verification page:"
+msgstr "प्रमाणीकरण पृष्ठमा कोड लेख्नुहोस्:"
+
+#: templates/email/registration_reapplication_allowed.html:3
+msgid "Reapplication Permitted"
+msgstr "पुनः आवेदन अनुमति दिइयो"
+
+#: templates/email/registration_reapplication_allowed.html:7
+msgid "You may reapply for staff access."
+msgstr "तपाईं कर्मचारी पहुँचका लागि पुनः आवेदन गर्न सक्नुहुन्छ।"
+
+#: templates/email/registration_reapplication_allowed.html:8
+msgid ""
+"An administrator has granted permission for you to submit a new application "
+"for SSDC Document Vault staff access."
+msgstr "प्रशासकले तपाईंलाई SSDC Document Vault कर्मचारी पहुँचका लागि नयाँ आवेदन पेश गर्न अनुमति दिनुभएको छ।"
+
+#: templates/email/registration_reapplication_allowed.txt:1
+#, python-format
+msgid ""
+"SSDC Document Vault - Reapplication Permitted\n"
+"\n"
+"An administrator has reviewed your declined application and granted "
+"permission for you to reapply.\n"
+"\n"
+"You may submit a new application here:\n"
+"%(reapply_url)s\n"
+msgstr "SSDC Document Vault - पुनः आवेदन अनुमति दिइयो\n\nप्रशासकले तपाईंको अस्वीकृत आवेदन समीक्षा गरी पुनः आवेदन गर्न अनुमति दिनुभएको छ।\n\nयहाँ नयाँ आवेदन पेश गर्न सक्नुहुन्छ:\n%(reapply_url)s\n"
+
+#: templates/email/registration_status_link.html:3
+msgid "Your application status"
+msgstr "तपाईंको आवेदन स्थिति"
+
+#: templates/email/registration_status_link.html:7
+#, python-format
+msgid "Hi %(user_name)s,"
+msgstr "नमस्ते %(user_name)s,"
+
+#: templates/email/registration_status_link.html:8
+msgid ""
+"Use the secure link below to open the current status of your staff "
+"registration application."
+msgstr "आफ्नो कर्मचारी दर्ता आवेदनको हालको स्थिति हेर्न तलको सुरक्षित लिङ्क प्रयोग गर्नुहोस्।"
+
+#: templates/email/registration_status_link.html:11
+#, python-format
+msgid ""
+"This link can only be used once and expires in %(hours)s hours. It does not "
+"verify your email address or sign you in."
+msgstr "यो लिङ्क एकपटक मात्र प्रयोग गर्न सकिन्छ र %(hours)s घण्टामा म्याद सकिन्छ। यसले तपाईंको इमेल ठेगाना प्रमाणित गर्दैन वा साइन इन गर्दैन।"
+
+#: templates/email/registration_status_link.html:14
+msgid ""
+"If you did not request this message, you can ignore it. Your application has "
+"not changed."
+msgstr "यदि तपाईंले यो सन्देश अनुरोध गर्नुभएको छैन भने बेवास्ता गर्न सक्नुहुन्छ। तपाईंको आवेदनमा कुनै परिवर्तन भएको छैन।"
+
+#: templates/email/registration_status_link.html:17
+msgid "This is an automated message, so replies are not monitored."
+msgstr "यो स्वचालित सन्देश हो, त्यसैले जवाफहरू हेरिँदैन।"
+
+#: templates/email/registration_status_link.txt:1
+#, python-format
+msgid ""
+"Hi %(user_name)s,\n"
+"\n"
+"Use the secure link below to open the current status of your SSDC Document "
+"Vault staff registration application:\n"
+"\n"
+"%(verification_url)s\n"
+"\n"
+"This link can only be used once and expires in %(hours)s hours. It does not "
+"verify your email address or sign you in.\n"
+"\n"
+"If you did not request this message, you can ignore it. Your application has "
+"not changed."
+msgstr "नमस्ते %(user_name)s,\n\nआफ्नो SSDC Document Vault कर्मचारी दर्ता आवेदनको हालको स्थिति हेर्न तलको सुरक्षित लिङ्क प्रयोग गर्नुहोस्:\n\n%(verification_url)s\n\nयो लिङ्क एकपटक मात्र प्रयोग गर्न सकिन्छ र %(hours)s घण्टामा म्याद सकिन्छ। यसले तपाईंको इमेल ठेगाना प्रमाणित गर्दैन वा साइन इन गर्दैन।\n\nयदि तपाईंले यो सन्देश अनुरोध गर्नुभएको छैन भने बेवास्ता गर्न सक्नुहुन्छ। तपाईंको आवेदनमा कुनै परिवर्तन भएको छैन।"
+
+#: templates/home.html:9
+msgid ""
+"An internal document library operated by Siddhartha Social Development "
+"Centre for authorized staff."
+msgstr ""
+"सिद्धार्थ सामाजिक विकास केन्द्रका अधिकारप्राप्त कर्मचारीका लागि सञ्चालित आन्तरिक "
+"कागजात पुस्तकालय।"
+
+#: templates/privacy.html:8
+msgid ""
+"SSDC Document Vault is an internal document library operated by Siddhartha "
+"Social Development Centre for authorized staff using organization issued "
+"accounts."
+msgstr ""
+"SSDC कागजात भण्डार सिद्धार्थ सामाजिक विकास केन्द्रले संस्थाबाट जारी खाता भएका "
+"अधिकारप्राप्त कर्मचारीका लागि सञ्चालन गरेको आन्तरिक पुस्तकालय हो।"
+
+#: templates/privacy.html:9
+msgid "The application requests the Google Drive"
+msgstr "एपले Google Drive को"
+
+#: templates/privacy.html:9
+msgid ""
+"permission only for the single storage owner Google account. Staff do not "
+"connect their personal Google accounts. The permission is used to create, "
+"store, retrieve, and manage only the document files that SSDC Document Vault "
+"creates in that storage owner account."
+msgstr ""
+"अनुमति एउटा भण्डारण मालिकको Google खाताका लागि मात्र माग्छ। कर्मचारीले व्यक्तिगत "
+"Google खाता जोड्दैनन्। यो अनुमति सो खातामा SSDC कागजात भण्डारले बनाएका कागजात "
+"बनाउन, राख्न, प्राप्त गर्न र व्यवस्थापन गर्न मात्र प्रयोग हुन्छ।"
+
+#: templates/privacy.html:10
+msgid ""
+"OAuth refresh and access tokens are encrypted at rest in the managed "
+"PostgreSQL database. The encryption key is held separately as an isolated "
+"application environment secret and is not included in the database or its "
+"backups. Tokens are used only to communicate with Google's OAuth and Drive "
+"services over HTTPS and are never displayed or logged."
+msgstr ""
+"OAuth का रिफ्रेस र पहुँच टोकन व्यवस्थित PostgreSQL डाटाबेसमा गुप्तीकरण गरेर राखिन्छन्। "
+"गुप्तीकरण कुञ्जी एपको वातावरणमा छुट्टै गोप्य रूपमा राखिन्छ र डाटाबेस वा ब्याकअपमा समावेश "
+"हुँदैन। टोकन Google को OAuth र Drive सेवासँग HTTPS मार्फत सञ्चार गर्न मात्र प्रयोग "
+"हुन्छन्। तिनलाई देखाइँदैन वा लगमा राखिँदैन।"
+
+#: templates/privacy.html:11
+msgid ""
+"Document contents remain in the storage owner's Google Drive. The "
+"application stores document metadata, staff permission grants, and audit "
+"records. Uploaded files are validated by type, structure, and size before "
+"publication, and each document request is checked against the staff member's "
+"current permissions."
+msgstr ""
+"कागजातको सामग्री भण्डारण मालिकको Google Drive मा रहन्छ। एपले कागजातको विवरण, "
+"कर्मचारीको अनुमति र गतिविधिको अभिलेख राख्छ। प्रकाशनअघि फाइलको प्रकार, संरचना र आकार "
+"जाँचिन्छ। प्रत्येक कागजात अनुरोधमा कर्मचारीको हालको अनुमति जाँचिन्छ।"
+
+#: templates/privacy.html:12
+msgid ""
+"SSDC does not sell Google user data or document data, use it for "
+"advertising, or share it with data brokers or unrelated third parties. If "
+"the organization disconnects the integration, the stored OAuth credentials "
+"are deleted; files already stored in Google Drive remain under the storage "
+"owner's control."
+msgstr ""
+"SSDC ले Google प्रयोगकर्ता वा कागजातको डेटा बेच्दैन, विज्ञापनमा प्रयोग गर्दैन र डेटा "
+"व्यापारी वा असम्बन्धित तेस्रो पक्षसँग साझा गर्दैन। संस्थाले जडान हटाएमा सुरक्षित OAuth "
+"प्रमाणहरू मेटिन्छन्। Google Drive मा रहेका फाइल भण्डारण मालिककै नियन्त्रणमा रहन्छन्।"
+
+#: templates/privacy.html:13 templates/terms.html:11
+msgid "Return to SSDC Document Vault"
+msgstr "SSDC कागजात भण्डारमा फर्कनुहोस्"
+
+#: templates/terms.html:8
+msgid ""
+"SSDC Document Vault is provided by Siddhartha Social Development Centre "
+"solely for authorized staff and approved organizational work."
+msgstr ""
+"सिद्धार्थ सामाजिक विकास केन्द्रले SSDC कागजात भण्डार अधिकारप्राप्त कर्मचारी र स्वीकृत "
+"संस्थागत कामका लागि मात्र उपलब्ध गराएको हो।"
+
+#: templates/terms.html:9
+msgid ""
+"Users must protect their credentials, follow SSDC information handling "
+"policies, access only documents needed for their duties, and must not upload "
+"unlawful, malicious, or unauthorized material. Access may be suspended or "
+"revoked by SSDC administrators."
+msgstr ""
+"प्रयोगकर्ताले आफ्नो खाताको गोपनीयता जोगाउनुपर्छ, SSDC को सूचना व्यवस्थापन नीति पालना "
+"गर्नुपर्छ र कामका लागि आवश्यक कागजातमा मात्र पहुँच लिनुपर्छ। गैरकानुनी, हानिकारक वा "
+"अनुमतिबिनाको सामग्री अपलोड गर्न पाइँदैन। SSDC प्रशासकले पहुँच रोक्न वा हटाउन सक्छन्।"
+
+#: templates/terms.html:10
+msgid ""
+"The service may be changed, interrupted, or withdrawn for maintenance, "
+"security, or operational reasons. Use of the service is subject to "
+"applicable SSDC policies and law."
+msgstr ""
+"मर्मत, सुरक्षा वा सञ्चालनका कारण सेवा बदलिन, रोकिन वा बन्द हुन सक्छ। सेवा प्रयोगमा "
+"SSDC का लागू नीति र कानुन पालना गर्नुपर्छ।"
+
+#: templates/vault/drive_connection.html:6
+msgid "Storage owner connected."
+msgstr "भण्डारण मालिकको खाता जोडिएको छ।"
+
+#: templates/vault/drive_connection.html:6
+msgid "Connect or reconnect the storage owner's Google account."
+msgstr "भण्डारण मालिकको Google खाता जोड्नुहोस् वा फेरि जोड्नुहोस्।"
+
+#: templates/vault/drive_connection.html:7
+msgid ""
+"Staff continue using SSDC accounts. Only the storage owner authorizes Google "
+"access."
+msgstr "कर्मचारीले SSDC खाताकै प्रयोग गर्छन्। भण्डारण मालिकले मात्र Google पहुँच दिन्छन्।"
+
+#: templates/vault/drive_connection.html:8
+msgid "Connect / reconnect Google Drive"
+msgstr "Google Drive जोड्नुहोस् वा फेरि जोड्नुहोस्"
+
+#: templates/vault/drive_connection.html:10
+msgid "The SSDC folder is configured. Verify it before uploading."
+msgstr "SSDC फोल्डर तयार छ। अपलोड गर्नुअघि प्रमाणित गर्नुहोस्।"
+
+#: templates/vault/drive_connection.html:10
+msgid "Prepare the private SSDC folder before uploading."
+msgstr "अपलोड गर्नुअघि निजी SSDC फोल्डर तयार गर्नुहोस्।"
+
+#: templates/vault/drive_connection.html:11
+msgid "Prepare / verify private folder"
+msgstr "निजी फोल्डर तयार वा प्रमाणित गर्नुहोस्"
+
+#: templates/vault/drive_connection.html:13
+msgid ""
+"Keep this folder private in Google Drive. SSDC permissions are managed "
+"inside the portal."
+msgstr ""
+"Google Drive मा यो फोल्डर निजी राख्नुहोस्। SSDC को अनुमति पोर्टलभित्र व्यवस्थापन हुन्छ।"
+
+#: templates/vault/form.html:6 templates/vault/manage.html:6
+#: templates/vault/management.html:5
+msgid "Document management"
+msgstr "कागजात व्यवस्थापन"
+
+#: templates/vault/form.html:6
+msgid "Add a file and give it a clear, recognisable title."
+msgstr "फाइल थप्नुहोस् र सजिलै चिनिने शीर्षक दिनुहोस्।"
+
+#: templates/vault/form.html:6
+msgid "Keep related documents together in a shared folder."
+msgstr "सम्बन्धित कागजात साझा फोल्डरमा सँगै राख्नुहोस्।"
+
+#: templates/vault/form.html:14 templates/vault/library.html:23
+#: templates/vault/library.html:116
+msgid "Upload document"
+msgstr "कागजात अपलोड गर्नुहोस्"
+
+#: templates/vault/form.html:14 templates/vault/import_panel.html:71
+msgid "Create folder"
+msgstr "फोल्डर बनाउनुहोस्"
+
+#: templates/vault/form.html:19
+msgid "Before you upload"
+msgstr "अपलोड गर्नुअघि"
+
+#: templates/vault/form.html:19
+msgid "PDF, JPEG, PNG, or WebP. Up to"
+msgstr "PDF, JPEG, PNG वा WebP। अधिकतम"
+
+#: templates/vault/form.html:19
+msgid "per file."
+msgstr "प्रति फाइल।"
+
+#: templates/vault/form.html:19
+msgid ""
+"Files are checked before they become available. You can review the result in "
+"document management."
+msgstr "उपलब्ध हुनुअघि फाइल जाँचिन्छन्। नतिजा कागजात व्यवस्थापनमा हेर्न सक्नुहुन्छ।"
+
+#: templates/vault/form.html:19
+msgid ""
+"The previous version remains in the version history. Change the document "
+"title in document management."
+msgstr "अघिल्लो संस्करण इतिहासमा रहन्छ। शीर्षक कागजात व्यवस्थापनबाट बदल्नुहोस्।"
+
+#: templates/vault/form.html:20
+msgid "Folder access"
+msgstr "फोल्डर पहुँच"
+
+#: templates/vault/form.html:20
+msgid "New folders normally inherit access from their parent folder."
+msgstr "नयाँ फोल्डरमा सामान्यतया मूल फोल्डरकै पहुँच लागू हुन्छ।"
+
+#: templates/vault/form.html:20
+msgid ""
+"A restricted folder uses its own grants. Manage staff access in "
+"Administration."
+msgstr ""
+"सीमित फोल्डरमा छुट्टै अनुमति लागू हुन्छ। प्रशासनबाट कर्मचारीको पहुँच व्यवस्थापन गर्नुहोस्।"
+
+#: templates/vault/import.html:13
+msgid "Grow your library"
+msgstr "पुस्तकालय बढाउनुहोस्"
+
+#: templates/vault/import.html:13
+msgid "Bring your files together, ready to share with your team."
+msgstr "आफ्नो टोलीसँग साझा गर्न फाइलहरू एकै ठाउँमा राख्नुहोस्।"
+
+#: templates/vault/import_panel.html:7
+msgid "A place for every document"
+msgstr "हरेक कागजातको आफ्नै ठाउँ"
+
+#: templates/vault/import_panel.html:7
+msgid "Bring files into your vault"
+msgstr "भण्डारमा फाइल थप्नुहोस्"
+
+#: templates/vault/import_panel.html:7
+msgid "Choose files, drop a folder, or paste a copied file."
+msgstr "फाइल छान्नुहोस्, फोल्डर छोड्नुहोस् वा प्रतिलिपि गरिएको फाइल टाँस्नुहोस्।"
+
+#: templates/vault/import_panel.html:7
+msgid "Add documents here once your account has upload access."
+msgstr "अपलोड अनुमति पाएपछि यहाँ कागजात थप्नुहोस्।"
+
+#: templates/vault/import_panel.html:7
+msgid "Private &amp; checked"
+msgstr "निजी र जाँच गरिएको"
+
+#: templates/vault/import_panel.html:16
+msgid "Check your upload"
+msgstr "अपलोड जाँच्नुहोस्"
+
+#: templates/vault/import_panel.html:17 vault/forms.py:14
+msgid "Save to folder"
+msgstr "राख्ने फोल्डर"
+
+#: templates/vault/import_panel.html:17
+msgid "Choose a vault folder"
+msgstr "भण्डारको फोल्डर छान्नुहोस्"
+
+#: templates/vault/import_panel.html:18
+msgid "Files use this folder’s access permissions."
+msgstr "फाइलमा यस फोल्डरकै पहुँच अनुमति लागू हुन्छ।"
+
+#: templates/vault/import_panel.html:26
+msgid "Drop your documents here"
+msgstr "कागजात यहाँ छोड्नुहोस्"
+
+#: templates/vault/import_panel.html:27
+msgid "PDF, JPG, PNG &amp; WebP · Up to"
+msgstr "PDF, JPG, PNG र WebP · अधिकतम"
+
+#: templates/vault/import_panel.html:27
+msgid "each"
+msgstr "प्रत्येक"
+
+#: templates/vault/import_panel.html:28
+msgid "Choose files"
+msgstr "फाइल छान्नुहोस्"
+
+#: templates/vault/import_panel.html:28
+msgid "Import folder"
+msgstr "फोल्डरबाट ल्याउनुहोस्"
+
+#: templates/vault/import_panel.html:28
+msgid "Paste files"
+msgstr "फाइल टाँस्नुहोस्"
+
+#: templates/vault/import_panel.html:31
+msgid "Or click here and press"
+msgstr "वा यहाँ क्लिक गरेर थिच्नुहोस्"
+
+#: templates/vault/import_panel.html:33
+msgid "Select a document"
+msgstr "कागजात छान्नुहोस्"
+
+#: templates/vault/import_panel.html:37
+msgid "Document title"
+msgstr "कागजातको शीर्षक"
+
+#: templates/vault/import_panel.html:50
+msgid ""
+"Folder imports include supported files from subfolders. All files go into "
+"your selected vault folder; local folder structure is not recreated. Up to "
+"50 files per batch."
+msgstr ""
+"उपफोल्डरका मिल्ने फाइल पनि ल्याइन्छन्। सबै फाइल छानिएको फोल्डरमा राखिन्छन्। स्थानीय "
+"फोल्डर संरचना बनाइँदैन। एक पटकमा ५० फाइलसम्म ल्याउन सकिन्छ।"
+
+#: templates/vault/import_panel.html:59
+msgid "Verify identity in a new tab, then continue here"
+msgstr "नयाँ ट्याबमा पहिचान प्रमाणित गरेर यहाँ जारी राख्नुहोस्"
+
+#: templates/vault/import_panel.html:62
+msgid "Ready to import"
+msgstr "ल्याउन तयार"
+
+#: templates/vault/import_panel.html:63
+msgid "Clear finished"
+msgstr "सकिएका हटाउनुहोस्"
+
+#: templates/vault/import_panel.html:68
+msgid "Files are checked before they appear in the library."
+msgstr "पुस्तकालयमा देखिनुअघि फाइल जाँचिन्छन्।"
+
+#: templates/vault/import_panel.html:68
+msgid "Import documents"
+msgstr "कागजात ल्याउनुहोस्"
+
+#: templates/vault/import_panel.html:71
+msgid "Create your first folder"
+msgstr "पहिलो फोल्डर बनाउनुहोस्"
+
+#: templates/vault/import_panel.html:71
+msgid "You need a folder with upload access"
+msgstr "अपलोड अनुमति भएको फोल्डर चाहिन्छ"
+
+#: templates/vault/import_panel.html:71
+msgid "Your account has viewing access"
+msgstr "तपाईंको खातामा हेर्ने अनुमति छ"
+
+#: templates/vault/import_panel.html:71
+msgid "Create a vault folder, then add your documents here."
+msgstr "भण्डारमा फोल्डर बनाएर यहाँ कागजात थप्नुहोस्।"
+
+#: templates/vault/import_panel.html:71
+msgid ""
+"Ask your administrator to give you manage access to a folder. You can then "
+"import documents here."
+msgstr ""
+"प्रशासकसँग फोल्डर व्यवस्थापनको अनुमति माग्नुहोस्। त्यसपछि यहाँ कागजात ल्याउन सक्नुहुन्छ।"
+
+#: templates/vault/import_panel.html:71
+msgid "You are signed in as"
+msgstr "तपाईंको खाता"
+
+#: templates/vault/import_panel.html:71
+msgid ""
+". To upload, sign in with an administrator account or ask your administrator "
+"to assign the Document manager role and manage access to a folder."
+msgstr ""
+"। अपलोड गर्न प्रशासक खाताबाट साइन इन गर्नुहोस् वा प्रशासकसँग कागजात व्यवस्थापकको "
+"भूमिका र फोल्डर व्यवस्थापन अनुमति माग्नुहोस्।"
+
+#: templates/vault/library.html:21
+msgid "Your workspace"
+msgstr "तपाईंको कार्यक्षेत्र"
+
+#: templates/vault/library.html:21
+msgid "Browse the documents shared in this folder."
+msgstr "यस फोल्डरमा साझा गरिएका कागजात हेर्नुहोस्।"
+
+#: templates/vault/library.html:21
+msgid "Browse shared folders or find the document you need."
+msgstr "साझा फोल्डर हेर्नुहोस् वा चाहिएको कागजात खोज्नुहोस्।"
+
+#: templates/vault/library.html:23
+msgid "New folder"
+msgstr "नयाँ फोल्डर"
+
+#: templates/vault/library.html:33
+msgid "Folders"
+msgstr "फोल्डरहरू"
+
+#: templates/vault/library.html:33
+msgid "Explore folders within"
+msgstr "यस भित्रका फोल्डर हेर्नुहोस्"
+
+#: templates/vault/library.html:33
+msgid "Browse by folder to find related documents."
+msgstr "सम्बन्धित कागजात भेट्न फोल्डरअनुसार हेर्नुहोस्।"
+
+#: templates/vault/library.html:40 templates/vault/management.html:14
+msgid "Documents"
+msgstr "कागजातहरू"
+
+#: templates/vault/library.html:40
+msgid "Select a document to open its preview."
+msgstr "पूर्वावलोकन खोल्न कागजात छान्नुहोस्।"
+
+#: templates/vault/library.html:41
+msgid "Document display"
+msgstr "कागजात प्रदर्शन"
+
+#: templates/vault/library.html:45
+msgid "List view"
+msgstr "सूचीमा हेर्नुहोस्"
+
+#: templates/vault/library.html:49
+msgid "Gallery view"
+msgstr "तस्बिर सूचीमा हेर्नुहोस्"
+
+#: templates/vault/library.html:55
+msgid "Find documents"
+msgstr "कागजात खोज्नुहोस्"
+
+#: templates/vault/library.html:56 templates/vault/library.html:59
+msgid "Search documents"
+msgstr "कागजात खोज्नुहोस्"
+
+#: templates/vault/library.html:61 templates/vault/management.html:7
+msgid "Search"
+msgstr "खोज्नुहोस्"
+
+#: templates/vault/library.html:62
+msgid "File type"
+msgstr "फाइलको प्रकार"
+
+#: templates/vault/library.html:62
+msgid "All file types"
+msgstr "सबै प्रकारका फाइल"
+
+#: templates/vault/library.html:62
+msgid "PDF documents"
+msgstr "PDF कागजातहरू"
+
+#: templates/vault/library.html:62
+msgid "Images"
+msgstr "तस्बिरहरू"
+
+#: templates/vault/library.html:63 templates/vault/management.html:10
+msgid "Sort by"
+msgstr "क्रम मिलाउनुहोस्"
+
+#: templates/vault/library.html:63 templates/vault/management.html:10
+msgid "Recently updated"
+msgstr "हालै अद्यावधिक"
+
+#: templates/vault/library.html:63 templates/vault/management.html:10
+msgid "Oldest first"
+msgstr "पुरानो पहिले"
+
+#: templates/vault/library.html:63 templates/vault/management.html:10
+msgid "Name alphabetically"
+msgstr "नामअनुसार"
+
+#: templates/vault/library.html:66
+msgid "Search results"
+msgstr "खोजको नतिजा"
+
+#: templates/vault/library.html:66
+msgid "Search term:"
+msgstr "खोजिएको शब्द:"
+
+#: templates/vault/library.html:66
+msgid "· PDF documents"
+msgstr "· PDF कागजातहरू"
+
+#: templates/vault/library.html:66
+msgid "· Images"
+msgstr "· तस्बिरहरू"
+
+#: templates/vault/library.html:67 templates/vault/library.html:116
+#: templates/vault/management.html:12 templates/vault/management.html:33
+msgid "Clear filters"
+msgstr "छनोट हटाउनुहोस्"
+
+#: templates/vault/library.html:76
+msgid "PDF document"
+msgstr "PDF कागजात"
+
+#: templates/vault/library.html:76 templates/vault/library.html:100
+#: templates/vault/library.html:101
+msgid "Image"
+msgstr "तस्बिर"
+
+#: templates/vault/library.html:87
+msgid "Documents available to your account"
+msgstr "तपाईंको खातामा उपलब्ध कागजातहरू"
+
+#: templates/vault/library.html:90
+msgid "Document name"
+msgstr "कागजातको नाम"
+
+#: templates/vault/library.html:91
+msgid "Type"
+msgstr "प्रकार"
+
+#: templates/vault/library.html:92
+msgid "Size"
+msgstr "आकार"
+
+#: templates/vault/library.html:93
+msgid "Last updated"
+msgstr "पछिल्लो अद्यावधिक"
+
+#: templates/vault/library.html:113 templates/vault/management.html:33
+msgid "No matching documents"
+msgstr "मिल्दो कागजात भेटिएन"
+
+#: templates/vault/library.html:113
+msgid "No documents yet"
+msgstr "अहिलेसम्म कागजात छैनन्"
+
+#: templates/vault/library.html:114
+msgid "Try a different search or clear your filters to see all documents."
+msgstr "अर्को शब्द खोज्नुहोस् वा सबै कागजात हेर्न छनोट हटाउनुहोस्।"
+
+#: templates/vault/library.html:114
+msgid ""
+"Upload a document to share it with staff who have access to this folder."
+msgstr "यस फोल्डरमा पहुँच भएका कर्मचारीसँग साझा गर्न कागजात अपलोड गर्नुहोस्।"
+
+#: templates/vault/library.html:114
+msgid "Documents shared in this folder will appear here."
+msgstr "यस फोल्डरमा साझा गरिएका कागजात यहाँ देखिन्छन्।"
+
+#: templates/vault/library.html:114
+msgid ""
+"Browse a shared folder, or contact your administrator for document access."
+msgstr "साझा फोल्डर हेर्नुहोस् वा कागजात पहुँचका लागि प्रशासकलाई सम्पर्क गर्नुहोस्।"
+
+#: templates/vault/manage.html:3 templates/vault/management.html:30
+msgid "Manage"
+msgstr "व्यवस्थापन"
+
+#: templates/vault/manage.html:5 templates/vault/manage.html:8
+msgid "Document details"
+msgstr "कागजातको विवरण"
+
+#: templates/vault/manage.html:6
+msgid "Update the details, visibility, and versions of this document."
+msgstr "यस कागजातको विवरण, उपलब्धता र संस्करण अद्यावधिक गर्नुहोस्।"
+
+#: templates/vault/manage.html:6 templates/vault/viewer.html:6
+msgid "Preview"
+msgstr "पूर्वावलोकन"
+
+#: templates/vault/manage.html:6
+msgid "Upload a replacement"
+msgstr "नयाँ संस्करण अपलोड गर्नुहोस्"
+
+#: templates/vault/manage.html:8
+msgid "Save changes"
+msgstr "परिवर्तन सुरक्षित गर्नुहोस्"
+
+#: templates/vault/manage.html:10
+msgid "Library visibility"
+msgstr "पुस्तकालयमा उपलब्धता"
+
+#: templates/vault/manage.html:10 templates/vault/management.html:8
+#: templates/vault/management.html:28
+msgid "Deleted"
+msgstr "मेटाइएका"
+
+#: templates/vault/manage.html:10 templates/vault/management.html:8
+#: templates/vault/management.html:28
+msgid "Archived"
+msgstr "अभिलेखमा"
+
+#: templates/vault/manage.html:10
+msgid "Awaiting publication"
+msgstr "प्रकाशनको प्रतीक्षामा"
+
+#: templates/vault/manage.html:11
+msgid "This document is retained for restoration until it is purged."
+msgstr "स्थायी रूपमा नमेटिएसम्म यो कागजात फिर्ता ल्याउन सकिन्छ।"
+
+#: templates/vault/manage.html:11
+msgid ""
+"Archived documents are hidden from the staff library. Unarchive to make this "
+"document available again."
+msgstr ""
+"अभिलेखका कागजात कर्मचारी पुस्तकालयमा देखिँदैनन्। फेरि उपलब्ध गराउन पुस्तकालयमा फर्काउनुहोस्।"
+
+#: templates/vault/manage.html:11
+msgid ""
+"This document is available to staff with access. Archive it to hide it while "
+"keeping its history."
+msgstr ""
+"पहुँच भएका कर्मचारीले यो कागजात हेर्न सक्छन्। इतिहास राखेर लुकाउन अभिलेखमा राख्नुहोस्।"
+
+#: templates/vault/manage.html:11
+msgid ""
+"The file must pass its checks before it appears in the library. Review the "
+"processing status below."
+msgstr "पुस्तकालयमा देखिनुअघि फाइलको जाँच पूरा हुनुपर्छ। तल जाँचको अवस्था हेर्नुहोस्।"
+
+#: templates/vault/manage.html:15
+msgid "Restore document"
+msgstr "कागजात फिर्ता ल्याउनुहोस्"
+
+#: templates/vault/manage.html:18
+msgid "Unarchive document"
+msgstr "पुस्तकालयमा फर्काउनुहोस्"
+
+#: templates/vault/manage.html:18
+msgid "Archive document"
+msgstr "अभिलेखमा राख्नुहोस्"
+
+#: templates/vault/manage.html:28
+msgid "Version history"
+msgstr "संस्करण इतिहास"
+
+#: templates/vault/manage.html:35
+msgid "Uploaded versions and processing results"
+msgstr "अपलोड गरिएका संस्करण र जाँचको नतिजा"
+
+#: templates/vault/manage.html:38
+msgid "File"
+msgstr "फाइल"
+
+#: templates/vault/manage.html:39
+msgid "Uploaded"
+msgstr "अपलोड गरिएको"
+
+#: templates/vault/manage.html:41
+msgid "Processing"
+msgstr "जाँच हुँदैछ"
+
+#: templates/vault/manage.html:44
+msgid "Current"
+msgstr "हालको"
+
+#: templates/vault/manage.html:44
+msgid "Checking document…"
+msgstr "कागजात जाँच हुँदैछ…"
+
+#: templates/vault/manage.html:44
+msgid "Retry document checks"
+msgstr "कागजात फेरि जाँच्नुहोस्"
+
+#: templates/vault/manage.html:46
+msgid "Restore this version"
+msgstr "यो संस्करण फिर्ता ल्याउनुहोस्"
+
+#: templates/vault/manage.html:46
+msgid "No versions uploaded yet."
+msgstr "अहिलेसम्म कुनै संस्करण अपलोड गरिएको छैन।"
+
+#: templates/vault/management.html:5
+msgid "Manage your documents"
+msgstr "आफ्ना कागजात व्यवस्थापन गर्नुहोस्"
+
+#: templates/vault/management.html:5
+msgid "Review uploads, update details, and manage version history."
+msgstr "अपलोड हेर्नुहोस्, विवरण अद्यावधिक गर्नुहोस् र संस्करण इतिहास व्यवस्थापन गर्नुहोस्।"
+
+#: templates/vault/management.html:5
+msgid "Browse library"
+msgstr "पुस्तकालय हेर्नुहोस्"
+
+#: templates/vault/management.html:7
+msgid "Search managed documents"
+msgstr "व्यवस्थापन गर्ने कागजात खोज्नुहोस्"
+
+#: templates/vault/management.html:8
+msgid "Document state"
+msgstr "कागजातको अवस्था"
+
+#: templates/vault/management.html:8
+msgid "All states"
+msgstr "सबै अवस्था"
+
+#: templates/vault/management.html:8 templates/vault/management.html:28
+msgid "Published"
+msgstr "प्रकाशित"
+
+#: templates/vault/management.html:8 templates/vault/management.html:28
+msgid "Awaiting checks"
+msgstr "जाँचको प्रतीक्षामा"
+
+#: templates/vault/management.html:8 templates/vault/management.html:28
+msgid "Rejected"
+msgstr "अस्वीकृत"
+
+#: templates/vault/management.html:9 templates/vault/management.html:23
+#: vault/forms.py:39
+msgid "Folder"
+msgstr "फोल्डर"
+
+#: templates/vault/management.html:9
+msgid "All folders"
+msgstr "सबै फोल्डर"
+
+#: templates/vault/management.html:12
+msgid "Matching documents"
+msgstr "मिल्दो कागजातहरू"
+
+#: templates/vault/management.html:19
+msgid "Documents you can manage, including archived and deleted items"
+msgstr "अभिलेखमा राखिएका र मेटाइएकासहित तपाईंले व्यवस्थापन गर्न सक्ने कागजात"
+
+#: templates/vault/management.html:22
+msgid "Document"
+msgstr "कागजात"
+
+#: templates/vault/management.html:24
+msgid "State"
+msgstr "अवस्था"
+
+#: templates/vault/management.html:25
+msgid "Actions"
+msgstr "कार्यहरू"
+
+#: templates/vault/management.html:28
+msgid "Replacement awaiting checks"
+msgstr "नयाँ संस्करण जाँचको प्रतीक्षामा"
+
+#: templates/vault/management.html:33
+msgid "Try a different search or clear your filters."
+msgstr "अर्को शब्द खोज्नुहोस् वा छनोट हटाउनुहोस्।"
+
+#: templates/vault/management.html:33
+msgid "No documents to manage yet"
+msgstr "अहिले व्यवस्थापन गर्ने कागजात छैनन्"
+
+#: templates/vault/management.html:33
+msgid ""
+"Open a folder in the library to upload your first document. Your uploads and "
+"their versions will appear here."
+msgstr ""
+"पहिलो कागजात अपलोड गर्न पुस्तकालयको फोल्डर खोल्नुहोस्। अपलोड र संस्करण यहाँ देखिनेछन्।"
+
+#: templates/vault/management.html:33
+msgid "Browse folders"
+msgstr "फोल्डर हेर्नुहोस्"
+
+#: templates/vault/pagination.html:6
+msgid "Previous"
+msgstr "अघिल्लो"
+
+#: templates/vault/pagination.html:7
+msgid "Page"
+msgstr "पृष्ठ"
+
+#: templates/vault/pagination.html:7 templates/vault/viewer.html:29
+msgid "of"
+msgstr "मध्ये"
+
+#: templates/vault/pagination.html:10
+msgid "Next"
+msgstr "अर्को"
+
+#: templates/vault/viewer.html:8
+msgid "Manage document"
+msgstr "कागजात व्यवस्थापन"
+
+#: templates/vault/viewer.html:13
+msgid "Document preview"
+msgstr "कागजात पूर्वावलोकन"
+
+#: templates/vault/viewer.html:15
+msgid "Preview controls"
+msgstr "पूर्वावलोकन नियन्त्रण"
+
+#: templates/vault/viewer.html:24
+msgid "Page number"
+msgstr "पृष्ठ सङ्ख्या"
+
+#: templates/vault/viewer.html:40
+msgid "Zoom out"
+msgstr "सानो बनाउनुहोस्"
+
+#: templates/vault/viewer.html:44
+msgid "Zoom in"
+msgstr "ठूलो बनाउनुहोस्"
+
+#: templates/vault/viewer.html:45
+msgid "Fit width"
+msgstr "चौडाइ मिलाउनुहोस्"
+
+#: templates/vault/viewer.html:47
+msgid "Private preview"
+msgstr "निजी पूर्वावलोकन"
+
+#: templates/vault/viewer.html:49
+msgid "Loading preview…"
+msgstr "पूर्वावलोकन खुल्दैछ…"
+
+#: templates/vault/viewer.html:71
+msgid "Enable JavaScript to view this document."
+msgstr "यो कागजात हेर्न JavaScript सक्षम गर्नुहोस्।"
+
+#: templates/vault/viewer.html:73
+msgid "For authorized viewing."
+msgstr "अनुमतिप्राप्त प्रयोगकर्ताका लागि।"
+
+#: vault/forms.py:9 vault/forms.py:39
+msgid "Title"
+msgstr "शीर्षक"
+
+#: vault/forms.py:10
+msgid "PDF or image"
+msgstr "PDF वा तस्बिर"
+
+#: vault/forms.py:32
+msgid "Name"
+msgstr "नाम"
+
+#: vault/forms.py:32
+msgid "Restricted"
+msgstr "सीमित पहुँच"
+
+msgid ""
+"%(added)s added to library. %(checking)s awaiting checks. %(rejected)s "
+"rejected. %(remaining)s need attention."
+msgstr ""
+"%(added)s पुस्तकालयमा थपिए। %(checking)s जाँचको प्रतीक्षामा छन्। %(rejected)s "
+"अस्वीकृत भए। %(remaining)s फाइलमा ध्यान दिनुहोस्।"
 
 msgid "%(count)s already queued"
 msgstr "%(count)s सूचीमा पहिल्यै छन्"
@@ -34,224 +2288,26 @@ msgstr "%(count)s फाइलको प्रकार मिलेन"
 msgid "%(name)s removed from the queue."
 msgstr "%(name)s सूचीबाट हटाइयो।"
 
-msgid ". To upload, sign in with an administrator account or ask your administrator to assign the Document manager role and manage access to a folder."
-msgstr "। अपलोड गर्न प्रशासक खाताबाट साइन इन गर्नुहोस् वा प्रशासकसँग कागजात व्यवस्थापकको भूमिका र फोल्डर व्यवस्थापन अनुमति माग्नुहोस्।"
-
-msgid "A place for every document"
-msgstr "हरेक कागजातको आफ्नै ठाउँ"
-
-msgid "A restricted folder uses its own grants. Manage staff access in Administration."
-msgstr "सीमित फोल्डरमा छुट्टै अनुमति लागू हुन्छ। प्रशासनबाट कर्मचारीको पहुँच व्यवस्थापन गर्नुहोस्।"
-
-msgid "Access follows your account permissions."
-msgstr "तपाईंको खाताको अनुमतिअनुसार पहुँच दिइन्छ।"
-
-msgid "Account security"
-msgstr "खाताको सुरक्षा"
-
-msgid "Account security · Step 1 of 2"
-msgstr "खाताको सुरक्षा · चरण १ मध्ये २"
-
-msgid "Account security · Step 2 of 2"
-msgstr "खाताको सुरक्षा · चरण २ मध्ये २"
-
-msgid "Accounts, access, and oversight."
-msgstr "खाता, पहुँच र अनुगमन।"
-
-msgid "Actions"
-msgstr "कार्यहरू"
-
-msgid "Active"
-msgstr "सक्रिय"
-
-msgid "Add"
-msgstr "थप्नुहोस्"
-
-msgid "Add a file and give it a clear, recognisable title."
-msgstr "फाइल थप्नुहोस् र सजिलै चिनिने शीर्षक दिनुहोस्।"
-
-msgid "Add documents"
-msgstr "कागजात थप्नुहोस्"
-
-msgid "Add documents here once your account has upload access."
-msgstr "अपलोड अनुमति पाएपछि यहाँ कागजात थप्नुहोस्।"
-
-msgid "Added to library"
-msgstr "पुस्तकालयमा थपियो"
-
-msgid "Admin portal"
-msgstr "प्रशासक पोर्टल"
-
-msgid "Admin sign in"
-msgstr "प्रशासक साइन इन"
-
-msgid "Admin sign in."
-msgstr "प्रशासक साइन इन"
-
-msgid "Administration"
-msgstr "प्रशासन"
-
-msgid "All file types"
-msgstr "सबै प्रकारका फाइल"
-
-msgid "All folders"
-msgstr "सबै फोल्डर"
-
-msgid "All states"
-msgstr "सबै अवस्था"
-
-msgid "An internal document library operated by Siddhartha Social Development Centre for authorized staff."
-msgstr "सिद्धार्थ सामाजिक विकास केन्द्रका अधिकारप्राप्त कर्मचारीका लागि सञ्चालित आन्तरिक कागजात पुस्तकालय।"
-
-msgid "Apply"
-msgstr "लागू गर्नुहोस्"
-
-msgid "Archive document"
-msgstr "अभिलेखमा राख्नुहोस्"
-
-msgid "Archived"
-msgstr "अभिलेखमा"
-
-msgid "Archived documents are hidden from the staff library. Unarchive to make this document available again."
-msgstr "अभिलेखका कागजात कर्मचारी पुस्तकालयमा देखिँदैनन्। फेरि उपलब्ध गराउन पुस्तकालयमा फर्काउनुहोस्।"
-
-msgid "Ask your administrator to give you manage access to a folder. You can then import documents here."
-msgstr "प्रशासकसँग फोल्डर व्यवस्थापनको अनुमति माग्नुहोस्। त्यसपछि यहाँ कागजात ल्याउन सक्नुहुन्छ।"
-
-msgid "Audit &amp; activity"
-msgstr "लेखापरीक्षण र गतिविधि"
-
-msgid "Authenticator or recovery code"
-msgstr "प्रमाणक वा पुनःप्राप्ति कोड"
-
-msgid "Awaiting checks"
-msgstr "जाँचको प्रतीक्षामा"
-
-msgid "Awaiting publication"
-msgstr "प्रकाशनको प्रतीक्षामा"
-
-msgid "Back to sign in"
-msgstr "साइन इनमा फर्कनुहोस्"
-
-msgid "Before you upload"
-msgstr "अपलोड गर्नुअघि"
-
-msgid "Breadcrumb"
-msgstr "पृष्ठ मार्ग"
-
-msgid "Bring files into your vault"
-msgstr "भण्डारमा फाइल थप्नुहोस्"
-
-msgid "Bring your files together, ready to share with your team."
-msgstr "आफ्नो टोलीसँग साझा गर्न फाइलहरू एकै ठाउँमा राख्नुहोस्।"
-
-msgid "Browse a shared folder, or contact your administrator for document access."
-msgstr "साझा फोल्डर हेर्नुहोस् वा कागजात पहुँचका लागि प्रशासकलाई सम्पर्क गर्नुहोस्।"
-
-msgid "Browse by folder to find related documents."
-msgstr "सम्बन्धित कागजात भेट्न फोल्डरअनुसार हेर्नुहोस्।"
-
-msgid "Browse folders"
-msgstr "फोल्डर हेर्नुहोस्"
-
-msgid "Browse library"
-msgstr "पुस्तकालय हेर्नुहोस्"
-
-msgid "Browse shared folders or find the document you need."
-msgstr "साझा फोल्डर हेर्नुहोस् वा चाहिएको कागजात खोज्नुहोस्।"
-
-msgid "Browse the documents shared in this folder."
-msgstr "यस फोल्डरमा साझा गरिएका कागजात हेर्नुहोस्।"
-
-msgid "Cancel"
-msgstr "रद्द गर्नुहोस्"
-
-msgid "Change"
-msgstr "बदल्नुहोस्"
-
-msgid "Change password"
-msgstr "पासवर्ड बदल्नुहोस्"
-
-msgid "Check the highlighted fields"
-msgstr "देखाइएका विवरण सच्याउनुहोस्"
-
-msgid "Check your upload"
-msgstr "अपलोड जाँच्नुहोस्"
-
 msgid "Choose a destination folder to continue."
 msgstr "जारी राख्न फोल्डर छान्नुहोस्।"
 
-msgid "Choose a portal"
-msgstr "पोर्टल छान्नुहोस्"
-
-msgid "Choose a strong password you haven’t used elsewhere."
-msgstr "अन्यत्र प्रयोग नगरेको बलियो पासवर्ड छान्नुहोस्।"
-
-msgid "Choose a vault folder"
-msgstr "भण्डारको फोल्डर छान्नुहोस्"
-
-msgid "Choose files"
-msgstr "फाइल छान्नुहोस्"
-
-msgid "Choose files, drop a folder, or paste a copied file."
-msgstr "फाइल छान्नुहोस्, फोल्डर छोड्नुहोस् वा प्रतिलिपि गरिएको फाइल टाँस्नुहोस्।"
-
-msgid "Clear filters"
-msgstr "छनोट हटाउनुहोस्"
-
-msgid "Clear finished"
-msgstr "सकिएका हटाउनुहोस्"
-
-msgid "Confirm your credentials to continue with administrative actions."
-msgstr "प्रशासनिक काम जारी राख्न आफ्नो पहिचान प्रमाणित गर्नुहोस्।"
-
-msgid "Confirm your identity"
-msgstr "आफ्नो पहिचान पुष्टि गर्नुहोस्"
-
-msgid "Connect / reconnect Google Drive"
-msgstr "Google Drive जोड्नुहोस् वा फेरि जोड्नुहोस्"
-
-msgid "Connect or reconnect the storage owner's Google account."
-msgstr "भण्डारण मालिकको Google खाता जोड्नुहोस् वा फेरि जोड्नुहोस्।"
-
-msgid "Connection interrupted. Check Manage documents before retrying; the file may have arrived."
-msgstr "जडान टुट्यो। फाइल पुगिसकेको हुन सक्छ, फेरि प्रयास गर्नुअघि कागजात व्यवस्थापन हेर्नुहोस्।"
-
-msgid "Contact your SSDC administrator."
-msgstr "आफ्नो SSDC प्रशासकलाई सम्पर्क गर्नुहोस्।"
-
-msgid "Continue"
-msgstr "जारी राख्नुहोस्"
+msgid ""
+"Connection interrupted. Check Manage documents before retrying; the file "
+"may have arrived."
+msgstr ""
+"जडान टुट्यो। फाइल पुगिसकेको हुन सक्छ, फेरि प्रयास गर्नुअघि कागजात व्यवस्थापन हेर्नुहोस्।"
 
 msgid "Could not read this folder. Try the Import folder button instead."
 msgstr "फोल्डर पढ्न सकिएन। फोल्डरबाट ल्याउनुहोस् बटन प्रयोग गर्नुहोस्।"
 
-msgid "Could not verify your session. Check your connection or sign in in a new tab, then continue here."
-msgstr "सत्र प्रमाणित भएन। जडान जाँच्नुहोस् वा नयाँ ट्याबमा साइन इन गरेर यहाँ जारी राख्नुहोस्।"
-
-msgid "Create a vault folder, then add your documents here."
-msgstr "भण्डारमा फोल्डर बनाएर यहाँ कागजात थप्नुहोस्।"
-
-msgid "Create folder"
-msgstr "फोल्डर बनाउनुहोस्"
-
-msgid "Create your first folder"
-msgstr "पहिलो फोल्डर बनाउनुहोस्"
+msgid ""
+"Could not verify your session. Check your connection or sign in in a new "
+"tab, then continue here."
+msgstr ""
+"सत्र प्रमाणित भएन। जडान जाँच्नुहोस् वा नयाँ ट्याबमा साइन इन गरेर यहाँ जारी राख्नुहोस्।"
 
 msgid "Creating folder…"
 msgstr "फोल्डर बन्दैछ…"
-
-msgid "Current"
-msgstr "हालको"
-
-msgid "Deleted"
-msgstr "मेटाइएका"
-
-msgid "Document"
-msgstr "कागजात"
-
-msgid "Document Vault"
-msgstr "कागजात भण्डार"
 
 msgid "Document checks are already running."
 msgstr "कागजातको जाँच चलिरहेको छ।"
@@ -259,146 +2315,23 @@ msgstr "कागजातको जाँच चलिरहेको छ।"
 msgid "Document checks completed."
 msgstr "कागजातको जाँच पूरा भयो।"
 
-msgid "Document contents remain in the storage owner's Google Drive. The application stores document metadata, staff permission grants, and audit records. Uploaded files are validated by type, structure, and size before publication, and each document request is checked against the staff member's current permissions."
-msgstr "कागजातको सामग्री भण्डारण मालिकको Google Drive मा रहन्छ। एपले कागजातको विवरण, कर्मचारीको अनुमति र गतिविधिको अभिलेख राख्छ। प्रकाशनअघि फाइलको प्रकार, संरचना र आकार जाँचिन्छ। प्रत्येक कागजात अनुरोधमा कर्मचारीको हालको अनुमति जाँचिन्छ।"
-
-msgid "Document details"
-msgstr "कागजातको विवरण"
-
 msgid "Document details updated."
 msgstr "कागजातको विवरण अद्यावधिक भयो।"
-
-msgid "Document display"
-msgstr "कागजात प्रदर्शन"
-
-msgid "Document library"
-msgstr "कागजात पुस्तकालय"
-
-msgid "Document management"
-msgstr "कागजात व्यवस्थापन"
-
-msgid "Document name"
-msgstr "कागजातको नाम"
 
 msgid "Document page %(page)s of %(total)s"
 msgstr "कागजात पृष्ठ %(page)s, जम्मा %(total)s"
 
-msgid "Document preview"
-msgstr "कागजात पूर्वावलोकन"
-
-msgid "Document state"
-msgstr "कागजातको अवस्था"
-
-msgid "Document storage"
-msgstr "कागजात भण्डारण"
-
-msgid "Document title"
-msgstr "कागजातको शीर्षक"
-
 msgid "Document title for %(name)s"
 msgstr "%(name)s को कागजात शीर्षक"
-
-msgid "Documents"
-msgstr "कागजातहरू"
-
-msgid "Documents &amp; permissions"
-msgstr "कागजात र अनुमतिहरू"
-
-msgid "Documents available to your account"
-msgstr "तपाईंको खातामा उपलब्ध कागजातहरू"
-
-msgid "Documents shared in this folder will appear here."
-msgstr "यस फोल्डरमा साझा गरिएका कागजात यहाँ देखिन्छन्।"
-
-msgid "Documents you can manage, including archived and deleted items"
-msgstr "अभिलेखमा राखिएका र मेटाइएकासहित तपाईंले व्यवस्थापन गर्न सक्ने कागजात"
-
-msgid "Drop your documents here"
-msgstr "कागजात यहाँ छोड्नुहोस्"
-
-msgid "Each code can be used once if you lose access to your authenticator. Store them somewhere private, separate from your password."
-msgstr "प्रमाणक एप चलाउन नसके प्रत्येक कोड एक पटक प्रयोग गर्न सकिन्छ। पासवर्डबाट छुट्टै गोप्य ठाउँमा राख्नुहोस्।"
-
-msgid "Enable JavaScript to view this document."
-msgstr "यो कागजात हेर्न JavaScript सक्षम गर्नुहोस्।"
-
-msgid "Enter a code from your authenticator app, or use a recovery code."
-msgstr "प्रमाणक एपको कोड वा पुनःप्राप्ति कोड राख्नुहोस्।"
-
-msgid "Enter the current code to finish setup."
-msgstr "सेटअप पूरा गर्न हालको कोड राख्नुहोस्।"
-
-msgid "Explore folders within"
-msgstr "यस भित्रका फोल्डर हेर्नुहोस्"
-
-msgid "File"
-msgstr "फाइल"
-
-msgid "File type"
-msgstr "फाइलको प्रकार"
-
-msgid "Files are checked before they appear in the library."
-msgstr "पुस्तकालयमा देखिनुअघि फाइल जाँचिन्छन्।"
-
-msgid "Files are checked before they become available. You can review the result in document management."
-msgstr "उपलब्ध हुनुअघि फाइल जाँचिन्छन्। नतिजा कागजात व्यवस्थापनमा हेर्न सक्नुहुन्छ।"
-
-msgid "Files use this folder’s access permissions."
-msgstr "फाइलमा यस फोल्डरकै पहुँच अनुमति लागू हुन्छ।"
-
-msgid "Find documents"
-msgstr "कागजात खोज्नुहोस्"
 
 msgid "Finished files cleared."
 msgstr "सकिएका फाइल हटाइए।"
 
-msgid "Fit width"
-msgstr "चौडाइ मिलाउनुहोस्"
-
-msgid "Folder"
-msgstr "फोल्डर"
-
-msgid "Folder access"
-msgstr "फोल्डर पहुँच"
-
-msgid "Folder imports include supported files from subfolders. All files go into your selected vault folder; local folder structure is not recreated. Up to 50 files per batch."
-msgstr "उपफोल्डरका मिल्ने फाइल पनि ल्याइन्छन्। सबै फाइल छानिएको फोल्डरमा राखिन्छन्। स्थानीय फोल्डर संरचना बनाइँदैन। एक पटकमा ५० फाइलसम्म ल्याउन सकिन्छ।"
-
-msgid "Folders"
-msgstr "फोल्डरहरू"
-
-msgid "For authorized staff use only"
-msgstr "अधिकारप्राप्त कर्मचारीका लागि मात्र"
-
-msgid "For authorized viewing."
-msgstr "अनुमतिप्राप्त प्रयोगकर्ताका लागि।"
-
-msgid "Gallery view"
-msgstr "तस्बिर सूचीमा हेर्नुहोस्"
-
-msgid "Grow your library"
-msgstr "पुस्तकालय बढाउनुहोस्"
-
-msgid "I've saved my codes"
-msgstr "मैले कोड सुरक्षित राखेँ"
-
 msgid "Identity confirmed. You can continue your administrative action."
 msgstr "पहिचान पुष्टि भयो। प्रशासनिक काम जारी राख्न सक्नुहुन्छ।"
 
-msgid "Image"
-msgstr "तस्बिर"
-
-msgid "Images"
-msgstr "तस्बिरहरू"
-
 msgid "Import %(count)s documents"
 msgstr "%(count)s कागजात ल्याउनुहोस्"
-
-msgid "Import documents"
-msgstr "कागजात ल्याउनुहोस्"
-
-msgid "Import folder"
-msgstr "फोल्डरबाट ल्याउनुहोस्"
 
 msgid "Importing %(current)s of %(total)s: %(name)s"
 msgstr "%(total)s मध्ये %(current)s ल्याइँदैछ: %(name)s"
@@ -406,215 +2339,33 @@ msgstr "%(total)s मध्ये %(current)s ल्याइँदैछ: %(nam
 msgid "Importing documents…"
 msgstr "कागजात ल्याइँदैछ…"
 
-msgid "Keep related documents together in a shared folder."
-msgstr "सम्बन्धित कागजात साझा फोल्डरमा सँगै राख्नुहोस्।"
-
-msgid "Keep this folder private in Google Drive. SSDC permissions are managed inside the portal."
-msgstr "Google Drive मा यो फोल्डर निजी राख्नुहोस्। SSDC को अनुमति पोर्टलभित्र व्यवस्थापन हुन्छ।"
-
-msgid "Keep this key private. You’ll save your recovery codes next."
-msgstr "यो कुञ्जी गोप्य राख्नुहोस्। अर्को चरणमा पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्।"
-
-msgid "Language"
-msgstr "भाषा"
-
-msgid "Last updated"
-msgstr "पछिल्लो अद्यावधिक"
-
-msgid "Library visibility"
-msgstr "पुस्तकालयमा उपलब्धता"
-
-msgid "List view"
-msgstr "सूचीमा हेर्नुहोस्"
-
-msgid "Loading preview…"
-msgstr "पूर्वावलोकन खुल्दैछ…"
-
-msgid "MFA code (if enabled)"
-msgstr "सुरक्षा कोड (सक्षम भएमा)"
-
-msgid "Main navigation"
-msgstr "मुख्य नेभिगेसन"
-
-msgid "Manage"
-msgstr "व्यवस्थापन"
-
-msgid "Manage accounts, document access, and vault activity with your administrator account."
-msgstr "प्रशासक खाताबाट कर्मचारी खाता, कागजात पहुँच र गतिविधि व्यवस्थापन गर्नुहोस्।"
-
-msgid "Manage document"
-msgstr "कागजात व्यवस्थापन"
-
-msgid "Manage documents"
-msgstr "कागजात व्यवस्थापन"
-
-msgid "Manage staff permissions and review the activity in your document vault."
-msgstr "कर्मचारीको अनुमति व्यवस्थापन गर्नुहोस् र भण्डारको गतिविधि हेर्नुहोस्।"
-
-msgid "Manage your documents"
-msgstr "आफ्ना कागजात व्यवस्थापन गर्नुहोस्"
-
-msgid "Mobile navigation"
-msgstr "मोबाइल नेभिगेसन"
-
-msgid "Move this document to deleted? You can restore it while it is retained."
-msgstr "यो कागजात मेटाइएका कागजातमा सार्ने हो? सुरक्षित अवधिभित्र फिर्ता ल्याउन सक्नुहुन्छ।"
-
-msgid "Move to deleted"
-msgstr "मेटाइएका कागजातमा सार्नुहोस्"
-
-msgid "Move to deleted?"
-msgstr "मेटाइएका कागजातमा सार्ने हो?"
-
-msgid "Name"
-msgstr "नाम"
-
-msgid "Name alphabetically"
-msgstr "नामअनुसार"
-
-msgid "Name it"
-msgstr "नाम दिनुहोस्"
-
-msgid "Need access or help signing in?"
-msgstr "पहुँच वा साइन इन गर्न सहयोग चाहिन्छ?"
-
-msgid "New folder"
-msgstr "नयाँ फोल्डर"
-
-msgid "New folders normally inherit access from their parent folder."
-msgstr "नयाँ फोल्डरमा सामान्यतया मूल फोल्डरकै पहुँच लागू हुन्छ।"
-
-msgid "Next"
-msgstr "अर्को"
-
-msgid "No documents to manage yet"
-msgstr "अहिले व्यवस्थापन गर्ने कागजात छैनन्"
-
-msgid "No documents yet"
-msgstr "अहिलेसम्म कागजात छैनन्"
-
-msgid "No matching documents"
-msgstr "मिल्दो कागजात भेटिएन"
-
-msgid "No versions uploaded yet."
-msgstr "अहिलेसम्म कुनै संस्करण अपलोड गरिएको छैन।"
-
-msgid "OAuth refresh and access tokens are encrypted at rest in the managed PostgreSQL database. The encryption key is held separately as an isolated application environment secret and is not included in the database or its backups. Tokens are used only to communicate with Google's OAuth and Drive services over HTTPS and are never displayed or logged."
-msgstr "OAuth का रिफ्रेस र पहुँच टोकन व्यवस्थित PostgreSQL डाटाबेसमा गुप्तीकरण गरेर राखिन्छन्। गुप्तीकरण कुञ्जी एपको वातावरणमा छुट्टै गोप्य रूपमा राखिन्छ र डाटाबेस वा ब्याकअपमा समावेश हुँदैन। टोकन Google को OAuth र Drive सेवासँग HTTPS मार्फत सञ्चार गर्न मात्र प्रयोग हुन्छन्। तिनलाई देखाइँदैन वा लगमा राखिँदैन।"
-
-msgid "Oldest first"
-msgstr "पुरानो पहिले"
-
-msgid "Single use recovery codes"
-msgstr "एक पटक प्रयोग हुने पुनःप्राप्ति कोड"
-
-msgid "Open"
-msgstr "खोल्नुहोस्"
-
-msgid "Open a folder in the library to upload your first document. Your uploads and their versions will appear here."
-msgstr "पहिलो कागजात अपलोड गर्न पुस्तकालयको फोल्डर खोल्नुहोस्। अपलोड र संस्करण यहाँ देखिनेछन्।"
-
-msgid "Open your authenticator app and add an account using a timed code."
-msgstr "प्रमाणक एप खोल्नुहोस् र समयअनुसार कोड दिने खाता थप्नुहोस्।"
-
-msgid "Or click here and press"
-msgstr "वा यहाँ क्लिक गरेर थिच्नुहोस्"
-
-msgid "PDF document"
-msgstr "PDF कागजात"
-
-msgid "PDF documents"
-msgstr "PDF कागजातहरू"
-
-msgid "PDF or image"
-msgstr "PDF वा तस्बिर"
-
-msgid "PDF, JPEG, PNG, or WebP. Up to"
-msgstr "PDF, JPEG, PNG वा WebP। अधिकतम"
-
-msgid "PDF, JPG, PNG &amp; WebP · Up to"
-msgstr "PDF, JPG, PNG र WebP · अधिकतम"
-
-msgid "Page"
-msgstr "पृष्ठ"
+msgid ""
+"Move this document to deleted? You can restore it while it is retained."
+msgstr ""
+"यो कागजात मेटाइएका कागजातमा सार्ने हो? सुरक्षित अवधिभित्र फिर्ता ल्याउन सक्नुहुन्छ।"
 
 msgid "Page %(page)s text"
 msgstr "पृष्ठ %(page)s को पाठ"
 
-msgid "Page number"
-msgstr "पृष्ठ सङ्ख्या"
-
-msgid "Page unavailable"
-msgstr "पृष्ठ उपलब्ध छैन"
-
-msgid "Password"
-msgstr "पासवर्ड"
-
 msgid "Password changed. Other sessions have been revoked."
 msgstr "पासवर्ड बदलियो। अन्य सत्र बन्द गरिए।"
 
-msgid "Paste files"
-msgstr "फाइल टाँस्नुहोस्"
-
-msgid "Please try again"
-msgstr "फेरि प्रयास गर्नुहोस्"
-
-msgid "Prepare / verify private folder"
-msgstr "निजी फोल्डर तयार वा प्रमाणित गर्नुहोस्"
-
-msgid "Prepare the private SSDC folder before uploading."
-msgstr "अपलोड गर्नुअघि निजी SSDC फोल्डर तयार गर्नुहोस्।"
-
 msgid "Press %(key)s here to paste copied files, or use Choose files."
-msgstr "प्रतिलिपि गरिएको फाइल टाँस्न यहाँ %(key)s थिच्नुहोस् वा फाइल छान्नुहोस् प्रयोग गर्नुहोस्।"
-
-msgid "Preview"
-msgstr "पूर्वावलोकन"
-
-msgid "Preview controls"
-msgstr "पूर्वावलोकन नियन्त्रण"
+msgstr ""
+"प्रतिलिपि गरिएको फाइल टाँस्न यहाँ %(key)s थिच्नुहोस् वा फाइल छान्नुहोस् प्रयोग "
+"गर्नुहोस्।"
 
 msgid "Preview unavailable. Your session may have expired. "
 msgstr "पूर्वावलोकन उपलब्ध छैन। सत्र सकिएको हुन सक्छ। "
 
-msgid "Previous"
-msgstr "अघिल्लो"
-
 msgid "Previous version restored as the current document."
 msgstr "अघिल्लो संस्करण हालको कागजातका रूपमा फिर्ता ल्याइयो।"
-
-msgid "Privacy Policy"
-msgstr "गोपनीयता नीति"
-
-msgid "Private &amp; checked"
-msgstr "निजी र जाँच गरिएको"
-
-msgid "Private authenticator setup key"
-msgstr "गोप्य प्रमाणक सेटअप कुञ्जी"
-
-msgid "Private preview"
-msgstr "निजी पूर्वावलोकन"
-
-msgid "Processing"
-msgstr "जाँच हुँदैछ"
-
-msgid "Published"
-msgstr "प्रकाशित"
 
 msgid "Reading your folder…"
 msgstr "फोल्डर पढिँदैछ…"
 
-msgid "Ready to import"
-msgstr "ल्याउन तयार"
-
 msgid "Ready to upload"
 msgstr "अपलोड गर्न तयार"
-
-msgid "Recently updated"
-msgstr "हालै अद्यावधिक"
-
-msgid "Rejected"
-msgstr "अस्वीकृत"
 
 msgid "Rejected during checking"
 msgstr "जाँचमा अस्वीकृत"
@@ -625,221 +2376,32 @@ msgstr "%(name)s हटाउनुहोस्"
 msgid "Replace document"
 msgstr "कागजात बदल्नुहोस्"
 
-msgid "Replacement awaiting checks"
-msgstr "नयाँ संस्करण जाँचको प्रतीक्षामा"
-
-msgid "Resource"
-msgstr "स्रोत"
-
-msgid "Restore document"
-msgstr "कागजात फिर्ता ल्याउनुहोस्"
-
-msgid "Restore this version"
-msgstr "यो संस्करण फिर्ता ल्याउनुहोस्"
-
-msgid "Restricted"
-msgstr "सीमित पहुँच"
-
-msgid "Retry document checks"
-msgstr "कागजात फेरि जाँच्नुहोस्"
-
-msgid "Return to SSDC Document Vault"
-msgstr "SSDC कागजात भण्डारमा फर्कनुहोस्"
-
-msgid "Return to document library"
-msgstr "कागजात पुस्तकालयमा फर्कनुहोस्"
-
-msgid "Return to library"
-msgstr "पुस्तकालयमा फर्कनुहोस्"
-
 msgid "Return to the library and try again."
 msgstr "पुस्तकालयमा फर्केर फेरि प्रयास गर्नुहोस्।"
-
-msgid "Review uploads, update details, and manage version history."
-msgstr "अपलोड हेर्नुहोस्, विवरण अद्यावधिक गर्नुहोस् र संस्करण इतिहास व्यवस्थापन गर्नुहोस्।"
-
-msgid "SSDC Document Vault"
-msgstr "SSDC कागजात भण्डार"
-
-msgid "SSDC Document Vault is an internal document library operated by Siddhartha Social Development Centre for authorized staff using organization issued accounts."
-msgstr "SSDC कागजात भण्डार सिद्धार्थ सामाजिक विकास केन्द्रले संस्थाबाट जारी खाता भएका अधिकारप्राप्त कर्मचारीका लागि सञ्चालन गरेको आन्तरिक पुस्तकालय हो।"
-
-msgid "SSDC Document Vault is provided by Siddhartha Social Development Centre solely for authorized staff and approved organizational work."
-msgstr "सिद्धार्थ सामाजिक विकास केन्द्रले SSDC कागजात भण्डार अधिकारप्राप्त कर्मचारी र स्वीकृत संस्थागत कामका लागि मात्र उपलब्ध गराएको हो।"
-
-msgid "SSDC Vault"
-msgstr "SSDC भण्डार"
-
-msgid "SSDC does not sell Google user data or document data, use it for advertising, or share it with data brokers or unrelated third parties. If the organization disconnects the integration, the stored OAuth credentials are deleted; files already stored in Google Drive remain under the storage owner's control."
-msgstr "SSDC ले Google प्रयोगकर्ता वा कागजातको डेटा बेच्दैन, विज्ञापनमा प्रयोग गर्दैन र डेटा व्यापारी वा असम्बन्धित तेस्रो पक्षसँग साझा गर्दैन। संस्थाले जडान हटाएमा सुरक्षित OAuth प्रमाणहरू मेटिन्छन्। Google Drive मा रहेका फाइल भण्डारण मालिककै नियन्त्रणमा रहन्छन्।"
-
-msgid "Save changes"
-msgstr "परिवर्तन सुरक्षित गर्नुहोस्"
-
-msgid "Save recovery codes"
-msgstr "पुनःप्राप्ति कोड सुरक्षित गर्नुहोस्"
-
-msgid "Save to folder"
-msgstr "राख्ने फोल्डर"
-
-msgid "Save your recovery codes."
-msgstr "पुनःप्राप्ति कोड सुरक्षित राख्नुहोस्।"
 
 msgid "Saved · Awaiting checks"
 msgstr "सुरक्षित भयो · जाँचको प्रतीक्षामा"
 
-msgid "Saving…"
-msgstr "सुरक्षित हुँदैछ…"
-
-msgid "Search"
-msgstr "खोज्नुहोस्"
-
-msgid "Search documents"
-msgstr "कागजात खोज्नुहोस्"
-
-msgid "Search managed documents"
-msgstr "व्यवस्थापन गर्ने कागजात खोज्नुहोस्"
-
-msgid "Select a document"
-msgstr "कागजात छान्नुहोस्"
-
-msgid "Select a document to open its preview."
-msgstr "पूर्वावलोकन खोल्न कागजात छान्नुहोस्।"
-
-msgid "Set up your authenticator"
-msgstr "प्रमाणक एप तयार गर्नुहोस्"
-
-msgid "Set up your authenticator."
-msgstr "प्रमाणक एप तयार गर्नुहोस्।"
-
-msgid "Siddhartha Social Development Centre"
-msgstr "सिद्धार्थ सामाजिक विकास केन्द्र"
-
-msgid "Sign in"
-msgstr "साइन इन गर्नुहोस्"
-
-msgid "Sign in to SSDC Document Vault. Your account determines which portal and documents you can access."
-msgstr "SSDC कागजात भण्डारमा साइन इन गर्नुहोस्। तपाईंको खाताले उपलब्ध पोर्टल र कागजात निर्धारण गर्छ।"
-
-msgid "Sign in with your staff account to browse documents shared with you."
-msgstr "तपाईंसँग साझा गरिएका कागजात हेर्न कर्मचारी खाताबाट साइन इन गर्नुहोस्।"
-
-msgid "Sign out"
-msgstr "साइन आउट"
-
-msgid "Signing in…"
-msgstr "साइन इन हुँदैछ…"
-
-msgid "Size"
-msgstr "आकार"
-
-msgid "Skip to content"
-msgstr "मुख्य सामग्रीमा जानुहोस्"
-
 msgid "Skipped: %(notes)s"
 msgstr "छोडिएका: %(notes)s"
-
-msgid "Something went wrong"
-msgstr "समस्या आयो"
-
-msgid "Sort by"
-msgstr "क्रम मिलाउनुहोस्"
-
-msgid "Staff ID"
-msgstr "कर्मचारी परिचय"
-
-msgid "Staff accounts"
-msgstr "कर्मचारी खाता"
-
-msgid "Staff continue using SSDC accounts. Only the storage owner authorizes Google access."
-msgstr "कर्मचारीले SSDC खाताकै प्रयोग गर्छन्। भण्डारण मालिकले मात्र Google पहुँच दिन्छन्।"
-
-msgid "Staff portal"
-msgstr "कर्मचारी पोर्टल"
-
-msgid "Staff sign in"
-msgstr "कर्मचारी साइन इन"
-
-msgid "Staff sign in."
-msgstr "कर्मचारी साइन इन"
-
-msgid "Staff workspace"
-msgstr "कर्मचारी कार्यक्षेत्र"
-
-msgid "State"
-msgstr "अवस्था"
-
-msgid "Status"
-msgstr "स्थिति"
-
-msgid "Storage owner connected."
-msgstr "भण्डारण मालिकको खाता जोडिएको छ।"
-
-msgid "Terms of Service"
-msgstr "सेवाका सर्तहरू"
-
-msgid "The SSDC folder is configured. Verify it before uploading."
-msgstr "SSDC फोल्डर तयार छ। अपलोड गर्नुअघि प्रमाणित गर्नुहोस्।"
-
-msgid "The application requests the Google Drive"
-msgstr "एपले Google Drive को"
-
-msgid "The file must pass its checks before it appears in the library. Review the processing status below."
-msgstr "पुस्तकालयमा देखिनुअघि फाइलको जाँच पूरा हुनुपर्छ। तल जाँचको अवस्था हेर्नुहोस्।"
-
-msgid "The item may have moved, or your account may not have access."
-msgstr "सामग्री सरेको हुन सक्छ वा तपाईंको खातामा पहुँच नहुन सक्छ।"
-
-msgid "The previous version remains in the version history. Change the document title in document management."
-msgstr "अघिल्लो संस्करण इतिहासमा रहन्छ। शीर्षक कागजात व्यवस्थापनबाट बदल्नुहोस्।"
-
-msgid "The service may be changed, interrupted, or withdrawn for maintenance, security, or operational reasons. Use of the service is subject to applicable SSDC policies and law."
-msgstr "मर्मत, सुरक्षा वा सञ्चालनका कारण सेवा बदलिन, रोकिन वा बन्द हुन सक्छ। सेवा प्रयोगमा SSDC का लागू नीति र कानुन पालना गर्नुपर्छ।"
-
-msgid "These codes are shown only once. Save them before continuing."
-msgstr "यी कोड एक पटक मात्र देखाइन्छन्। अगाडि बढ्नुअघि सुरक्षित राख्नुहोस्।"
-
-msgid "This document is available to staff with access. Archive it to hide it while keeping its history."
-msgstr "पहुँच भएका कर्मचारीले यो कागजात हेर्न सक्छन्। इतिहास राखेर लुकाउन अभिलेखमा राख्नुहोस्।"
-
-msgid "This document is retained for restoration until it is purged."
-msgstr "स्थायी रूपमा नमेटिएसम्म यो कागजात फिर्ता ल्याउन सकिन्छ।"
-
-msgid "This document will leave the library. You can restore it from document management while it is retained."
-msgstr "यो कागजात पुस्तकालयबाट हट्नेछ। सुरक्षित राखिएको अवधिभित्र कागजात व्यवस्थापनबाट फिर्ता ल्याउन सक्नुहुन्छ।"
 
 msgid "This file exceeds the server upload limit."
 msgstr "यो फाइल अपलोड सीमाभन्दा ठूलो छ।"
 
-msgid "This folder is too large to read completely. Review the queued files and import smaller folders next."
+msgid ""
+"This folder is too large to read completely. Review the queued files and "
+"import smaller folders next."
 msgstr "यो फोल्डर पूरै पढ्न धेरै ठूलो छ। सूचीका फाइल हेर्नुहोस् र साना फोल्डर ल्याउनुहोस्।"
 
-msgid "This page has no extractable text. Contact your document administrator for an accessible copy."
-msgstr "यो पृष्ठबाट पाठ निकाल्न सकिँदैन। सहज रूपमा पढ्न मिल्ने प्रतिका लागि कागजात प्रशासकलाई सम्पर्क गर्नुहोस्।"
-
-msgid "This page isn't available."
-msgstr "यो पृष्ठ उपलब्ध छैन।"
-
-msgid "Title"
-msgstr "शीर्षक"
-
-msgid "Try a different search or clear your filters to see all documents."
-msgstr "अर्को शब्द खोज्नुहोस् वा सबै कागजात हेर्न छनोट हटाउनुहोस्।"
-
-msgid "Try a different search or clear your filters."
-msgstr "अर्को शब्द खोज्नुहोस् वा छनोट हटाउनुहोस्।"
+msgid ""
+"This page has no extractable text. Contact your document administrator "
+"for an accessible copy."
+msgstr ""
+"यो पृष्ठबाट पाठ निकाल्न सकिँदैन। सहज रूपमा पढ्न मिल्ने प्रतिका लागि कागजात "
+"प्रशासकलाई सम्पर्क गर्नुहोस्।"
 
 msgid "Try again later"
 msgstr "केही बेरपछि प्रयास गर्नुहोस्"
-
-msgid "Try again shortly. Contact your administrator if the problem continues."
-msgstr "केही बेरपछि प्रयास गर्नुहोस्। समस्या रहिरहे प्रशासकलाई सम्पर्क गर्नुहोस्।"
-
-msgid "Type"
-msgstr "प्रकार"
-
-msgid "Unable to complete request"
-msgstr "अनुरोध पूरा भएन"
 
 msgid "Unable to confirm your identity."
 msgstr "पहिचान प्रमाणित भएन।"
@@ -850,32 +2412,8 @@ msgstr "साइन इन भएन। कर्मचारी परिच�
 msgid "Unable to sign in. Please try again later."
 msgstr "साइन इन भएन। केही बेरपछि प्रयास गर्नुहोस्।"
 
-msgid "Unable to verify this code."
-msgstr "कोड प्रमाणित भएन।"
-
 msgid "Unable to verify this code. Try again later if needed."
 msgstr "कोड प्रमाणित भएन। आवश्यक भए केही बेरपछि प्रयास गर्नुहोस्।"
-
-msgid "Unarchive document"
-msgstr "पुस्तकालयमा फर्काउनुहोस्"
-
-msgid "Update password"
-msgstr "पासवर्ड बदल्नुहोस्"
-
-msgid "Update the details, visibility, and versions of this document."
-msgstr "यस कागजातको विवरण, उपलब्धता र संस्करण अद्यावधिक गर्नुहोस्।"
-
-msgid "Updating password…"
-msgstr "पासवर्ड बदलिँदैछ…"
-
-msgid "Upload a document to share it with staff who have access to this folder."
-msgstr "यस फोल्डरमा पहुँच भएका कर्मचारीसँग साझा गर्न कागजात अपलोड गर्नुहोस्।"
-
-msgid "Upload a replacement"
-msgstr "नयाँ संस्करण अपलोड गर्नुहोस्"
-
-msgid "Upload document"
-msgstr "कागजात अपलोड गर्नुहोस्"
 
 msgid "Upload failed. Try again shortly."
 msgstr "अपलोड भएन। केही बेरपछि प्रयास गर्नुहोस्।"
@@ -886,29 +2424,11 @@ msgstr "अपलोड सीमा पुग्यो। एक मिने�
 msgid "Upload progress for %(name)s"
 msgstr "%(name)s को अपलोड प्रगति"
 
-msgid "Uploaded"
-msgstr "अपलोड गरिएको"
-
-msgid "Uploaded versions and processing results"
-msgstr "अपलोड गरिएका संस्करण र जाँचको नतिजा"
-
 msgid "Uploaded · Checking document…"
 msgstr "अपलोड भयो · कागजात जाँच हुँदैछ…"
 
 msgid "Uploading and checking…"
 msgstr "अपलोड र जाँच हुँदैछ…"
-
-msgid "Uploading…"
-msgstr "अपलोड हुँदैछ…"
-
-msgid "Users must protect their credentials, follow SSDC information handling policies, access only documents needed for their duties, and must not upload unlawful, malicious, or unauthorized material. Access may be suspended or revoked by SSDC administrators."
-msgstr "प्रयोगकर्ताले आफ्नो खाताको गोपनीयता जोगाउनुपर्छ, SSDC को सूचना व्यवस्थापन नीति पालना गर्नुपर्छ र कामका लागि आवश्यक कागजातमा मात्र पहुँच लिनुपर्छ। गैरकानुनी, हानिकारक वा अनुमतिबिनाको सामग्री अपलोड गर्न पाइँदैन। SSDC प्रशासकले पहुँच रोक्न वा हटाउन सक्छन्।"
-
-msgid "Verify and continue"
-msgstr "प्रमाणित गरी जारी राख्नुहोस्"
-
-msgid "Verify identity in a new tab, then continue here"
-msgstr "नयाँ ट्याबमा पहिचान प्रमाणित गरेर यहाँ जारी राख्नुहोस्"
 
 msgid "Verify your identity"
 msgstr "आफ्नो पहिचान प्रमाणित गर्नुहोस्"
@@ -916,107 +2436,28 @@ msgstr "आफ्नो पहिचान प्रमाणित गर्न
 msgid "Verify your identity, then continue your upload."
 msgstr "पहिचान प्रमाणित गरी अपलोड जारी राख्नुहोस्।"
 
-msgid "Verifying…"
-msgstr "प्रमाणित हुँदैछ…"
-
-msgid "Version history"
-msgstr "संस्करण इतिहास"
-
-msgid "View"
-msgstr "हेर्नुहोस्"
-
 msgid "View details"
 msgstr "विवरण हेर्नुहोस्"
-
-msgid "We couldn't complete that request."
-msgstr "अनुरोध पूरा गर्न सकिएन।"
-
-msgid "Welcome back."
-msgstr "फेरि स्वागत छ।"
-
-msgid "Workspace administration"
-msgstr "कार्यक्षेत्र प्रशासन"
-
-msgid "Workspace navigation"
-msgstr "कार्यक्षेत्र नेभिगेसन"
-
-msgid "You are signed in as"
-msgstr "तपाईंको खाता"
-
-msgid "You don’t have permission to manage any resources."
-msgstr "तपाईंलाई स्रोत व्यवस्थापन गर्ने अनुमति छैन।"
-
-msgid "You don’t have permission to view or edit any resources."
-msgstr "तपाईंलाई स्रोत हेर्ने वा सम्पादन गर्ने अनुमति छैन।"
-
-msgid "You need a folder with upload access"
-msgstr "अपलोड अनुमति भएको फोल्डर चाहिन्छ"
 
 msgid "You no longer have permission to upload to this folder."
 msgstr "यस फोल्डरमा अपलोड गर्ने अनुमति अब छैन।"
 
-msgid "Your account has viewing access"
-msgstr "तपाईंको खातामा हेर्ने अनुमति छ"
-
-msgid "Your administrative changes will appear here."
-msgstr "तपाईंका प्रशासनिक परिवर्तन यहाँ देखिन्छन्।"
-
-msgid "Your private workspace"
-msgstr "तपाईंको निजी कार्यक्षेत्र"
-
-msgid "Your recent changes"
-msgstr "तपाईंका हालैका परिवर्तन"
-
-msgid "Your session expired. Sign in again in a new tab, then continue here."
+msgid ""
+"Your session expired. Sign in again in a new tab, then continue here."
 msgstr "सत्र सकियो। नयाँ ट्याबमा साइन इन गरी यहाँ जारी राख्नुहोस्।"
 
-msgid "Your session or upload access changed. Refresh the page and sign in again."
+msgid ""
+"Your session or upload access changed. Refresh the page and sign in again."
 msgstr "सत्र वा अपलोड पहुँच बदलिएको छ। पृष्ठ फेरि खोलेर साइन इन गर्नुहोस्।"
-
-msgid "Your workspace"
-msgstr "तपाईंको कार्यक्षेत्र"
 
 msgid "You’ve signed out. Sign in to access your portal."
 msgstr "तपाईं साइन आउट हुनुभयो। पोर्टल खोल्न साइन इन गर्नुहोस्।"
 
-msgid "Zoom in"
-msgstr "ठूलो बनाउनुहोस्"
-
-msgid "Zoom out"
-msgstr "सानो बनाउनुहोस्"
-
-msgid "and enter the setup key below."
-msgstr "र तलको सेटअप कुञ्जी राख्नुहोस्।"
-
-msgid "each"
-msgstr "प्रत्येक"
-
 msgid "matching document"
 msgstr "मिल्दो कागजात"
 
-msgid "of"
-msgstr "मध्ये"
-
-msgid "per file."
-msgstr "प्रति फाइल।"
-
-msgid "permission only for the single storage owner Google account. Staff do not connect their personal Google accounts. The permission is used to create, store, retrieve, and manage only the document files that SSDC Document Vault creates in that storage owner account."
-msgstr "अनुमति एउटा भण्डारण मालिकको Google खाताका लागि मात्र माग्छ। कर्मचारीले व्यक्तिगत Google खाता जोड्दैनन्। यो अनुमति सो खातामा SSDC कागजात भण्डारले बनाएका कागजात बनाउन, राख्न, प्राप्त गर्न र व्यवस्थापन गर्न मात्र प्रयोग हुन्छ।"
-
 msgid "result"
 msgstr "नतिजा"
-
-msgid "· Images"
-msgstr "· तस्बिरहरू"
-
-msgid "· PDF documents"
-msgstr "· PDF कागजातहरू"
-
-msgid "· SSDC Administration"
-msgstr "· SSDC प्रशासन"
-
-msgid "Administrator"
-msgstr "प्रशासक"
 
 msgid "Document manager"
 msgstr "कागजात व्यवस्थापक"
@@ -1038,18 +2479,6 @@ msgstr "पुष्टि भयो; मालवेयर जाँच बन�
 
 msgid "Development-only scan bypass"
 msgstr "विकासका लागि मात्र जाँच छोडिएको"
-
-msgid "Checking document…"
-msgstr "कागजात जाँच हुँदैछ…"
-
-msgid "Search results"
-msgstr "खोजको नतिजा"
-
-msgid "Matching documents"
-msgstr "मिल्दो कागजातहरू"
-
-msgid "Search term:"
-msgstr "खोजिएको शब्द:"
 
 msgid "Admin ID"
 msgstr "प्रशासक परिचय"

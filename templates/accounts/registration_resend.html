@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Resend verification link" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="resend-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Staff registration" %}</span>
+    <h1 id="resend-heading">{% translate "Resend verification link" %}</h1>
+
+    {% if submitted %}
+      <div class="message info" role="status">
+        {% translate "If an active registration exists for that email address, a new verification link has been sent. Please check your inbox and spam folder." %}
+      </div>
+      <p class="muted" style="margin-top: var(--space-4);">
+        {% translate "For security, verification links expire after 24 hours and can only be used once." %}
+      </p>
+    {% else %}
+      <p class="muted">
+        {% translate "Enter your email address to receive a fresh verification link. The link will remain valid for 24 hours." %}
+      </p>
+
+      {% if form.non_field_errors %}
+        <div class="message error" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'staff_register_resend' %}" data-progress="{% translate "Sending…" %}">
+        {% csrf_token %}
+        <div class="form-fields">
+          <div class="form-field">
+            <label for="id_email">{% translate "Email address" %}</label>
+            <input type="email" name="email" id="id_email" required value="{{ email|default:'' }}" autocomplete="email" placeholder="staff@ssdc.org" class="text-input">
+            {% if form.email.errors %}
+              <div class="field-error">{{ form.email.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: var(--space-4);">
+          <button class="button full" type="submit">{% translate "Send verification link" %} {% include "components/icon.html" with name="arrow" %}</button>
+        </div>
+      </form>
+    {% endif %}
+
+    <div class="auth-foot" style="margin-top: var(--space-6);">
+      <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}

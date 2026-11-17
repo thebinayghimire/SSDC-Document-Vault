@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Check application status" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="status-lookup-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Staff registration" %}</span>
+    <h1 id="status-lookup-heading">{% translate "Check application status" %}</h1>
+
+    {% if submitted %}
+      <div class="message info" role="status">
+        {% translate "If a registration exists for that address, we have emailed a link." %}
+      </div>
+      <p class="muted" style="margin-top: var(--space-4);">
+        {% translate "Please check your inbox. If you need a new verification link, you can also request one from the email." %}
+      </p>
+    {% else %}
+      <p class="muted">
+        {% translate "To view your application status on this device, enter the email address used during registration." %}
+      </p>
+
+      {% if form.non_field_errors %}
+        <div class="message error" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <form method="post" action="{% url 'staff_registration_status' %}" data-progress="{% translate "Checking…" %}">
+        {% csrf_token %}
+        <div class="form-fields">
+          <div class="form-field">
+            <label for="id_email">{% translate "Email address" %}</label>
+            <input type="email" name="email" id="id_email" required autocomplete="email" placeholder="staff@ssdc.org" class="text-input">
+            {% if form.email.errors %}
+              <div class="field-error">{{ form.email.errors }}</div>
+            {% endif %}
+          </div>
+        </div>
+        <div class="form-actions" style="margin-top: var(--space-4);">
+          <button class="button full" type="submit">{% translate "Check status" %} {% include "components/icon.html" with name="arrow" %}</button>
+        </div>
+      </form>
+    {% endif %}
+
+    <div class="auth-foot" style="margin-top: var(--space-6);">
+      <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}

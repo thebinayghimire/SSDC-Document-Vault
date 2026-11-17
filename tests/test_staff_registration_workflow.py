@@ -148,10 +148,7 @@ def test_wrong_otp_increments_attempts_and_locks_after_the_limit(registration_en
         assert result.status in {"invalid", "locked"}
         assert request.otp_attempts == attempt
     assert verify_registration_otp(request, "000000").status == "locked"
-    assert (
-        verify_registration_otp(request, latest_otp(request)).status
-        == "locked"
-    )
+    assert verify_registration_otp(request, latest_otp(request)).status == "locked"
     request.refresh_from_db()
     assert request.status == StaffRegistrationRequest.Status.EMAIL_PENDING
 
@@ -254,9 +251,9 @@ def test_expiry_command_closes_due_email_and_review_windows(registration_enabled
     )
     assert expire_due_registrations() == 2
     assert set(
-        StaffRegistrationRequest.objects.filter(
-            pk__in=[pending.pk, reviewing.pk]
-        ).values_list("status", flat=True)
+        StaffRegistrationRequest.objects.filter(pk__in=[pending.pk, reviewing.pk]).values_list(
+            "status", flat=True
+        )
     ) == {StaffRegistrationRequest.Status.EXPIRED}
 
 
@@ -290,9 +287,7 @@ def test_approval_activates_only_the_staff_role_and_stages_the_password(
 
 
 @pytest.mark.django_db
-def test_approval_is_idempotent_and_does_not_duplicate_notifications(
-    registration_enabled, users
-):
+def test_approval_is_idempotent_and_does_not_duplicate_notifications(registration_enabled, users):
     request = register()
     verify_registration_otp(request, latest_otp(request))
     first = approve_registration(request.pk, users["admin"])
@@ -391,9 +386,7 @@ def test_authorized_reapplication_reuses_the_account_and_binds_the_new_code(
 
 
 @pytest.mark.django_db
-def test_reapplication_is_denied_without_explicit_admin_authorization(
-    registration_enabled, users
-):
+def test_reapplication_is_denied_without_explicit_admin_authorization(registration_enabled, users):
     request = register()
     verify_registration_otp(request, latest_otp(request))
     decline_registration(request.pk, users["admin"], allow_reapplication=False)
@@ -434,6 +427,49 @@ def test_resend_by_email_is_identical_for_missing_and_pending_addresses(registra
     assert resend_registration_for_email("missing@example.test").status == "not_pending"
     result = resend_registration_for_email("PENDING@example.test")
     assert result.status == "sent"
+    request.refresh_from_db()
+    assert request.status == StaffRegistrationRequest.Status.EMAIL_PENDING
+
+
+@pytest.mark.django_db
+def test_resend_after_verification_issues_a_status_link_instead_of_an_otp(
+    registration_enabled,
+):
+    from django.core.cache import cache
+
+    request = register()
+    assert verify_registration_otp(request, latest_otp(request)).status == "verified"
+    request.refresh_from_db()
+    EmailNotification.objects.filter(registration_request=request).update(
+        created_at=timezone.now() - timezone.timedelta(minutes=2)
+    )
+    cache.clear()
+
+    result = resend_registration_for_email("new.staff@example.test")
+    assert result.status == "sent"
+    notification = result.notification
+    assert notification.kind == "registration_status_link"
+    assert notification.template_name == "email/registration_status_link"
+    assert notification.context["verification_url"]
+    assert notification.context["status_url"]
+    assert (
+        EmailNotification.objects.filter(
+            registration_request=request,
+            kind="registration_otp",
+            status=EmailNotification.Status.PENDING,
+        ).count()
+        == 0
+    )
+
+
+@pytest.mark.django_db
+def test_expiry_dry_run_reports_without_changing_state(registration_enabled):
+    request = register()
+    StaffRegistrationRequest.objects.filter(pk=request.pk).update(
+        created_at=timezone.now()
+        - timezone.timedelta(days=registration_enabled.STAFF_REGISTRATION_EMAIL_EXPIRY_DAYS + 1)
+    )
+    assert expire_due_registrations(dry_run=True) == 1
     request.refresh_from_db()
     assert request.status == StaffRegistrationRequest.Status.EMAIL_PENDING
 

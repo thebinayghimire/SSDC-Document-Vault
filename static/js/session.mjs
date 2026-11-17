@@ -1,12 +1,13 @@
-// The server authorizes every request. This also clears stale account screens
-// when a different tab signs out or signs in as someone else.
+// Mitigates token leakage via localStorage and DOM while preserving cross-tab session termination and account-switch detection
 const metadata = document.querySelector('meta[name="vault-session"]');
-const marker = metadata?.content || '';
-const storageKey = 'ssdc-vault-session';
+const currentTag = metadata?.dataset?.accountTag || '';
 let checking = false;
 
+// BroadcastChannel carries only non-sensitive event names; no tokens or tags are ever broadcast or stored
+const authChannel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('ssdc-vault-session') : null;
+
 async function checkSession() {
-  if (!marker || checking) return;
+  if (!currentTag || checking) return;
   checking = true;
   try {
     const response = await fetch(metadata.dataset.statusUrl, {
@@ -16,7 +17,7 @@ async function checkSession() {
     });
     if (!response.ok) throw new Error('Session check unavailable');
     const session = await response.json();
-    if (!session.authenticated || session.marker !== marker) {
+    if (!session.authenticated || session.account_tag !== currentTag) {
       document.documentElement.hidden = true;
       location.replace(session.home_url || metadata.dataset.loginUrl);
       return;
@@ -31,18 +32,37 @@ async function checkSession() {
 }
 
 if (metadata) {
-  try {
-    localStorage.setItem(storageKey, marker);
-  } catch {
-    // Focus and history checks still work when browser storage is unavailable.
-  }
-  if (marker) {
-    window.addEventListener('storage', event => {
-      if (event.key === storageKey && event.newValue !== marker) {
-        document.documentElement.hidden = true;
-        checkSession();
+  if (authChannel) {
+    authChannel.addEventListener('message', event => {
+      if (event.data === 'session_changed') {
+        if (currentTag) {
+          document.documentElement.hidden = true;
+          checkSession();
+        }
       }
     });
+  }
+
+  // Notify other tabs on navigation or state transitions
+  try {
+    authChannel?.postMessage('session_changed');
+  } catch {
+    // Ignore environments where broadcast is restricted
+  }
+
+  // Intercept sign-out to notify other tabs across the origin immediately
+  document.addEventListener('submit', event => {
+    const form = event.target;
+    if (form && form.action && form.action.includes('/logout/')) {
+      try {
+        authChannel?.postMessage('session_changed');
+      } catch {
+        // BroadcastChannel failure should not prevent form submission
+      }
+    }
+  });
+
+  if (currentTag) {
     window.addEventListener('pagehide', () => {
       document.documentElement.hidden = true;
     });

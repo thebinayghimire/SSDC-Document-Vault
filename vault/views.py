@@ -91,6 +91,11 @@ def staff_portal(request):
 @require_http_methods(["GET", "HEAD"])
 def library(request, folder_id=None):
     if not request.user.is_authenticated:
+        if folder_id:
+            # Mitigates unauthorized folder access by redirecting anonymous visitors to neutral login with return path
+            from django.contrib.auth.views import redirect_to_login
+
+            return redirect_to_login(request.get_full_path(), login_url="login")
         return render(request, "home.html")
     throttled = request_limit(request, "library", 120)
     if throttled:

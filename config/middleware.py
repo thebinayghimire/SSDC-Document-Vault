@@ -26,6 +26,18 @@ class RequestReferenceMiddleware:
             request_reference.reset(token)
 
 
+class NullOriginMiddleware:
+    """Normalize opaque 'null' Origin headers sent by browsers under strict Referrer-Policy or local contexts."""
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        if request.META.get("HTTP_ORIGIN") == "null":
+            del request.META["HTTP_ORIGIN"]
+        return self.get_response(request)
+
+
 class SessionPolicyMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response

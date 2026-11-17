@@ -1,12 +1,10 @@
-{% load i18n %}{% blocktranslate %}SSDC Document Vault - Email Verification
+{% load i18n %}{% firstof otp_code otp as otp_code %}{% firstof app_name 'SSDC Document Vault' as app_name %}{% firstof purpose 'complete your staff registration' as purpose %}{% firstof expiry_minutes 10 as expiry_minutes %}{% blocktranslate %}Your {{ app_name }} code is: {{ otp_code }}
 
-A request was made to register a staff account for SSDC Document Vault using this email address.
-
-Your verification code is: {{ otp }}
-
-This code expires in {{ expiry_minutes }} minutes.
-
-Verify your email using this link:
+Enter it to {{ purpose }}. It works once and expires in {{ expiry_minutes }} minutes.{% endblocktranslate %}
+{% if verification_url %}
+{% translate "Enter the code on the verification page:" %}
 {{ verification_url }}
-
-If you did not initiate this request, no action is needed. Do not share this code with anyone.{% endblocktranslate %}
+{% translate "Opening the link alone does not verify your email address. You must enter the six-digit code to finish your registration." %}
+{% endif %}
+{% blocktranslate %}Didn't request this? You can ignore this email.
+{{ app_name }} will never ask you for this code by phone, chat, or email.{% endblocktranslate %}

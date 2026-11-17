@@ -1,12 +1,9 @@
-{% load i18n %}{% blocktranslate %}SSDC Document Vault - Confirm Your New Email
+{% load i18n %}{% firstof otp_code otp as otp_code %}{% firstof app_name 'SSDC Document Vault' as app_name %}{% firstof purpose 'confirm your new email address' as purpose %}{% firstof expiry_minutes 10 as expiry_minutes %}{% blocktranslate %}Your {{ app_name }} code is: {{ otp_code }}
 
-You requested to change your SSDC Document Vault account email address to this address.
-
-Your confirmation code is: {{ otp }}
-
-This code expires in {{ expiry_minutes }} minutes.
-
-Enter this code on the verification page:
+Enter it to {{ purpose }}. It works once and expires in {{ expiry_minutes }} minutes.{% endblocktranslate %}
+{% if change_url %}
+{% translate "Confirm your email using this link:" %}
 {{ change_url }}
-
-If you did not request this change, do not share this code with anyone.{% endblocktranslate %}
+{% endif %}
+{% blocktranslate %}Didn't request this? You can ignore this email.
+{{ app_name }} will never ask you for this code by phone, chat, or email.{% endblocktranslate %}

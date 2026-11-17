@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% block title %}{% translate "Verification link invalid" %}{% endblock %}
+{% block content %}
+  <section class="auth-card" aria-labelledby="invalid-heading">
+    <div class="auth-brand"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC <small>{% translate "Document Vault" %}</small></span></div>
+    <span class="eyebrow">{% translate "Verification link" %}</span>
+    <h1 id="invalid-heading">{% translate "Unable to verify email" %}</h1>
+    <p class="muted">
+      {% translate "This verification link is invalid, expired, or has already been used. For your security, verification links are single-use and expire within 24 hours." %}
+    </p>
+    <div class="message warning" role="alert">
+      {% translate "If you are completing your registration, please request a new verification link below." %}
+    </div>
+    <div class="form-actions" style="margin-top: var(--space-4);">
+      <a class="button full" href="{% url 'staff_register_resend' %}">{% translate "Request a new link" %} {% include "components/icon.html" with name="arrow" %}</a>
+    </div>
+    <div class="auth-foot" style="margin-top: var(--space-6);">
+      <a class="back-link" href="{% url 'staff_login' %}">{% include "components/icon.html" with name="back" %}{% translate "Back to sign in" %}</a>
+    </div>
+  </section>
+  <p class="auth-caption">
+    {% translate "Siddhartha Social Development Centre" %}
+    <br>
+    {% translate "For authorized staff use only" %}
+  </p>
+{% endblock %}

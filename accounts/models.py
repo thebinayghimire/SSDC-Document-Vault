@@ -280,6 +280,37 @@ class StaffRegistrationRequest(models.Model):
         return f"{self.user_id}:{self.status}"
 
 
+class StaffRegistrationToken(models.Model):
+    """Database-backed, single-use, 24-hour verification token for staff registration.
+
+    Mitigates token replay attacks and URL token persistence (VULN-03).
+    Only the SHA-256 hash of the random secret is stored.
+    """
+
+    registration = models.ForeignKey(
+        StaffRegistrationRequest,
+        on_delete=models.CASCADE,
+        related_name="tokens",
+    )
+    # Mitigates plaintext credential exposure in database dumps and logs by storing only SHA-256 hash
+    token_hash = models.CharField(max_length=64, unique=True, db_index=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    # Mitigates indefinite window of opportunity by enforcing 24-hour expiry
+    expires_at = models.DateTimeField(db_index=True)
+    # Mitigates token replay attacks by tracking consumption timestamp
+    used_at = models.DateTimeField(null=True, blank=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["token_hash"], name="staff_reg_tok_hash_idx"),
+            models.Index(fields=["expires_at", "used_at"], name="staff_reg_tok_exp_used_idx"),
+        ]
+
+    def __str__(self):
+        return f"Token({self.registration_id}, used={bool(self.used_at)})"
+
+
 class EmailChangeRequest(models.Model):
     """A verified, reserved replacement of the address owned by an account."""
 

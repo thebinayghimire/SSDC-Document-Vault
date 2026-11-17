@@ -99,7 +99,6 @@ def test_email_delivery_is_locmem_only_in_phase_1():
     "path",
     [
         "/accounts/signup/",
-        "/accounts/register/verify/",
         "/accounts/email-login/",
     ],
 )
@@ -110,6 +109,16 @@ def test_unsupported_registration_or_email_routes_raise_404(path, settings, clie
     with pytest.raises(Resolver404):
         resolve(path)
     assert client.get(path).status_code == 404
+
+
+@pytest.mark.django_db
+def test_tokenless_verify_route_requires_a_session_or_a_code(settings, client):
+    settings.STAFF_SELF_REGISTRATION_ENABLED = True
+    response = client.post("/accounts/register/verify/")
+    assert response.status_code == 200
+    assert "accounts/registration_link_invalid.html" in [
+        template.name for template in response.templates
+    ]
 
 
 def test_disabled_registration_route_returns_404_when_flag_off(settings, client):

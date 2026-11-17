@@ -86,8 +86,9 @@ try:
         page.wait_for_url("https://localhost:8443/")
         expect(page.get_by_role("heading", name="Document library", exact=True)).to_be_visible()
         cookies = {cookie["name"]: cookie for cookie in context.cookies()}
-        assert cookies["sessionid"]["secure"] and cookies["sessionid"]["httpOnly"]
-        assert cookies["sessionid"]["sameSite"] == "Lax"
+        session_cookie = cookies.get("__Host-sessionid") or cookies.get("sessionid")
+        assert session_cookie and session_cookie["secure"] and session_cookie["httpOnly"]
+        assert session_cookie["sameSite"] == "Lax"
         assert cookies["csrftoken"]["secure"]
         buffer = io.BytesIO()
         writer = PdfWriter()

@@ -9,8 +9,9 @@
     <meta name="color-scheme" content="light">
     <title>{% block title %}{% translate "Document Vault" %}{% endblock %} · SSDC</title>
     {% include "components/font_preload.html" %}
+    <link rel="icon" type="image/jpeg" href="{% static 'img/SSDC-logo.jpeg' %}">
     <link rel="stylesheet" href="{% static 'css/tokens.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=3">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=4">
     <script src="{% url 'javascript-catalog' %}"></script>
     <script type="module" src="{% static 'js/app.mjs' %}?v=3"></script>
     {% include "components/session_guard.html" %}
@@ -21,7 +22,7 @@
     <a class="skip" href="#main">{% translate "Skip to content" %}</a>
     {% if request.user.is_authenticated %}
       <aside class="sidebar">
-        <a class="brand" href="{% if request.user.is_portal_admin %}{% url 'admin:index' %}{% else %}{% url 'staff_portal' %}{% endif %}"><span class="brand-mark">{% include "components/icon.html" with name="vault" %}</span><span>SSDC<span class="brand-sub">{% if request.user.is_portal_admin %}{% translate "Admin portal" %}{% else %}{% translate "Staff portal" %}{% endif %}</span></span></a>
+        <a class="brand" href="{% if request.user.is_portal_admin %}{% url 'library' %}{% else %}{% url 'staff_portal' %}{% endif %}"><span class="brand-mark">{% include "components/brand_logo.html" %}</span><span>SSDC<span class="brand-sub">{% if request.user.is_portal_admin %}{% translate "Admin portal" %}{% else %}{% translate "Staff portal" %}{% endif %}</span></span></a>
         <div class="nav-label">{% if request.user.is_portal_admin %}{% translate "Administration" %}{% else %}{% translate "Staff workspace" %}{% endif %}</div>
         <nav aria-label="{% translate "Main navigation" %}">
           {% include "components/navigation.html" %}

@@ -22,8 +22,10 @@ strong { font-weight: 600; }
 .sidebar { position: fixed; inset: 0 auto 0 0; width: var(--sidebar-width); padding: var(--space-8) var(--space-4) var(--space-6); background: var(--color-canvas-secondary); display: flex; flex-direction: column; z-index: var(--z-sticky); overflow-y: auto; }
 .brand { display: flex; align-items: center; gap: var(--space-3); color: var(--color-text); margin: 0 var(--space-3) var(--space-12); font-size: var(--text-lg); font-weight: 600; letter-spacing: -.02em; }
 .brand:hover { text-decoration: none; }
-.brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 auto; color: var(--color-white); background: var(--color-text); border-radius: var(--radius-md); }
+.brand-mark { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; flex: 0 0 auto; border-radius: 50%; overflow: hidden; }
+.brand-mark:has(.icon) { background: var(--color-text); color: var(--color-white); border-radius: var(--radius-md); }
 .brand-mark .icon { width: 22px; height: 22px; }
+.brand-mark .brand-logo, .brand-logo { display: block; width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
 .brand-sub { display: block; color: var(--color-secondary); font-size: var(--text-xs); font-weight: 400; letter-spacing: 0; margin-top: 2px; }
 .nav-label { font-size: var(--text-xs); color: var(--color-secondary); padding: 0 var(--space-3); margin-bottom: var(--space-3); }
 .nav-link { display: flex; align-items: center; gap: var(--space-3); min-height: 44px; padding: var(--space-3); margin-bottom: var(--space-1); border-radius: var(--radius-sm); color: var(--color-secondary); font-size: var(--text-sm); transition: background-color var(--duration-fast) ease; }
